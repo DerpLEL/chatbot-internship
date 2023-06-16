@@ -71,7 +71,7 @@ class Chatbox{
             this.message.slice().reverse().forEach(function(item, index){
                 if (item.name === "NOIS Staff")
                 {
-                    html += '<div class="messages__item messages__item--visitor">' + item.message + '</div>'
+                    html += '<div class="messages__item messages__item--visitor">' + item.message + '</div>' + '<img src="https://img.icons8.com/color/48/000000/circled-user-female-skin-type-5--v1.png" alt="image" style="width:40px;height:40px;">'
                 }
                 else
                 {
@@ -79,6 +79,8 @@ class Chatbox{
                 }
 
             });
+
+            html += '<div class="messages__item messages__item--visitor"> Hi. I am NOIS Staff. How can I help you? </div><img src="https://img.icons8.com/color/48/000000/circled-user-female-skin-type-5--v1.png" alt="image" style="width:40px;height:40px;">';
 
             const chatmessage = chatbox.querySelector('.chatbox__messages');
             chatmessage.innerHTML = html;

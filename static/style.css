@@ -54,10 +54,11 @@ body {
 
 .send__button {
     padding: 6px;
-    background: transparent;
+    background: orange;
     border: none;
     outline: none;
     cursor: pointer;
+    border-radius: 20%;
 }
 
 
@@ -66,6 +67,7 @@ body {
     position: sticky;
     top: 0;
     background: orange;
+    font-size: 16px;
 }
 
 /* MESSAGES */
@@ -74,12 +76,20 @@ body {
     display: flex;
     overflow-y: scroll;
     flex-direction: column-reverse;
+    left: 20px;
 }
 
 .messages__item {
     background: orange;
     max-width: 60.6%;
     width: fit-content;
+    left: 20px;
+}
+
+.messages__item img {
+    position: absolute;
+    left: -20px;
+    top: 0;
 }
 
 .messages__item--operator {
@@ -146,9 +156,9 @@ body {
 
 .messages__item--visitor,
 .messages__item--typing {
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
+    border-bottom-left-radius: 20px;
     border-bottom-right-radius: 20px;
+    border-top-right-radius: 20px;
 }
 
 .messages__item--operator {
