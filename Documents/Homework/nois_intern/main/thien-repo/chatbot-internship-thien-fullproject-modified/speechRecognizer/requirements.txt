@@ -1,0 +1,2 @@
+PyAudio==0.2.11
+playsound==1.2.2
