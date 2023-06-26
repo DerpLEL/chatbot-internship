@@ -199,7 +199,7 @@ For example:
         self.keywordChain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ))
         self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
         self.policy_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.policy_template))
-        self.drink_chain = load_qa_with_sources_chain(llm=self.llm, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
+        self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
 
     def get_document(self, query, retriever):
         # Get top 4 documents
@@ -271,7 +271,7 @@ For example:
 
         response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},
                          return_only_outputs=False)
-        
+
         self.add_to_history(query, response['output_text'])
         return response, doc
 
