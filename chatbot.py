@@ -243,9 +243,16 @@ For example:
     def chat_public(self, query):
         keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
         print(f"Query: {query}\nKeywords: {keywords}")
+
+        chain = self.qa_chain
         doc = self.get_document(keywords, self.retriever_public)
 
-        response = self.qa_chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()}, return_only_outputs=False)
+        try:
+            response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},
+                             return_only_outputs=False)
+        except Exception as e:
+            return [{'output_text': f'Cannot generate response, error: {e}'}]
+
         self.add_to_history(query, response['output_text'])
         return response, doc
 
@@ -267,8 +274,11 @@ For example:
             chain = self.policy_chain
             doc = self.get_document(keywords, self.retriever_policy)
 
-        response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},
-                         return_only_outputs=False)
+        try:
+            response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},
+                             return_only_outputs=False)
+        except Exception as e:
+            return [{'output_text': f'Cannot generate response, error: {e}'}]
 
         self.add_to_history(query, response['output_text'])
         return response, doc
