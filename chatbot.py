@@ -5,8 +5,6 @@ from langchain.chains import LLMChain
 from azure.search.documents import SearchClient
 from langchain.chat_models import AzureChatOpenAI
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
-from langchain.retrievers import AzureCognitiveSearchRetriever
-import os
 
 public_index_name = "nois-public-data-index"
 private_index_name = "nois-private-data-index"
