@@ -14,7 +14,7 @@ search_endpoint = 'https://search-service01.search.windows.net'
 search_key = '73Swa5YqUR5IRMwUIqOH6ww2YBm3SveLv7rDmZVXtIAzSeBjEQe9'
 
 # os.environ["AZURE_COGNITIVE_SEARCH_SERVICE_NAME"] = "search-service01"
-# os.environ["AZURE_COGNITIVE_SEARCH_API_KEY"] = "73Swa5YqUR5IRMwUIqOH6ww2YBm3SveLv7rDmZVXtIAzSeBjEQe9"
+# os.environ["AZURE_COGNITIVE_SEARCH_API_KEY"] = "73Swa5YqUR5IRMwUIqOH6ww2YBm3SveLv7rDmZVXtIAzSeBjEQe9
 
 
 class chatAI:
