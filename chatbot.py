@@ -183,18 +183,26 @@ For example:
             credential=AzureKeyCredential(search_key)
         )
 
+        self.retriever_policy = SearchClient(
+            endpoint=search_endpoint,
+            index_name=company_regulations_index,
+            credential=AzureKeyCredential(search_key)
+        )
+
+        self.retriever_drink = SearchClient(
+            endpoint=search_endpoint,
+            index_name=nois_drink_fee_index,
+            credential=AzureKeyCredential(search_key)
+        )
+
         self.qa_chain = load_qa_with_sources_chain(llm=self.llm, chain_type="stuff", prompt=PromptTemplate.from_template(self.chat_template))
         self.keywordChain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ))
         self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
         self.policy_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.policy_template))
         self.drink_chain = load_qa_with_sources_chain(llm=self.llm, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
 
-    def get_document(self, query):
+    def get_document(self, query, retriever):
         # Get top 4 documents
-        retriever = self.retriever_public
-        if self.private:
-            retriever = self.retriever_private
-
         res = retriever.search(search_text=query, top=4)
 
         doc_num = 1
@@ -237,44 +245,33 @@ For example:
     def chat_public(self, query):
         keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
         print(f"Query: {query}\nKeywords: {keywords}")
-        doc = self.get_document(keywords)
+        doc = self.get_document(keywords, self.retriever_public)
 
         response = self.qa_chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()}, return_only_outputs=False)
         self.add_to_history(query, response['output_text'])
         return response, doc
-    
-    def get_docs_using_keyword_string(keywords, ret):
-        return ret.get_relevant_documents(keywords)[:1]
 
     def chat_private(self, query):
         label = self.classifier_chain(query)['text']
 
         keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
         print(f"Query: {query}\nKeywords: {keywords}")
-  
+
+        chain = self.qa_chain
+        doc = self.get_document(keywords, self.retriever_private)
+
         if label == "drink fee":
-            self.retriever_private = SearchClient(
-            endpoint=search_endpoint,
-            index_name=nois_drink_fee_index,
-            credential=AzureKeyCredential(search_key)
-            )
-            doc = self.get_document(keywords)
+            doc = self.get_document(keywords, self.retriever_drink)
             chain = self.drink_chain
-            doc = self.excel_drink_preprocess(doc)       
+            doc = self.excel_drink_preprocess(doc)
+
         elif label == "policy":
-            self.retriever_private = SearchClient(
-            endpoint=search_endpoint,
-            index_name=company_regulations_index,
-            credential=AzureKeyCredential(search_key)
-            )
             chain = self.policy_chain
-            doc = self.get_document(keywords)
-        elif label == "other":
-            chain = self.qa_chain
-            doc = self.get_document(keywords)
+            doc = self.get_document(keywords, self.retriever_policy)
 
         response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},
                          return_only_outputs=False)
+        
         self.add_to_history(query, response['output_text'])
         return response, doc
 
