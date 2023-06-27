@@ -7,8 +7,8 @@ from langchain.chat_models import AzureChatOpenAI
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 
 public_index_name = "nois-public-v3-index"
-private_index_name = "nois-private-data-index"
-company_regulations_index = "company-regulations-index"
+private_index_name = "nois-private-v3-index"
+company_regulations_index = "nois-company-regulations-v2"
 nois_drink_fee_index = "nois-drink-fee-index"
 search_endpoint = 'https://search-service01.search.windows.net'
 search_key = '73Swa5YqUR5IRMwUIqOH6ww2YBm3SveLv7rDmZVXtIAzSeBjEQe9'
@@ -44,19 +44,8 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
-    get_query_template = """Below is a history of the conversation so far, and a new question asked by the user that needs to be answered by searching in a knowledge base about employee healthcare plans and the employee handbook.
-Generate a search query based on the conversation and the new question.
-
-History:{context}
-
-New question:
-{question}
-
-Search query:
-"""
-
     chat_template = """<|im_start|>system
-Assistant helps users answer their questions. Your answer must adhere to the following criteria:
+Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. Your answer must adhere to the following criteria:
 - Be brief in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
 - If the user greets you, respond accordingly.
 - If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese
@@ -78,6 +67,7 @@ Given a sentence, assistant will determine if the sentence belongs in 1 of 3 cat
 - policy
 - drink fee
 - other
+Do not answer the question, only output the appropriate category.
 
 EXAMPLE
 Input: Ai chưa đóng tiền nước tháng 5?
@@ -143,7 +133,7 @@ For example:
             openai_api_version="2023-03-15-preview",
             deployment_name='test-1',
             openai_api_key='400568d9a16740b88aff437480544a39',
-            temperature=0,
+            temperature=0.0,
             max_tokens=600
         )
 
@@ -165,16 +155,22 @@ For example:
             searchMode="all"
         )
 
-        self.retriever_policy = SearchClient(
-            endpoint=search_endpoint,
-            index_name=company_regulations_index,
-            credential=AzureKeyCredential(search_key)
-        )
-
         self.retriever_drink = SearchClient(
             endpoint=search_endpoint,
             index_name=nois_drink_fee_index,
-            credential=AzureKeyCredential(search_key)
+            credential=AzureKeyCredential(search_key),
+            b=0.0,
+            k1=0.3,
+            searchMode="all"
+        )
+
+        self.retriever_policy = SearchClient(
+            endpoint=search_endpoint,
+            index_name=company_regulations_index,
+            credential=AzureKeyCredential(search_key),
+            b=0.0,
+            k1=0.3,
+            searchMode="all"
         )
 
         self.qa_chain = load_qa_with_sources_chain(llm=self.llm, chain_type="stuff", prompt=PromptTemplate.from_template(self.chat_template))
@@ -241,21 +237,21 @@ For example:
         return response, doc
 
     def chat_private(self, query):
-        # label = self.classifier_chain(query)['text']
+        label = self.classifier_chain(query)['text']
+
         keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
         print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
-        doc = self.get_document(keywords, self.retriever_private)
 
-        # if label == "drink fee":
-        #     doc = self.get_document(keywords, self.retriever_drink)
-        #     chain = self.drink_chain
-        #     doc = self.excel_drink_preprocess(doc)
-        #
-        # elif label == "policy":
-        #     chain = self.policy_chain
-        #     doc = self.get_document(keywords, self.retriever_policy)
+        if label == "drink fee":
+            doc = self.get_document(keywords, self.retriever_drink)
+
+        elif label == "policy":
+            doc = self.get_document(keywords, self.retriever_policy)
+
+        else:
+            doc = self.get_document(keywords, self.retriever_private)
 
         try:
             response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},
