@@ -73,12 +73,13 @@ def predict():
     response = {}
     if 'claims_challenge' in session['flow']:
         bot.private = False
-        response = bot.chat_public(text)
+        response, doc = bot.chat_public(text)
     else:
         bot.private = True
-        response = bot.chat_private(text)
-        
-    message = {"answer": response[0]['output_text']}
+        response, doc = bot.chat_private(text)
+
+    print(doc)
+    message = {"answer": response['output_text']}
 
     return jsonify(message)
 

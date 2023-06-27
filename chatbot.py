@@ -6,7 +6,7 @@ from azure.search.documents import SearchClient
 from langchain.chat_models import AzureChatOpenAI
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 
-public_index_name = "nois-public-data-index"
+public_index_name = "nois-public-v3-index"
 private_index_name = "nois-private-data-index"
 company_regulations_index = "company-regulations-index"
 nois_drink_fee_index = "nois-drink-fee-index"
@@ -19,40 +19,54 @@ search_key = '73Swa5YqUR5IRMwUIqOH6ww2YBm3SveLv7rDmZVXtIAzSeBjEQe9'
 
 class chatAI:
     keyword_templ = """<|im_start|>system
-Given a sentence and a conversation about the companies New Ocean Automation System and NOIS, assistant will extract keywords based on the conversation and the sentence and translate them to Vietnamese if they're in English and vice versa.
-Your output will be on one line, in both languages if possible and separated by commas. Do not duplicate keywords.
-Assume the context is about the companies unless specified otherwise. Only return the keywords, do not output anything else. Do not answer the questions, just return the keywords.
-Reuse the most recent keywords and do not create new keywords if the sentence has continuity.
+Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
+Generate a search query based on the conversation and the new question. Use Roman numerals for chapter numbers. Only include the most important queries.
+Replace AND with + and OR with |. Do not answer the question.
+
+Chat history:{context}
+
 EXAMPLE
+Input: Ai là giám đốc điều hành?
+Ouput: (giám +đốc +điều +hành) | (managing +director)
 Input: Ai chưa đóng tiền nước tháng 5?
-Output: tiền nước tháng 05, May drink fee
+Output: (tiền +nước +tháng +05) | (May +drink +fee)
 Input: Was Pepsico a customer of New Ocean?
 Output: Pepsico
 Input: What is FASF?
 Output: FASF
-Input: What is chapter 1, article 4 of the company's policy about?
-Output: chapter I article 4, chương I điều 4, company's policy, quy định công ty
-Input: Chương 2, điều 7 gồm nội dung gì?
-Ouput: chương II điều 7, chapter II article 7
+Input: What is the company's policy on leave?
+Ouput: (ngày +nghỉ +phép) | leave
+Input: Điều 7 chương 2 gồm nội dung gì?
+Output: ("điều 7" + "chương II") | ("article 7" + "chapter II")
 <|im_end|>
-{context}
-<|im_start|>user
+
 Input: {question}
-<|im_end|>
 <|im_start|>assistant
 Output:"""
 
+    get_query_template = """Below is a history of the conversation so far, and a new question asked by the user that needs to be answered by searching in a knowledge base about employee healthcare plans and the employee handbook.
+Generate a search query based on the conversation and the new question.
+
+History:{context}
+
+New question:
+{question}
+
+Search query:
+"""
+
     chat_template = """<|im_start|>system
-You must follow this rule:
-1. If the input is Vietnamese, you must answer in Vietnamese.  If the input is  English, the output is English.
-2. Assistant helps the company employees and users with their questions about the companies New Ocean Automation System and NOIS. Your answer must adhere to the following criteria:
-- Be brief in your answers. Answer ONLY with the facts listed in the list of sources below. If there isn't enough information below, say you don't know. Do not generate answers that don't use the sources below. If asking a clarifying question to the user would help, ask the question.
-- If the user asks any questions not related to New Ocean Automation System or NOIS, apologize and request another question from the user. If the user greets you, respond accordingly.
+Assistant helps users answer their questions. Your answer must adhere to the following criteria:
+- Be brief in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
+- If the user greets you, respond accordingly.
+- If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese
 
 Sources:
 {summaries}
 <|im_end|>
-{context}
+
+Chat history:{context}
+
 <|im_start|>user
 {question}
 <|im_end|>
@@ -172,13 +186,19 @@ For example:
         self.retriever_public = SearchClient(
             endpoint=search_endpoint,
             index_name=public_index_name,
-            credential=AzureKeyCredential(search_key)
+            credential=AzureKeyCredential(search_key),
+            b=0.0,
+            k1=0.3,
+            searchMode="all"
         )
 
         self.retriever_private = SearchClient(
             endpoint=search_endpoint,
             index_name=private_index_name,
-            credential=AzureKeyCredential(search_key)
+            credential=AzureKeyCredential(search_key),
+            b=0.0,
+            k1=0.3,
+            searchMode="all"
         )
 
         self.retriever_policy = SearchClient(
@@ -201,7 +221,7 @@ For example:
 
     def get_document(self, query, retriever):
         # Get top 4 documents
-        res = retriever.search(search_text=query, top=4)
+        res = retriever.search(search_text=query, top=3)
 
         doc_num = 1
         doc = []
@@ -221,7 +241,8 @@ For example:
         if self.private:
             hist = self.history_private
 
-        for i in hist:
+        history = hist[::-1]
+        for i in history[:3]:
             txt += f"\n<|im_start|>user\n{i['user']}\n<|im_end|>\n"
             txt += f"<|im_start|>assistant\n{i['AI']}\n<|im_end|>"
 
@@ -251,34 +272,33 @@ For example:
             response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},
                              return_only_outputs=False)
         except Exception as e:
-            return [{'output_text': f'Cannot generate response, error: {e}'}]
+            return {'output_text': f'Cannot generate response, error: {e}'}, doc
 
         self.add_to_history(query, response['output_text'])
         return response, doc
 
     def chat_private(self, query):
-        label = self.classifier_chain(query)['text']
-
+        # label = self.classifier_chain(query)['text']
         keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
         print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
         doc = self.get_document(keywords, self.retriever_private)
 
-        if label == "drink fee":
-            doc = self.get_document(keywords, self.retriever_drink)
-            chain = self.drink_chain
-            doc = self.excel_drink_preprocess(doc)
-
-        elif label == "policy":
-            chain = self.policy_chain
-            doc = self.get_document(keywords, self.retriever_policy)
+        # if label == "drink fee":
+        #     doc = self.get_document(keywords, self.retriever_drink)
+        #     chain = self.drink_chain
+        #     doc = self.excel_drink_preprocess(doc)
+        #
+        # elif label == "policy":
+        #     chain = self.policy_chain
+        #     doc = self.get_document(keywords, self.retriever_policy)
 
         try:
             response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},
                              return_only_outputs=False)
         except Exception as e:
-            return [{'output_text': f'Cannot generate response, error: {e}'}]
+            return {'output_text': f'Cannot generate response, error: {e}'}, doc
 
         self.add_to_history(query, response['output_text'])
         return response, doc
