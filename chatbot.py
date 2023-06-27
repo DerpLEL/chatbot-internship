@@ -98,42 +98,6 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
-    policy_template = """<|im_start|>system
-
-Sources:
-{summaries}
-
-You must follow this rule:
-1. If the input is Vietnamese, you must answer in Vietnamese.  If the input is  English, the output is English.
-2. Because this is Company regulations, you must answer same as in document except you are required to paraphraise.
-3. Company regulations includes 10 chapters and 36 articles from 1 to 36:
-CHAPTER I has 4 articles from article 1 to article 4,
-CHAPTER II has 8 articles from article 5 to 13,
-CHAPTER III has 6 articles from article 14 to 19,
-CHAPTER IV has 2 articles from article 20 to 21,
-CHAPTER V has 2 articles from article 22 to 23,
-CHAPTER VI has 2 articles from article 24 to 25,
-CHAPTER VII has 2 articles from article 26 to 27,
-CHAPTER VIII has 7 articles from article 28 to 34,
-CHAPTER IX has 1 articles,
-CHAPTER X has 1 articles
-If user just ask about article, you just answer the chapter that article belongs to.
-for example: if input is "article 14" , so the output is "article 14 in chapter III". After ask user whether user want ask detailly about that article.
-4. You must read Roman numerals: I~1,II~2,III~3, IV~4,V~5,VI~6,VII~7,VIII~8,IX~9,X~10
-For example: Chapter V means Chapter 5 and reverse
-5. Assistant is a friendly chatbot that helps the company employees and users with their questions about the companies New Ocean and NOIS in their language. Be brief in your answers.
-Answer ONLY with the facts listed in the list of sources below. If there isn't enough information below, say you don't know. Do not generate answers that don't use the sources below. If asking a clarifying question to the user would help, ask the question.
-If the user asks any questions not related to New Ocean or NOIS, apologize and request another question from the user. If the user greets you, respond accordingly.
-If given a question with both languages present, ask the user which language they prefer.
-
-<|im_end|>
-{context}
-<|im_start|>user
-{question}
-<|im_end|>
-<|im_start|>assistant
-"""
-
     drink_fee_template = """<|im_start|>system
 
 Sources:
@@ -216,7 +180,6 @@ For example:
         self.qa_chain = load_qa_with_sources_chain(llm=self.llm, chain_type="stuff", prompt=PromptTemplate.from_template(self.chat_template))
         self.keywordChain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ))
         self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
-        self.policy_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.policy_template))
         self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
 
     def get_document(self, query, retriever):
