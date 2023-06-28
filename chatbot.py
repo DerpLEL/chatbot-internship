@@ -1,14 +1,15 @@
 from langchain.prompts import PromptTemplate
 from langchain.document_transformers import Document
-from azure.core.credentials import AzureKeyCredential
 from langchain.chains import LLMChain
 from azure.search.documents import SearchClient
+from azure.core.credentials import AzureKeyCredential
+from langchain.llms import AzureOpenAI
 from langchain.chat_models import AzureChatOpenAI
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 
 public_index_name = "nois-public-v3-index"
 private_index_name = "nois-private-v3-index"
-company_regulations_index = "nois-company-regulations-v2"
+company_regulations_index = "nois-company-regulations-v2-index"
 nois_drink_fee_index = "nois-drink-fee-index"
 search_endpoint = 'https://search-service01.search.windows.net'
 search_key = '73Swa5YqUR5IRMwUIqOH6ww2YBm3SveLv7rDmZVXtIAzSeBjEQe9'
@@ -22,20 +23,23 @@ class chatAI:
 Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
 Generate a search query based on the conversation and the new question. Use Roman numerals for chapter numbers. Only include the most important queries.
 Replace AND with + and OR with |. Do not answer the question.
+Output queries must be in both English and Vietnamese in the forms of the provided examples.
 
 Chat history:{context}
 
-EXAMPLE
+EXAMPLES
 Input: Ai là giám đốc điều hành?
 Ouput: (giám +đốc +điều +hành) | (managing +director)
 Input: Ai chưa đóng tiền nước tháng 5?
 Output: (tiền +nước +tháng +05) | (May +drink +fee)
+Input: Số người đã đóng tiền nước tháng 4?
+Output: (tiền +nước +tháng +04) | (April +drink +fee)
 Input: Was Pepsico a customer of New Ocean?
 Output: Pepsico
 Input: What is FASF?
 Output: FASF
 Input: What is the company's policy on leave?
-Ouput: (ngày +nghỉ +phép) | leave
+Ouput: leave | (ngày +nghỉ +phép)
 Input: Điều 7 chương 2 gồm nội dung gì?
 Output: ("điều 7" + "chương II") | ("article 7" + "chapter II")
 <|im_end|>
@@ -45,10 +49,10 @@ Input: {question}
 Output:"""
 
     chat_template = """<|im_start|>system
-Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. Your answer must adhere to the following criteria:
-- Be brief in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
+Assistant helps answer questions about the companies NOAS and NOIS. Your answer must adhere to the following criteria:
+- Be brief in your answers. You may use the provided sources to help answer the question. If asking a clarifying question to the user would help, ask the question.
 - If the user greets you, respond accordingly.
-- If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese
+- If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese.
 
 Sources:
 {summaries}
@@ -79,6 +83,8 @@ Output: policy
 Input: What is Chapter 1, article 2 of the company policy about?
 Output: policy
 Input: Dịch vụ của NOIS là gì?
+Output: other
+Input: What is NOIS?
 Output: other
 Input: What is FASF?
 Output: other
@@ -127,14 +133,16 @@ For example:
             max_tokens=400
         )
 
-        self.llm2 = AzureChatOpenAI(
+        self.llm2 = AzureOpenAI(
             openai_api_type="azure",
             openai_api_base='https://openai-nois-intern.openai.azure.com/',
             openai_api_version="2023-03-15-preview",
             deployment_name='test-1',
             openai_api_key='400568d9a16740b88aff437480544a39',
             temperature=0.0,
-            max_tokens=600
+            max_tokens=600,
+            top_p=0.5,
+            stop=['<|im_end|>', '\n']
         )
 
         self.retriever_public = SearchClient(
@@ -221,7 +229,7 @@ For example:
         return self.chat_public(query)
 
     def chat_public(self, query):
-        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
+        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
         print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
@@ -237,17 +245,18 @@ For example:
         return response, doc
 
     def chat_private(self, query):
-        label = self.classifier_chain(query)['text']
+        label = self.classifier_chain(query)['text'].strip()
+        print(f"Label: {label}")
 
-        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
+        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
         print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
 
-        if label == "drink fee":
+        if "drink fee" in label:
             doc = self.get_document(keywords, self.retriever_drink)
 
-        elif label == "policy":
+        elif "policy" in label:
             doc = self.get_document(keywords, self.retriever_policy)
 
         else:
