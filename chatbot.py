@@ -57,11 +57,12 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
-    chat_template = """<|im_start|>system
+    backup_chat = """<|im_start|>system
 Assistant helps users answer their questions about NOAS and NOIS. Your answer must adhere to the following criteria:
+- The info might be spread across 2 documents, so check the docs carefully.
 - Be brief but friendly in your answers. If asking a clarifying question to the user would help, ask the question. You may use the sources provided to answer. If you can't find the answer from the sources, say you don't know.
+- If question is Vietnamese, answer in Vietnamese, DO NOT answer in English. If question is English, then you may answer in English.
 - If the user greets you, respond accordingly. If asked a question not related to NOIS or NOAS, apologize and request another question.
-- If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese.
 
 Sources:
 {summaries}
@@ -69,6 +70,26 @@ Sources:
 
 Chat history:{context}
 
+<|im_start|>user
+{question}
+<|im_end|>
+<|im_start|>assistant
+"""
+
+    chat_template = """<|im_start|>system
+Assistant helps company employees and users with their questions about the companies New Ocean Automation System and NOIS. Your answer must adhere to the following criteria:
+- The info might be spread across 2 documents, so check the docs carefully.
+- Be brief in your answers. Answer ONLY with the facts listed in the list of sources below. If there isn't enough information below, say you don't know. Do not generate answers that don't use the sources below. If asking a clarifying question to the user would help, ask the question.
+- If the user asks any questions not related to New Ocean Automation System or NOIS, apologize and request another question from the user. If the user greets you, respond accordingly.
+- You must answer in the current question's language.
+
+Sources:
+{summaries}
+<|im_end|>
+
+Chat history: {context}
+
+Answer in the current question's language.
 <|im_start|>user
 {question}
 <|im_end|>
@@ -92,6 +113,8 @@ Output: drink fee
 Input: Quy định công ty về nơi làm việc là gì?
 Output: policy
 Input: What is Chapter 1, article 2 of the company policy about?
+Output: policy
+Input: Số ngày làm việc ở nhà?
 Output: policy
 Input: Dịch vụ của NOIS là gì?
 Output: other
@@ -188,6 +211,18 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
             stop=['<|im_end|>', '\n', '<|im_sep|>']
         )
 
+        self.llm3 = AzureOpenAI(
+            openai_api_type="azure",
+            openai_api_base='https://openai-nois-intern.openai.azure.com/',
+            openai_api_version="2023-03-15-preview",
+            deployment_name='test-1',
+            openai_api_key='400568d9a16740b88aff437480544a39',
+            temperature=1.0,
+            max_tokens=600,
+            top_p=0.5,
+            stop=['<|im_end|>', '\n', '<|im_sep|>']
+        )
+
         self.retriever_public = SearchClient(
             endpoint=search_endpoint,
             index_name=public_index_name,
@@ -226,7 +261,7 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
 
         self.qa_chain = load_qa_with_sources_chain(llm=self.llm, chain_type="stuff",
                                                    prompt=PromptTemplate.from_template(self.chat_template))
-        self.keywordChain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ))
+        self.keywordChain = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_templ))
         self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
         self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff",
                                                       prompt=PromptTemplate.from_template(self.drink_fee_template))
@@ -276,7 +311,8 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
         return self.chat_public(query)
 
     def chat_public(self, query):
-        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
+        # keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
+        keywords = query
         print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
@@ -295,7 +331,8 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
         label = self.classifier_chain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
         print(f"Label: {label}")
 
-        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
+        # keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
+        keywords = query
         print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
