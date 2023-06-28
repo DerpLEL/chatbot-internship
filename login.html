@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Chatbot</title>
+</head>
+<body>
+    <h1>Microsoft Identity Python Web App</h1>
+
+    <li><a href='{{ auth_url }}'>Sign In</a></li>
+
+    {% if config.get("B2C_RESET_PASSWORD_AUTHORITY") %}
+    <li><a href='{{_build_auth_code_flow(authority=config["B2C_RESET_PASSWORD_AUTHORITY"])["auth_uri"]}}'>Reset Password</a></li>
+    {% endif %}
+
+    <div class="container">
+        <div class="chatbox">
+            <div class="chatbox__support">
+                <div class="chatbox__header">
+                    <div class="chatbox__image--header">
+                    <img src = "static/images/New-Ocean-Information-System-logo-19.png" alt="image_logo" style="width:93px;height:31px;left: -20px;">
+                    </div>
+                    <div class="chatbox__content--header">
+                        <h4 class="chatbox__heading--header">New Ocean Assistant</h4>
+                    </div>
+                </div>
+                <div class="chatbox__messages">
+                    <div class="messages__item messages__item--visitor">  
+                        Hi. I am New Ocean bot. How can I help you? 
+                    </div>
+                    <img src="static/images/voicebot.jpg" alt="image" style="width:40px;height:40px;">
+                </div>
+                <div class="chatbox__footer">
+                    <button class="clear-button--footer clear__button">Clear</button>
+                    <input type="text" placeholder="Write a message...">
+                    <button class="chatbox__send--footer send__button">Send</button>
+                    
+                </div>
+            </div>
+            <div class="chatbox__button">
+                <button><img src="{{ url_for('static', filename='images/chatbox-icon.svg') }}" /></button>
+            </div>
+        </div>
+    </div>
+    
+        <script>
+            $SCRIPT_ROOT = {{ request.script_root|tojson }};
+        </script>
+        <script type="text/javascript" src="{{ url_for('static', filename='app.js') }}"></script>
+
+
+    <hr>
+    <footer style="text-align: right">Powered by MSAL Python {{ version }}</footer>
+</body>
+</html>
+
