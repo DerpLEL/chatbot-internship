@@ -58,13 +58,10 @@ Input: {question}
 Output:"""
 
     chat_template = """<|im_start|>system
-Assistant helps NOAS and NOIS's employees answer their questions. Your answer must adhere to the following criteria:
-- Be brief in your answers. You may use the provided sources to help answer the question. If asking a clarifying question to the user would help, ask the question.
+Assistant helps users answer their questions. Your answer must adhere to the following criteria:
+- Be brief in your answers. If asking a clarifying question to the user would help, ask the question.
 - If the user greets you, respond accordingly.
 - If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese.
-
-Sources:
-{summaries}
 <|im_end|>
 
 Chat history:{context}
@@ -74,6 +71,15 @@ Chat history:{context}
 <|im_end|>
 <|im_start|>assistant
 """
+
+    doc_checker = """<|im_start|>system
+Assistant is provided with an answer from a random question and some reference documents. Determine of the the answer is related to the documents or not.
+
+Given answer:
+{question}
+
+Documents:
+{summaries}"""
 
     classifier_template = """<|im_start|>system
 Given a question and a conversation, assistant will determine based on the question and the conversation history if the question belongs in 1 of 3 categories, which are:
