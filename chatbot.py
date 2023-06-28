@@ -63,7 +63,7 @@ Assistant helps users answer their questions. Your answer must adhere to the fol
 - If the user greets you, respond accordingly.
 - If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese.
 <|im_end|>
-
+{summaries}
 Chat history:{context}
 
 <|im_start|>user
@@ -236,6 +236,7 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
         self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
         self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff",
                                                       prompt=PromptTemplate.from_template(self.drink_fee_template))
+
         self.check_chain = load_qa_with_sources_chain(llm=self.llm,
                                                       prompt=PromptTemplate.from_template(self.doc_checker))
 
@@ -287,17 +288,22 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
         keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
         print(f"Query: {query}\nKeywords: {keywords}")
 
-        chain = self.qa_chain
+        response1 = self.qa_chain({'question': query, 'input_documents': '',
+                                   'context': self.get_history_as_txt()},
+                                  return_only_outputs=False)
+
+        chain = self.check_chain
         doc = self.get_document(keywords, self.retriever_public)
 
         try:
-            response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},
-                             return_only_outputs=False)
+            response2 = chain({'input_documents': doc, 'question': response1['output_text'],
+                               'context': self.get_history_as_txt()},
+                              return_only_outputs=False)
         except Exception as e:
             return {'output_text': f'Cannot generate response, error: {e}'}, doc
 
-        self.add_to_history(query, response['output_text'])
-        return response, doc
+        self.add_to_history(query, response2['output_text'])
+        return response2, doc
 
     def chat_private(self, query):
         label = self.classifier_chain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
