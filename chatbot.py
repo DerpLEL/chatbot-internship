@@ -6,6 +6,10 @@ from azure.core.credentials import AzureKeyCredential
 from langchain.llms import AzureOpenAI
 from langchain.chat_models import AzureChatOpenAI
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
+from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
+import pandas as pd
+from azure.core.exceptions import ResourceExistsError
+from datetime import datetime, timedelta
 
 public_index_name = "nois-public-v3-index"
 private_index_name = "nois-private-v3-index"
@@ -17,23 +21,30 @@ search_key = '73Swa5YqUR5IRMwUIqOH6ww2YBm3SveLv7rDmZVXtIAzSeBjEQe9'
 # os.environ["AZURE_COGNITIVE_SEARCH_SERVICE_NAME"] = "search-service01"
 # os.environ["AZURE_COGNITIVE_SEARCH_API_KEY"] = "73Swa5YqUR5IRMwUIqOH6ww2YBm3SveLv7rDmZVXtIAzSeBjEQe9
 
+account_name = 'acschatbotnoisintern'
+account_key = 'ohteFF8/tuPx3K0xtA/oIqXSKpx/MTnM4Ia0CbvLXJT1l0KJajB3zvX8A/DsNE9wm3gUq1TDlwve+AStS3nB0A=='
+storage_connection_string = 'DefaultEndpointsProtocol=https;AccountName=acschatbotnoisintern;AccountKey=ohteFF8/tuPx3K0xtA/oIqXSKpx/MTnM4Ia0CbvLXJT1l0KJajB3zvX8A/DsNE9wm3gUq1TDlwve+AStS3nB0A==;EndpointSuffix=core.windows.net'
+blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
+
 
 class chatAI:
     keyword_templ = """<|im_start|>system
 Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
-Generate a search query based on the conversation and the new question. Use Roman numerals for chapter numbers. Only include the most important queries.
-Replace AND with + and OR with |. Do not answer the question.
-Output queries must be in both English and Vietnamese in the forms of the provided examples.
+Generate a search query based on the conversation and the new question. Use Roman numerals for chapter numbers.
+Replace AND with + and OR with |. Verbs and adjectives must be accompanied by |.
+Do not answer the question. Output queries must be in both English and Vietnamese in the forms of the provided examples.
 
 Chat history:{context}
 
 EXAMPLES
 Input: Ai là giám đốc điều hành?
 Ouput: (giám +đốc +điều +hành) | (managing +director)
-Input: Ai chưa đóng tiền nước tháng 5?
-Output: (tiền +nước +tháng +05) | (May +drink +fee)
-Input: Số người đã đóng tiền nước tháng 4?
-Output: (tiền +nước +tháng +04) | (April +drink +fee)
+Input: Số người chưa đóng tiền nước tháng 5?
+Output: (tiền +nước +tháng +05 |chưa |đóng) | (May +drink +fee |not |paid)
+Input: Ai đã đóng tiền nước tháng 4?
+Output: (tiền +nước +tháng +04 |đã |đóng) | (April +drink +fee |paid)
+Input: Danh sách người đóng tiền nước tháng 3?
+Output: (tiền +nước +tháng +03) | (March +drink +fee)
 Input: Was Pepsico a customer of New Ocean?
 Output: Pepsico
 Input: What is FASF?
@@ -65,11 +76,13 @@ Chat history:{context}
 """
 
     classifier_template = """<|im_start|>system
-Given a sentence, assistant will determine if the sentence belongs in 1 of 3 categories, which are:
+Given a question and a conversation, assistant will determine based on the question and the conversation history if the question belongs in 1 of 3 categories, which are:
 - policy
 - drink fee
 - other
 Do not answer the question, only output the appropriate category.
+
+Chat history:{context}
 
 EXAMPLE
 Input: Ai chưa đóng tiền nước tháng 5?
@@ -92,23 +105,53 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
+    backup_drink = """<|im_start|>system
+Sources:
+{summaries}
+
+You must follow this rule:
+1. If user require count or ask how many, you must write pandas code for file csv. The output must be 1 line.
+Your ouput must only include code and nothing else, DO NOT print out the provided sheet.
+Must NO COMMENT, NO RESULT, NO ADD anything to the line of code.
+For example:
+Input:có bao nhiêu người có tên là Bảo trong tiền nước tháng 5?
+Output: df[df['FullName'].str.contains('BẢO')]['FullName'].count()
+Input: có bao nhiêu người có tên là Hiệp đã đóng tiền nước tháng 5?
+Output: df[df['Tình trạng'] == 'Done'][df[df['Tình trạng'] == 'Done']['FullName'].str.contains('HIỆP')]['FullName'].count()
+Input: tiền nước tháng 5 bao nhiêu người chưa đóng?
+Output: df[df['Tình trạng'] != 'Done']['FullName'].count()
+
+2. You must follow up the structure of dataset.
+For example: If ask aboout fullname is 'Hưng', use must answer with format of dataset is "HƯNG" instead of "hưng" or "Hưng"
+
+<|im_end|>
+{context}
+<|im_start|>user
+{question}
+<|im_end|>
+<|im_start|>assistant
+"""
+
     drink_fee_template = """<|im_start|>system
 
 Sources:
 {summaries}
 
 You must follow this rule:
-1. If the input is Vietnamese, you must answer in Vietnamese.  If the input is  English, the output is English.
-2. If user ask to list about people who paid the water money or not paid, you must list all like require of user.
-If the user asks any questions not related to New Ocean or NOIS, apologize and request another question from the user. If the user greets you, respond accordingly.
-If given a question with both languages present, ask the user which language they prefer.
-3. Form of list should have a endline.
-For example: 
-1. hung.bui@nois.vn BÙI TUẤN HƯNG 68000 'newline'
-2. hiep.dang@nois.vn ĐẶNG DUY HIỆP 33542 33542 Done 'newline'
-3. tai.dang@nois.vn ĐẶNG HỮU TÀI 56100 56100 Done 'newline'
-
+1. If user require count or ask how many, you must write pandas code for file csv. The output must be 1 line.
+2. Output just only code.
+3. Must NO COMMENT, NO RESULT
+For example:
+Input: Danh sách những người đã đóng tiền tháng 5
+Output: df[df['Tình trạng'] == Done]
+Inpput:có bao nhiêu người có tên là Bảo trong tiền nước tháng 5?
+Output: df[df['FullName'].str.contains('BẢO')]['FullName'].count()
+Input: có bao nhiêu người có tên là Hiệp đã đóng tiền nước tháng 5?
+Output: df[df['Tình trạng'] == 'Done'][df[df['Tình trạng'] == 'Done']['FullName'].str.contains('HIỆP')]['FullName'].count()
+4. You must follow up the structure of dataset.
+For example: If ask aboout fullname is 'Hưng', use must answer with format of dataset is "HƯNG" instead of "hưng" or "Hưng"
 <|im_end|>
+
 {context}
 <|im_start|>user
 {question}
@@ -120,6 +163,8 @@ For example:
         self.history_public = []
         self.history_private = []
         self.private = False
+        self.container_drink_fee_name = 'nois-drink-fee'
+        self.container_client = blob_service_client.get_container_client(self.container_drink_fee_name)
 
         self.llm = AzureChatOpenAI(
             openai_api_type="azure",
@@ -128,7 +173,7 @@ For example:
             deployment_name='test-1',
             openai_api_key='400568d9a16740b88aff437480544a39',
             temperature=0.5,
-            max_tokens=400
+            max_tokens=250
         )
 
         self.llm2 = AzureOpenAI(
@@ -137,10 +182,10 @@ For example:
             openai_api_version="2023-03-15-preview",
             deployment_name='test-1',
             openai_api_key='400568d9a16740b88aff437480544a39',
-            temperature=0.0,
+            temperature=0.7,
             max_tokens=600,
             top_p=0.5,
-            stop=['<|im_end|>', '\n']
+            stop=['<|im_end|>', '\n', '<|im_sep|>']
         )
 
         self.retriever_public = SearchClient(
@@ -179,10 +224,12 @@ For example:
             searchMode="all"
         )
 
-        self.qa_chain = load_qa_with_sources_chain(llm=self.llm, chain_type="stuff", prompt=PromptTemplate.from_template(self.chat_template))
+        self.qa_chain = load_qa_with_sources_chain(llm=self.llm, chain_type="stuff",
+                                                   prompt=PromptTemplate.from_template(self.chat_template))
         self.keywordChain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ))
         self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
-        self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
+        self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff",
+                                                      prompt=PromptTemplate.from_template(self.drink_fee_template))
 
     def get_document(self, query, retriever):
         # Get top 4 documents
@@ -192,7 +239,9 @@ For example:
         doc = []
         for i in res:
             newdoc = Document(page_content=i['content'],
-                              metadata={'@search.score': i['@search.score'], 'source': f'doc-{doc_num}'})
+                              metadata={'@search.score': i['@search.score'],
+                                        'metadata_storage_name': i['metadata_storage_name'],
+                                        'source': f'doc-{doc_num}'})
 
             doc.append(newdoc)
             doc_num += 1
@@ -243,7 +292,7 @@ For example:
         return response, doc
 
     def chat_private(self, query):
-        label = self.classifier_chain(query)['text'].strip()
+        label = self.classifier_chain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
         print(f"Label: {label}")
 
         keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
@@ -253,6 +302,16 @@ For example:
 
         if "drink fee" in label:
             doc = self.get_document(keywords, self.retriever_drink)
+
+            input_pandas = self.drink_chain(
+                {'input_documents': doc, 'question': query, 'context': ''},
+                return_only_outputs=False)
+            blob_name = doc[0].metadata['metadata_storage_name']
+
+            temp_result = self.excel_drink_preprocess(input_pandas['output_text'], blob_name)
+            result_doc = "Input: " + query + "\n Output: " + str(temp_result)
+
+            doc[0].page_content = result_doc
 
         elif "policy" in label:
             doc = self.get_document(keywords, self.retriever_policy)
@@ -269,54 +328,23 @@ For example:
         self.add_to_history(query, response['output_text'])
         return response, doc
 
-    def excel_drink_preprocess(self, doc):
-        doc = doc[:1]
+    def excel_drink_preprocess(self, input_pandas, file_name):
+        sas_i = generate_blob_sas(account_name=account_name,
+                                  container_name=self.container_drink_fee_name,
+                                  blob_name=file_name,
+                                  account_key=account_key,
+                                  permission=BlobSasPermissions(read=True),
+                                  expiry=datetime.utcnow() + timedelta(hours=1))
 
-        done_lines = []
-        done_name = []
-        not_done_lines = []
-        not_done_name = []
+        sas_url = 'https://' + account_name + '.blob.core.windows.net/' + self.container_drink_fee_name + '/' + file_name + '?' + sas_i
 
-        for x in doc:
-            count_done = x.page_content.count("Done")
-            print(count_done)
-            print(x.page_content)
-            lines = x.page_content.split('\n')
+        df = pd.read_excel(sas_url, skiprows=1)
+        df = df[df['FullName'].notnull()]
+        df = df.iloc[:, 0:7]
 
-            # Create empty lists to store the line numbers with and without "Done"
+        result_pandas = eval(input_pandas)
 
-            # Loop through the lines and check for "Done"
-            for line in lines:
-                if "Done" in line:
-                    # If "Done" is found, extract the line number and fullname, and add it to the done list
-                    fields = line.split()
-                    number = fields[0]
-                    fullname = ' '.join(fields[2:-3])
-                    done_name.append(fullname)
-                    done_lines.append(number)
-                elif line.startswith('\t'):
-                    # If the line starts with a tab character, it's a data row
-                    fields = line.split()
-                    number = fields[0]
-                    fullname = ' '.join(fields[2:-2])
-                    not_done_name.append(fullname)
-                    not_done_lines.append(number)
-
-            # Print the lists of line numbers that have and do not have "Done"
-            print("Lines with 'Done':", done_lines)
-            print(done_name)
-            print("Lines without 'Done':", not_done_lines[2:-4])
-            print(not_done_name[2:-4])
-            total_people = len(done_lines) + len(not_done_lines[2:-4])
-            print(total_people)
-
-            final_hidden_prompt = "Có tổng cộng" + str(total_people) + "người đã mua nước. Trong đó có" + str(
-                len(done_name)) + "người đã đóng tiền nước, bao gồm:" + str(done_name) + "\n" + str(
-                len(not_done_name[2:-4])) + "người chưa đóng tiền nước, bao gồm" + str(not_done_name[2:-4])
-            print(final_hidden_prompt)
-            x.page_content = final_hidden_prompt + x.page_content
-
-        return doc
+        return result_pandas
 
     def clear_history(self):
         self.history_public = []
