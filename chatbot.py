@@ -47,7 +47,7 @@ Input: {question}
 Output:"""
 
     chat_template = """<|im_start|>system
-Assistant helps answer questions about the companies NOAS and NOIS. Your answer must adhere to the following criteria:
+Assistant helps NOAS and NOIS's employees answer their questions. Your answer must adhere to the following criteria:
 - Be brief in your answers. You may use the provided sources to help answer the question. If asking a clarifying question to the user would help, ask the question.
 - If the user greets you, respond accordingly.
 - If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese.
