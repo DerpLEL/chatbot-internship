@@ -34,7 +34,7 @@ Generate a search query based on the conversation and the new question. Use Roma
 Replace AND with + and OR with |. Verbs and adjectives must be accompanied by |.
 Do not answer the question. Output queries must be in both English and Vietnamese in the forms of the provided examples.
 
-Chat history:{context}
+Conversation history:{context}
 
 EXAMPLES
 Input: Ai là giám đốc điều hành?
@@ -59,7 +59,7 @@ Output:"""
 
     chat_template = """<|im_start|>system
 Assistant helps users answer their questions about NOAS and NOIS. Your answer must adhere to the following criteria:
-- Be brief in your answers. If asking a clarifying question to the user would help, ask the question. You may use the sources provided to answer. If you can't find the answer from the sources, say you don't know.
+- Be brief but friendly in your answers. If asking a clarifying question to the user would help, ask the question. You may use the sources provided to answer. If you can't find the answer from the sources, say you don't know.
 - If the user greets you, respond accordingly. If asked a question not related to NOIS or NOAS, apologize and request another question.
 - If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese.
 
