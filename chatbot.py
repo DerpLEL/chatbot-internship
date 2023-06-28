@@ -40,8 +40,6 @@ Input: What is FASF?
 Output: FASF
 Input: What is the company's policy on leave?
 Ouput: leave | (ngày +nghỉ +phép)
-Input: Điều 7 chương 2 gồm nội dung gì?
-Output: ("điều 7" + "chương II") | ("article 7" + "chapter II")
 <|im_end|>
 
 Input: {question}

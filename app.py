@@ -77,6 +77,11 @@ def predict():
     else:
         bot.private = True
 
+    if "hist" in text.strip():
+        bot.clear_history()
+        message = {"answer": "Cleared history."}
+        return jsonify(message)
+
     response, doc = bot.chat(text)
     print(doc)
     message = {"answer": response['output_text']}
