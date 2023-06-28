@@ -236,6 +236,8 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
         self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
         self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff",
                                                       prompt=PromptTemplate.from_template(self.drink_fee_template))
+        self.check_chain = load_qa_with_sources_chain(llm=self.llm,
+                                                      prompt=PromptTemplate.from_template(self.doc_checker))
 
     def get_document(self, query, retriever):
         # Get top 4 documents
