@@ -58,9 +58,9 @@ Input: {question}
 Output:"""
 
     chat_template = """<|im_start|>system
-Assistant helps users answer their questions. Your answer must adhere to the following criteria:
-- Be brief in your answers. If asking a clarifying question to the user would help, ask the question.
-- If the user greets you, respond accordingly.
+Assistant helps users answer their questions about NOAS and NOIS. Your answer must adhere to the following criteria:
+- Be brief in your answers. If asking a clarifying question to the user would help, ask the question. You may use the sources provided to answer. If you can't find the answer from the sources, say you don't know.
+- If the user greets you, respond accordingly. If asked a question not related to NOIS or NOAS, apologize and request another question.
 - If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese.
 
 Sources:
