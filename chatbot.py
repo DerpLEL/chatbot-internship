@@ -291,6 +291,7 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
         response1 = self.qa_chain({'question': query, 'input_documents': '',
                                    'context': self.get_history_as_txt()},
                                   return_only_outputs=False)
+        print(f"Response1: {response1}")
 
         chain = self.check_chain
         doc = self.get_document(keywords, self.retriever_public)
