@@ -79,7 +79,7 @@ Chat history:{context}
     chat_template = """<|im_start|>system
 Assistant helps company employees and users with their questions about the companies New Ocean Automation System and NOIS. Your answer must adhere to the following criteria:
 - The info might be spread across 2 documents, so check the docs carefully.
-- Be brief in your answers. Answer ONLY with the facts listed in the list of sources below. If there isn't enough information below, say you don't know. Do not generate answers that don't use the sources below. If asking a clarifying question to the user would help, ask the question.
+- Be brief and friendly in your answers. Answer ONLY with the facts listed in the list of sources below. If there isn't enough information below, say you don't know. Do not generate answers that don't use the sources below. If asking a clarifying question to the user would help, ask the question.
 - If the user asks any questions not related to New Ocean Automation System or NOIS, apologize and request another question from the user. If the user greets you, respond accordingly.
 - You must answer in the current question's language.
 
@@ -95,6 +95,27 @@ Answer in the current question's language.
 <|im_end|>
 <|im_start|>assistant
 """
+
+    keyword_templ_drink_fee = """<|im_start|>system
+Given a sentence and a conversation about the companies New Ocean and NOIS, assistant will extract keywords based on the conversation and the sentence and translate them to Vietnamese if they're in English and vice versa.
+Your output will be on one line, in both languages if possible and separated by commas. Do not duplicate keywords.
+Assume the context is about the companies unless specified otherwise. Only return the keywords, do not output anything else.
+
+
+EXAMPLE
+Input: Ai chưa đóng tiền nước tháng 3?
+Output: input:Vietnamese
+Input: Was Pepsico a customer of New Ocean?
+Output: input:English
+Input: What is FASF?
+Output: input:English
+<|im_end|>
+{context}
+<|im_start|>user
+Input: {question}
+<|im_end|>
+<|im_start|>assistant
+Output:"""
 
     classifier_template = """<|im_start|>system
 Given a question and a conversation, assistant will determine based on the question and the conversation history if the question belongs in 1 of 3 categories, which are:
@@ -310,6 +331,29 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
 
         return self.chat_public(query)
 
+    def get_docs_using_keyword_string_for_drink_fee(self, keyword, retriever):
+
+        # Get top 4 documents
+
+        res = retriever.search(search_text=keyword, top=1)
+
+        doc_num = 1
+
+        doc = []
+
+        for i in res:
+            newdoc = Document(page_content=i['content'],
+
+                              metadata={'@search.score': i['@search.score'],
+                                        'metadata_storage_name': i['metadata_storage_name'],
+                                        'source': f'doc-{doc_num}'})
+
+            doc.append(newdoc)
+
+            doc_num += 1
+
+        return doc
+
     def chat_public(self, query):
         # keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
         keywords = query
@@ -338,15 +382,28 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
         chain = self.qa_chain
 
         if "drink fee" in label:
-            doc = self.get_document(keywords, self.retriever_drink)
+            # doc = self.get_document(keywords, self.retriever_drink)
+
+            keywordChain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ_drink_fee))
+
+            keywords_drink_fee = keywordChain({'context': self.get_history_as_txt(), 'question': query})
+
+            doc = self.get_docs_using_keyword_string_for_drink_fee(keywords_drink_fee['text'], self.retriever_drink)
 
             input_pandas = self.drink_chain(
                 {'input_documents': doc, 'question': query, 'context': ''},
                 return_only_outputs=False)
-            blob_name = doc[0].metadata['metadata_storage_name']
+
+            try:
+                blob_name = doc[0].metadata['metadata_storage_name']
+            except Exception as e:
+                return {'output_text': f'Cannot generate response, error: {e}'}, None
 
             temp_result = self.excel_drink_preprocess(input_pandas['output_text'], blob_name)
             result_doc = "Input: " + query + "\n Output: " + str(temp_result)
+
+            if """count""" not in input_pandas['output_text']:
+                return {'output_text': str(temp_result)}, doc
 
             doc[0].page_content = result_doc
 
