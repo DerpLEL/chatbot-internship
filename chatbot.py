@@ -7,7 +7,6 @@ from langchain.chat_models import AzureChatOpenAI
 from langchain.llms import AzureOpenAI
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
-from langchain.retrievers import AzureCognitiveSearchRetriever
 from azure.core.exceptions import ResourceExistsError
 from datetime import datetime, timedelta
 
@@ -19,6 +18,7 @@ public_index_name = "nois-public-v3-index"
 private_index_name = "nois-private-v3-index"
 company_regulations_index = "nois-company-regulations-v2-index"
 nois_drink_fee_index = "nois-drink-fee-index"
+semantic_index = "nois-private-semantic-nonnum-index"
 search_endpoint = 'https://search-service01.search.windows.net'
 search_key = '73Swa5YqUR5IRMwUIqOH6ww2YBm3SveLv7rDmZVXtIAzSeBjEQe9'
 
@@ -56,25 +56,23 @@ Search query:
 """
 
     keyword_templ = """Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
-Generate a search query based on the conversation and the new question.Replace AND with + and OR with |. Verbs, adjectives and stop words must be accompanied by |.
+Generate a search query based on the conversation and the new question. Replace AND with + and OR with |. Verbs, adjectives and stop words must always be accompanied by |.
 Do not answer the question. Output queries must be in both English and Vietnamese and MUST strictly follow this format: (<Vietnamese queries>) | (<English queries>).
-Examples are provided down below:
+Examples are provided down below.
 
-EXAMPLES
+Examples:
 Input: Ai là giám đốc điều hành của NOIS?
-Ouput: (giám +đốc +điều +hành) | (managing +director)
+Ouput: (giám đốc điều hành) | (managing director)
 Input: Số người chưa đóng tiền nước tháng 5?
-Output: (tiền +nước +tháng +05 |chưa |đóng) | (May +drink +fee |not |paid)
-Input: Ai đã đóng tiền nước tháng 4?
-Output: (tiền +nước +tháng +04 |đã |đóng) | (April +drink +fee |paid)
+Output: (tiền nước tháng 05) | (May drink fee)
 Input: Danh sách người đóng tiền nước tháng 3?
-Output: (tiền +nước +tháng +03) | (March +drink +fee)
+Output: (tiền nước tháng 03) | (March drink fee)
 Input: Was Pepsico a customer of New Ocean?
-Output: Pepsico
+Output: (Pepsico) | (Pepsico)
 Input: What is FASF?
-Output: FASF
+Output: (FASF) | (FASF)
 Input: What is the company's policy on leave?
-Ouput: (ngày +nghỉ +phép) | leave
+Ouput: (ngày nghỉ phép) | leave
 
 Chat history:{context}
 
@@ -83,6 +81,11 @@ Question:
 
 Search query:
 """
+
+    '''Input: Số người chưa đóng tiền nước tháng 5?
+Output: (tiền +nước +tháng +05 |chưa |đóng) | (May +drink +fee |not |paid)
+Input: Ai đã đóng tiền nước tháng 4?
+Output: (tiền +nước +tháng +04 |đã |đóng) | (April drink fee paid)'''
 
     '''Input: Điều 7 chương 2 gồm nội dung gì?
 Output: ("điều 7" + "chương II") | ("article 7" + "chapter II")'''
@@ -105,7 +108,7 @@ Chat history:{context}
 <|im_start|>assistant
 """
 
-    classifier_template = """Given an input sentence and a history of the conversation so far, assistant will determine if the sentence belongs in 1 of 3 categories, which are:
+    backup_classifier_template = """Given an input sentence and a history of the conversation so far, determine if the sentence belongs in 1 of 3 categories, which are:
 - policy
 - drink fee
 - other
@@ -127,8 +130,38 @@ Output: other
 
 Chat history:{context}
 
-Input: {question}
-Output: """
+Sentence:
+{question}
+
+Output:
+"""
+
+    classifier_template = """Given an input sentence and a history of the conversation so far, determine if the sentence belongs in 1 of 3 categories, which are:
+- drink fee
+- other
+Do not answer the question, only output the appropriate category.
+
+EXAMPLE
+Input: Ai chưa đóng tiền nước tháng 5?
+Output: drink fee
+Input: Who has paid April 2023 Drink Fee?
+Output: drink fee
+Input: Quy định công ty về nơi làm việc là gì?
+Output: other
+Input: What is Chapter 1, article 2 of the company policy about?
+Output: other
+Input: Dịch vụ của NOIS là gì?
+Output: other
+Input: What is FASF?
+Output: other
+
+Chat history:{context}
+
+Sentence:
+{question}
+
+Output:
+"""
 
     drink_fee_template = """<|im_start|>system
 
@@ -148,7 +181,6 @@ Input: có bao nhiêu người có tên là Hiệp đã đóng tiền nước th
 Output: df[df['Tình trạng'] == 'Done'][df[df['Tình trạng'] == 'Done']['FullName'].str.contains('HIỆP')]['FullName'].count()
 4. You must follow up the structure of dataset.
 For example: If ask aboout fullname is 'Hưng', use must answer with format of dataset is "HƯNG" instead of "hưng" or "Hưng"
-
 <|im_end|>
 {context}
 <|im_start|>user
@@ -249,6 +281,13 @@ Output:"""
             b=0.0,
             k1=0.3,
             searchMode="any"
+        )
+
+        self.retriever_semantic = SearchClient(
+            endpoint=search_endpoint,
+            index_name=semantic_index,
+            credential=AzureKeyCredential(search_key),
+            queryType='semantic'
         )
 
         self.qa_chain = load_qa_with_sources_chain(llm=self.llm, chain_type="stuff", prompt=PromptTemplate.from_template(self.chat_template))
@@ -357,11 +396,8 @@ Output:"""
                 return {'output_text': str(temp_result)}, doc
             doc[0].page_content = result_doc
 
-        elif label == "policy":
-            doc = self.get_document(keywords, self.retriever_policy)
-
         else:
-            doc = self.get_document(keywords, self.retriever_private)
+            doc = self.get_document(keywords, self.retriever_semantic)
 
         try:
             response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},
