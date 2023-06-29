@@ -31,32 +31,55 @@ class chatAI:
     keyword_templ = """<|im_start|>system
 Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
 Generate a search query based on the conversation and the new question.Replace AND with + and OR with |. Verbs and adjectives must be accompanied by |.
-Do not answer the question. Output queries must be in both English and Vietnamese in this form: (<English keywords>) | (<Vietnamese keywords>). Examples are provided down below:
+Do not answer the question. Output queries must be in both English and Vietnamese and strictly follow this format: (<Vietnamese queries>) | (<English queries>). DO NOT generate more than 2 sets of ().
+Examples are provided down below:
 
 EXAMPLES
-Input: Ai là giám đốc điều hành?
-Ouput:  (managing +director) | (giám +đốc +điều +hành)
+Input: Ai là giám đốc điều hành của NOIS?
+Ouput: (giám +đốc +điều +hành) | (managing +director)
 Input: Số người chưa đóng tiền nước tháng 5?
-Output: (May +drink +fee |not |paid) | (tiền +nước +tháng +05 |chưa |đóng)
+Output: (tiền +nước +tháng +05 |chưa |đóng) | (May +drink +fee |not |paid)
 Input: Ai đã đóng tiền nước tháng 4?
-Output: (April +drink +fee |paid) | (tiền +nước +tháng +04 |đã |đóng)
+Output: (tiền +nước +tháng +04 |đã |đóng) | (April +drink +fee |paid)
 Input: Danh sách người đóng tiền nước tháng 3?
-Output: (March +drink +fee) | (tiền +nước +tháng +03)
+Output: (tiền +nước +tháng +03) | (March +drink +fee)
 Input: Was Pepsico a customer of New Ocean?
 Output: Pepsico
 Input: What is FASF?
 Output: FASF
 Input: What is the company's policy on leave?
-Ouput: leave | (ngày +nghỉ +phép)
+Ouput: (ngày +nghỉ +phép) | leave
 
 Consider the conversation history for your queries, as questions may be connected.
-Conversation history:{context}
+CONVERSATION HISTORY{context}
 
 <|im_end|>
 
 Input: {question}
 <|im_start|>assistant
 Output:"""
+
+    question_prompt = """Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
+Generate a new question with full context based on the conversation and the given question. Do not answer the question.
+Your generated question's language must match the given question's language. Examples are provided below.
+
+EXAMPLE
+Current question
+Ai chưa đóng tiền nước tháng 5?
+Generated question
+Ai chưa đóng tiền nước tháng 5?
+Current question
+Ai đóng rồi?
+Generated question
+Ai đóng tiền nước tháng 5 rồi?
+
+CONVERSATION HISTORY{context}
+
+CURRENT QUESTION
+{question}
+
+GENERATED QUESTION
+"""
 
     backup_chat = """<|im_start|>system
 Assistant helps users answer their questions about NOAS and NOIS. Your answer must adhere to the following criteria:
@@ -239,7 +262,7 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
             openai_api_version="2023-03-15-preview",
             deployment_name='test-1',
             openai_api_key='400568d9a16740b88aff437480544a39',
-            temperature=1.0,
+            temperature=0.0,
             max_tokens=600,
             top_p=0.5,
             stop=['<|im_end|>', '\n', '<|im_sep|>']
@@ -283,12 +306,13 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
 
         self.qa_chain = load_qa_with_sources_chain(llm=self.llm, chain_type="stuff",
                                                    prompt=PromptTemplate.from_template(self.chat_template))
-        self.keywordChain = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_templ))
+        self.keyword_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ))
         self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
         self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff",
                                                       prompt=PromptTemplate.from_template(self.drink_fee_template))
+        self.question_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.question_prompt))
 
-    def get_document(self, query, retriever, n=3):
+    def get_document(self, query, retriever, n=4):
         # Get top 3 documents
         res = retriever.search(search_text=query, top=n)
 
@@ -333,7 +357,7 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
         return self.chat_public(query)
 
     def chat_public(self, query):
-        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
+        keywords = self.keyword_chain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
         # keywords = query
         print(f"Query: {query}\nKeywords: {keywords}")
 
@@ -353,18 +377,20 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
         label = self.classifier_chain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
         print(f"Label: {label}")
 
-        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
+        keywords = self.keyword_chain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
         # keywords = query
+        # keywords = self.question_chain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
         print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
 
         if "drink fee" in label:
             # doc = self.get_document(keywords, self.retriever_drink)
-            keywordChain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ_drink_fee))
-            keywords_drink_fee = keywordChain({'context': self.get_history_as_txt(), 'question': query})
+            # keyword_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ_drink_fee))
+            # keywords_drink_fee = keyword_chain({'context': self.get_history_as_txt(), 'question': query})
+            # print(f"Drink fee keywords: {keywords_drink_fee['text']}")
 
-            doc = self.get_document(keywords_drink_fee['text'], self.retriever_drink, 1)
+            doc = self.get_document(keywords, self.retriever_drink, 1)
 
             input_pandas = self.drink_chain(
                 {'input_documents': doc, 'question': query, 'context': ''},
@@ -415,7 +441,8 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
         try:
             result_pandas = eval(input_pandas)
         except Exception as e:
-            return {'output_text': f'Cannot generate response, error: {e}\nTrace: {input_pandas}'}, None
+            return {'output_text': f'''Cannot generate response, error: {e}
+            Trace: {input_pandas}'''}, None
 
         return result_pandas
 
