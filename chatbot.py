@@ -31,7 +31,7 @@ class chatAI:
     keyword_templ = """<|im_start|>system
 Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
 Generate a search query based on the conversation and the new question.Replace AND with + and OR with |. Verbs and adjectives must be accompanied by |.
-Do not answer the question. Output queries must be in both English and Vietnamese and strictly follow this format: (<Vietnamese queries>) | (<English queries>). DO NOT generate more than 2 sets of ().
+Do not answer the question. Output queries must be in both English and Vietnamese and MUST strictly follow this format: (<Vietnamese queries>) | (<English queries>). DO NOT generate more than 2 sets of ().
 Examples are provided down below:
 
 EXAMPLES
@@ -306,7 +306,7 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
 
         self.qa_chain = load_qa_with_sources_chain(llm=self.llm, chain_type="stuff",
                                                    prompt=PromptTemplate.from_template(self.chat_template))
-        self.keyword_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ))
+        self.keyword_chain = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_templ))
         self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
         self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff",
                                                       prompt=PromptTemplate.from_template(self.drink_fee_template))
