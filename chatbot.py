@@ -28,8 +28,7 @@ blob_service_client = BlobServiceClient.from_connection_string(storage_connectio
 
 
 class chatAI:
-    keyword_templ = """<|im_start|>system
-Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
+    keyword_templ = """Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
 Generate a search query based on the conversation and the new question.Replace AND with + and OR with |. Verbs and adjectives must be accompanied by |.
 Do not answer the question. Output queries must be in both English and Vietnamese and MUST strictly follow this format: (<Vietnamese queries>) | (<English queries>). DO NOT generate more than 2 sets of ().
 Examples are provided down below:
@@ -50,13 +49,9 @@ Output: FASF
 Input: What is the company's policy on leave?
 Ouput: (ngày +nghỉ +phép) | leave
 
-Consider the conversation history for your queries, as questions may be connected.
-CONVERSATION HISTORY{context}
-
-<|im_end|>
+Chat history:{context}
 
 Input: {question}
-<|im_start|>assistant
 Output:"""
 
     question_prompt = """Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
@@ -263,8 +258,7 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
             deployment_name='test-1',
             openai_api_key='400568d9a16740b88aff437480544a39',
             temperature=0.0,
-            max_tokens=600,
-            top_p=0.5,
+            max_tokens=100,
             stop=['<|im_end|>', '\n', '<|im_sep|>']
         )
 
