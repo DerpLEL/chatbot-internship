@@ -56,8 +56,10 @@ Search query:
 """
 
     keyword_templ = """Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
-Generate a search query based on the conversation and the new question. Replace AND with + and OR with |. Verbs, adjectives and stop words must always be accompanied by |.
-Do not answer the question. Output queries must be in both English and Vietnamese and MUST strictly follow this format: (<Vietnamese queries>) | (<English queries>).
+Generate a search query based on the conversation and the new question. The output query must adhere to the following criteria:
+- Output query must be in both English and Vietnamese and MUST strictly follow this format: (<Vietnamese queries>) | (<English queries>).
+- Do not generate queries with more than 2 sets of () and do not put queries outside of ().
+- Replace AND with + and OR with |.
 Examples are provided down below.
 
 Examples:
@@ -68,11 +70,11 @@ Output: (tiền nước tháng 05) | (May drink fee)
 Input: Danh sách người đóng tiền nước tháng 3?
 Output: (tiền nước tháng 03) | (March drink fee)
 Input: Was Pepsico a customer of New Ocean?
-Output: (Pepsico) | (Pepsico)
+Output: Pepsico
 Input: What is FASF?
-Output: (FASF) | (FASF)
+Output: FASF
 Input: What is the company's policy on leave?
-Ouput: (ngày nghỉ phép) | leave
+Ouput: (ngày nghỉ phép) | (leave)
 
 Chat history:{context}
 
@@ -258,7 +260,7 @@ Output:"""
 
         self.retriever_private = SearchClient(
             endpoint=search_endpoint,
-            index_name=private_index_name,
+            index_name=semantic_index,
             credential=AzureKeyCredential(search_key),
             b=0.0,
             k1=0.3,
@@ -397,7 +399,7 @@ Output:"""
             doc[0].page_content = result_doc
 
         else:
-            doc = self.get_document(keywords, self.retriever_semantic)
+            doc = self.get_document(query, self.retriever_private)
 
         try:
             response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},
