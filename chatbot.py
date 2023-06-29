@@ -4,6 +4,7 @@ from azure.core.credentials import AzureKeyCredential
 from langchain.chains import LLMChain
 from azure.search.documents import SearchClient
 from langchain.chat_models import AzureChatOpenAI
+from langchain.llms import AzureOpenAI
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
 from langchain.retrievers import AzureCognitiveSearchRetriever
@@ -30,12 +31,9 @@ storage_connection_string = 'DefaultEndpointsProtocol=https;AccountName=acschatb
 blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
 
 class chatAI:
-    keyword_templ = """<|im_start|>system
-Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
+    keyword_templ = """Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
 Generate a search query based on the conversation and the new question. Use Roman numerals for chapter numbers. Only include the most important queries.
 Replace AND with + and OR with |. Do not answer the question.
-
-Chat history:{context}
 
 EXAMPLE
 Input: Ai là giám đốc điều hành?
@@ -48,11 +46,14 @@ Input: What is FASF?
 Output: FASF
 Input: What is the company's policy on leave?
 Ouput: (ngày +nghỉ +phép) | leave
-<|im_end|>
 
-Input: {question}
-<|im_start|>assistant
-Output:"""
+Chat history:{context}
+
+Question:
+{question}
+
+Search query:
+"""
 
     '''Input: Điều 7 chương 2 gồm nội dung gì?
 Output: ("điều 7" + "chương II") | ("article 7" + "chapter II")'''
@@ -80,7 +81,7 @@ Given a sentence, assistant will determine if the sentence belongs in 1 of 3 cat
 - policy
 - drink fee
 - other
-Do not answer the question,     `only output the appropriate category.
+Do not answer the question, only output the appropriate category.
 
 EXAMPLE
 Input: Ai chưa đóng tiền nước tháng 5?
@@ -175,6 +176,17 @@ Output:"""
             max_tokens=600
         )
 
+        self.llm3 = AzureOpenAI(
+            openai_api_type="azure",
+            openai_api_base='https://openai-nois-intern.openai.azure.com/',
+            openai_api_version="2023-03-15-preview",
+            deployment_name='test-1',
+            openai_api_key=os.getenv('OPENAI_API_KEY'),
+            temperature=0.0,
+            max_tokens=100,
+            stop=['\n', '<|im_end|>', '<|im_sep|>']
+        )
+
         self.retriever_public = SearchClient(
             endpoint=search_endpoint,
             index_name=public_index_name,
@@ -212,7 +224,7 @@ Output:"""
         )
 
         self.qa_chain = load_qa_with_sources_chain(llm=self.llm, chain_type="stuff", prompt=PromptTemplate.from_template(self.chat_template))
-        self.keywordChain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ))
+        self.keyword_chain = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_templ))
         self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
         self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
 
@@ -262,7 +274,7 @@ Output:"""
         return self.chat_public(query)
 
     def chat_public(self, query):
-        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
+        keywords = self.keyword_chain({'question': query, 'context': self.get_history_as_txt()})['text']
         print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
@@ -281,7 +293,7 @@ Output:"""
         label = self.classifier_chain(query)['text']
         print(f"Label: {label}")
 
-        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
+        keywords = self.keyword_chain({'question': query, 'context': self.get_history_as_txt()})['text']
         print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
@@ -289,8 +301,8 @@ Output:"""
         if label == "drink fee":
             # self.history_private = []
 
-            keywordChain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ_drink_fee))
-            keywords_drink_fee = keywordChain({'context': self.get_history_as_txt(), 'question': query})['text']
+            keyword_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ_drink_fee))
+            keywords_drink_fee = keyword_chain({'context': self.get_history_as_txt(), 'question': query})['text']
             print(f"Drink fee keywords: {keywords_drink_fee}")
 
             doc = self.get_document(keywords_drink_fee, self.retriever_drink, 1)
@@ -320,7 +332,6 @@ Output:"""
         try:
             response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},
                              return_only_outputs=False)
-
         except Exception as e:
             return {'output_text': f'Cannot generate response, error: {e}'}, doc
 
