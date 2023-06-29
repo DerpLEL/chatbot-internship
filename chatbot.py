@@ -6,15 +6,17 @@ from azure.search.documents import SearchClient
 from langchain.chat_models import AzureChatOpenAI
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
+from langchain.retrievers import AzureCognitiveSearchRetriever
 from azure.core.exceptions import ResourceExistsError
 from datetime import datetime, timedelta
 
 import pandas as pd
 import openpyxl
+import os
 
 public_index_name = "nois-public-v3-index"
 private_index_name = "nois-private-v3-index"
-company_regulations_index = "nois-company-regulations-v2"
+company_regulations_index = "nois-company-regulations-v2-index"
 nois_drink_fee_index = "nois-drink-fee-index"
 search_endpoint = 'https://search-service01.search.windows.net'
 search_key = '73Swa5YqUR5IRMwUIqOH6ww2YBm3SveLv7rDmZVXtIAzSeBjEQe9'
@@ -56,7 +58,7 @@ Output:"""
 
     chat_template = """<|im_start|>system
 Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. Your answer must adhere to the following criteria:
-- Be brief in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
+- Be brief but friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
 - If the user greets you, respond accordingly.
 - If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese
 
@@ -77,7 +79,7 @@ Given a sentence, assistant will determine if the sentence belongs in 1 of 3 cat
 - policy
 - drink fee
 - other
-Do not answer the question, only output the appropriate category.
+Do not answer the question,     `only output the appropriate category.
 
 EXAMPLE
 Input: Ai chưa đóng tiền nước tháng 5?
@@ -99,23 +101,22 @@ Input: {question}
 Output:"""
 
     drink_fee_template = """<|im_start|>system
+
 Sources:
 {summaries}
 
 You must follow this rule:
-1. If user require count or ask how many, you must write pandas code for file csv. The out put must be 1 line.
-Output just code CODE.
-Must NO COMMENT, NO RESULT, NO ADD anything to the line of code
+1. If user require count or ask how many, you must write pandas code for file csv. The output must be 1 line.
+2. Output just only code.
+3. Must NO COMMENT, NO RESULT
 For example:
-Input:có bao nhiêu người có tên là Bảo trong tiền nước tháng 5?
+Input: Danh sách những người đã đóng tiền tháng 5
+Output: df[df['Tình trạng'] == Done]
+Inpput:có bao nhiêu người có tên là Bảo trong tiền nước tháng 5?
 Output: df[df['FullName'].str.contains('BẢO')]['FullName'].count()
 Input: có bao nhiêu người có tên là Hiệp đã đóng tiền nước tháng 5?
 Output: df[df['Tình trạng'] == 'Done'][df[df['Tình trạng'] == 'Done']['FullName'].str.contains('HIỆP')]['FullName'].count()
-Input: tiền nước tháng 5 bao nhiêu người chưa đóng?
-Output: df[df['Tình trạng'] != 'Done']['FullName'].count()
-
-
-2. You must follow up the structure of dataset.
+4. You must follow up the structure of dataset.
 For example: If ask aboout fullname is 'Hưng', use must answer with format of dataset is "HƯNG" instead of "hưng" or "Hưng"
 
 <|im_end|>
@@ -169,7 +170,7 @@ Output:"""
             openai_api_version="2023-03-15-preview",
             deployment_name='test-1',
             openai_api_key='400568d9a16740b88aff437480544a39',
-            temperature=0.0,
+            temperature=0.7,
             max_tokens=600
         )
 
@@ -249,6 +250,7 @@ Output:"""
             hist = self.history_private
 
         hist.append({'user': user_msg, 'AI': ai_msg})
+        print(hist)
 
     def chat(self, query):
         if self.private:
@@ -277,25 +279,29 @@ Output:"""
         label = self.classifier_chain(query)['text']
 
         keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
+        print(keywords)
 
         chain = self.qa_chain
 
         if label == "drink fee":
-            # sua lai keyword khac keyword cua Bao
+            # self.history_private = []
+
             keywordChain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ_drink_fee))
             keywords_drink_fee = keywordChain({'context': self.get_history_as_txt(), 'question': query})
 
             doc = self.get_docs_using_keyword_string_for_drink_fee(keywords_drink_fee['text'], self.retriever_drink)
 
-
-            print(doc)
-
             input_pandas = self.drink_chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()}, return_only_outputs=False)
             blob_name = doc[0].metadata['metadata_storage_name']
         
+            print(input_pandas['output_text'])
             temp_result = self.excel_drink_preprocess(input_pandas['output_text'], blob_name)
+            print(temp_result)
             result_doc = "Input: " + query +"\n Output: " + str(temp_result)
+            print(result_doc)
 
+            if """count""" not in input_pandas['output_text']:
+                return {'output_text': str(temp_result)}, doc
             doc[0].page_content = result_doc
 
         elif label == "policy":
@@ -307,8 +313,6 @@ Output:"""
         try:
             response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},
                              return_only_outputs=False)
-            
-
 
         except Exception as e:
             return {'output_text': f'Cannot generate response, error: {e}'}, doc
@@ -318,7 +322,7 @@ Output:"""
 
     def get_docs_using_keyword_string_for_drink_fee(self, keyword, retriever):
         # Get top 4 documents
-        res = retriever.search(search_text=keyword, top=3)
+        res = retriever.search(search_text=keyword, top=1)
 
         doc_num = 1
         doc = []
@@ -345,7 +349,10 @@ Output:"""
         df = df[df['FullName'].notnull()]
         df = df.iloc[:, 0:7]
 
-        result_pandas = eval(input_pandas) 
+        try:
+            result_pandas = eval(input_pandas) 
+        except Exception as e:
+            return input_pandas
 
         return result_pandas
 
