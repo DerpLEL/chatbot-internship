@@ -385,7 +385,6 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
         chain = self.qa_chain
 
         if "drink fee" in label:
-            # doc = self.get_document(keywords, self.retriever_drink)
             # keyword_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ_drink_fee))
             # keywords_drink_fee = keyword_chain({'context': self.get_history_as_txt(), 'question': query})
             # print(f"Drink fee keywords: {keywords_drink_fee['text']}")
