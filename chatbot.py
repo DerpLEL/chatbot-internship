@@ -76,8 +76,7 @@ Chat history:{context}
 <|im_start|>assistant
 """
 
-    classifier_template = """<|im_start|>system
-Given a sentence, assistant will determine if the sentence belongs in 1 of 3 categories, which are:
+    classifier_template = """Given an input sentence and a history of the conversation so far, assistant will determine if the sentence belongs in 1 of 3 categories, which are:
 - policy
 - drink fee
 - other
@@ -96,11 +95,11 @@ Input: Dịch vụ của NOIS là gì?
 Output: other
 Input: What is FASF?
 Output: other
-<|im_end|>
+
+Chat history:{context}
 
 Input: {question}
-<|im_start|>assistant
-Output:"""
+Output: """
 
     drink_fee_template = """<|im_start|>system
 
@@ -245,15 +244,20 @@ Output:"""
 
         return doc
 
-    def get_history_as_txt(self):
+    def get_history_as_txt(self, n=3):
         txt = ""
         hist = self.history_public
 
         if self.private:
             hist = self.history_private
 
-        history = hist[::-1]
-        for i in history[:3]:
+        if len(hist) <= n:
+            history = hist
+
+        else:
+            history = hist[len(hist) - n:]
+
+        for i in history:
             txt += f"\n<|im_start|>user\n{i['user']}\n<|im_end|>\n"
             txt += f"<|im_start|>assistant\n{i['AI']}\n<|im_end|>"
 
@@ -265,7 +269,7 @@ Output:"""
             hist = self.history_private
 
         hist.append({'user': user_msg, 'AI': ai_msg})
-        print(hist)
+        # print(hist)
 
     def chat(self, query):
         if self.private:
@@ -290,7 +294,7 @@ Output:"""
         return response, doc
 
     def chat_private(self, query):
-        label = self.classifier_chain(query)['text']
+        label = self.classifier_chain({'question': query, 'context': self.get_history_as_txt()})['text']
         print(f"Label: {label}")
 
         keywords = self.keyword_chain({'question': query, 'context': self.get_history_as_txt()})['text']
@@ -301,11 +305,11 @@ Output:"""
         if label == "drink fee":
             # self.history_private = []
 
-            keyword_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ_drink_fee))
-            keywords_drink_fee = keyword_chain({'context': self.get_history_as_txt(), 'question': query})['text']
-            print(f"Drink fee keywords: {keywords_drink_fee}")
+            # keyword_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ_drink_fee))
+            # keywords_drink_fee = keyword_chain({'context': self.get_history_as_txt(), 'question': query})['text']
+            # print(f"Drink fee keywords: {keywords_drink_fee}")
 
-            doc = self.get_document(keywords_drink_fee, self.retriever_drink, 1)
+            doc = self.get_document(keywords, self.retriever_drink, 1)
 
             input_pandas = self.drink_chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()}, return_only_outputs=False)
             try:
@@ -320,6 +324,7 @@ Output:"""
             print(result_doc)
 
             if """count""" not in input_pandas['output_text']:
+                self.add_to_history(query, str(temp_result))
                 return {'output_text': str(temp_result)}, doc
             doc[0].page_content = result_doc
 
