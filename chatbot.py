@@ -224,7 +224,9 @@ Output:"""
         doc = []
         for i in res:
             newdoc = Document(page_content=i['content'],
-                              metadata={'@search.score': i['@search.score'], 'source': f'doc-{doc_num}'})
+                              metadata={'@search.score': i['@search.score'],
+                                        'metadata_storage_name': i['metadata_storage_name'],
+                                        'source': f'doc-{doc_num}'})
 
             doc.append(newdoc)
             doc_num += 1
@@ -288,7 +290,7 @@ Output:"""
             # self.history_private = []
 
             keywordChain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ_drink_fee))
-            keywords_drink_fee = keywordChain({'context': self.get_history_as_txt(), 'question': query})['text'].strip()
+            keywords_drink_fee = keywordChain({'context': self.get_history_as_txt(), 'question': query})['text']
             print(f"Drink fee keywords: {keywords_drink_fee}")
 
             doc = self.get_document(keywords_drink_fee, self.retriever_drink, 1)
@@ -301,7 +303,7 @@ Output:"""
         
             print(input_pandas['output_text'])
             temp_result = self.excel_drink_preprocess(input_pandas['output_text'], blob_name)
-            print(temp_result)
+            # print(temp_result)
             result_doc = "Input: " + query +"\n Output: " + str(temp_result)
             print(result_doc)
 
