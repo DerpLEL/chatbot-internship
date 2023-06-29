@@ -320,20 +320,6 @@ Output:"""
         self.add_to_history(query, response['output_text'])
         return response, doc
 
-    def get_docs_using_keyword_string_for_drink_fee(self, keyword, retriever):
-        # Get top 4 documents
-        res = retriever.search(search_text=keyword, top=1)
-
-        doc_num = 1
-        doc = []
-        for i in res:
-            newdoc = Document(page_content=i['content'], 
-                              metadata={'@search.score': i['@search.score'], 'metadata_storage_name': i['metadata_storage_name'], 'source': f'doc-{doc_num}'})
-
-            doc.append(newdoc)
-            doc_num += 1
-        return doc
-
     def excel_drink_preprocess(self, input_pandas, file_name):
 
         sas_i = generate_blob_sas(account_name = account_name,
