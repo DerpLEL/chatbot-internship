@@ -31,7 +31,7 @@ storage_connection_string = 'DefaultEndpointsProtocol=https;AccountName=acschatb
 blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
 
 class chatAI:
-    keyword_templ = """Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
+    keyword_templ_backup = """Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
 Generate a search query based on the conversation and the new question. Use Roman numerals for chapter numbers. Only include the most important queries.
 Replace AND with + and OR with |. Do not answer the question.
 
@@ -40,6 +40,35 @@ Input: Ai là giám đốc điều hành?
 Ouput: (giám +đốc +điều +hành) | (managing +director)
 Input: Ai chưa đóng tiền nước tháng 5?
 Output: (tiền +nước +tháng +05) | (May +drink +fee)
+Input: Was Pepsico a customer of New Ocean?
+Output: Pepsico
+Input: What is FASF?
+Output: FASF
+Input: What is the company's policy on leave?
+Ouput: (ngày +nghỉ +phép) | leave
+
+Chat history:{context}
+
+Question:
+{question}
+
+Search query:
+"""
+
+    keyword_templ = """Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
+Generate a search query based on the conversation and the new question.Replace AND with + and OR with |. Verbs, adjectives and stop words must be accompanied by |.
+Do not answer the question. Output queries must be in both English and Vietnamese and MUST strictly follow this format: (<Vietnamese queries>) | (<English queries>).
+Examples are provided down below:
+
+EXAMPLES
+Input: Ai là giám đốc điều hành của NOIS?
+Ouput: (giám +đốc +điều +hành) | (managing +director)
+Input: Số người chưa đóng tiền nước tháng 5?
+Output: (tiền +nước +tháng +05 |chưa |đóng) | (May +drink +fee |not |paid)
+Input: Ai đã đóng tiền nước tháng 4?
+Output: (tiền +nước +tháng +04 |đã |đóng) | (April +drink +fee |paid)
+Input: Danh sách người đóng tiền nước tháng 3?
+Output: (tiền +nước +tháng +03) | (March +drink +fee)
 Input: Was Pepsico a customer of New Ocean?
 Output: Pepsico
 Input: What is FASF?
