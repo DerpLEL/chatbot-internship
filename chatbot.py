@@ -34,8 +34,6 @@ Generate a search query based on the conversation and the new question. Use Roma
 Replace AND with + and OR with |. Verbs and adjectives must be accompanied by |.
 Do not answer the question. Output queries must be in both English and Vietnamese in the forms of the provided examples.
 
-Conversation history:{context}
-
 EXAMPLES
 Input: Ai là giám đốc điều hành?
 Ouput: (giám +đốc +điều +hành) | (managing +director)
@@ -51,6 +49,9 @@ Input: What is FASF?
 Output: FASF
 Input: What is the company's policy on leave?
 Ouput: leave | (ngày +nghỉ +phép)
+
+Conversation history:{context}
+
 <|im_end|>
 
 Input: {question}
@@ -87,7 +88,7 @@ Sources:
 {summaries}
 <|im_end|>
 
-Chat history: {context}
+Chat history:{context}
 
 Answer in the current question's language.
 <|im_start|>user
@@ -287,9 +288,9 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
         self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff",
                                                       prompt=PromptTemplate.from_template(self.drink_fee_template))
 
-    def get_document(self, query, retriever):
-        # Get top 4 documents
-        res = retriever.search(search_text=query, top=3)
+    def get_document(self, query, retriever, n=3):
+        # Get top 3 documents
+        res = retriever.search(search_text=query, top=n)
 
         doc_num = 1
         doc = []
@@ -331,29 +332,6 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
 
         return self.chat_public(query)
 
-    def get_docs_using_keyword_string_for_drink_fee(self, keyword, retriever):
-
-        # Get top 4 documents
-
-        res = retriever.search(search_text=keyword, top=1)
-
-        doc_num = 1
-
-        doc = []
-
-        for i in res:
-            newdoc = Document(page_content=i['content'],
-
-                              metadata={'@search.score': i['@search.score'],
-                                        'metadata_storage_name': i['metadata_storage_name'],
-                                        'source': f'doc-{doc_num}'})
-
-            doc.append(newdoc)
-
-            doc_num += 1
-
-        return doc
-
     def chat_public(self, query):
         # keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
         keywords = query
@@ -383,12 +361,10 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
 
         if "drink fee" in label:
             # doc = self.get_document(keywords, self.retriever_drink)
-
             keywordChain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ_drink_fee))
-
             keywords_drink_fee = keywordChain({'context': self.get_history_as_txt(), 'question': query})
 
-            doc = self.get_docs_using_keyword_string_for_drink_fee(keywords_drink_fee['text'], self.retriever_drink)
+            doc = self.get_document(keywords_drink_fee['text'], self.retriever_drink, 1)
 
             input_pandas = self.drink_chain(
                 {'input_documents': doc, 'question': query, 'context': ''},
