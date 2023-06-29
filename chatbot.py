@@ -48,13 +48,14 @@ Input: What is FASF?
 Output: FASF
 Input: What is the company's policy on leave?
 Ouput: (ngày +nghỉ +phép) | leave
-Input: Điều 7 chương 2 gồm nội dung gì?
-Output: ("điều 7" + "chương II") | ("article 7" + "chapter II")
 <|im_end|>
 
 Input: {question}
 <|im_start|>assistant
 Output:"""
+
+    '''Input: Điều 7 chương 2 gồm nội dung gì?
+Output: ("điều 7" + "chương II") | ("article 7" + "chapter II")'''
 
     chat_template = """<|im_start|>system
 Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. Your answer must adhere to the following criteria:
@@ -288,6 +289,7 @@ Output:"""
 
             keywordChain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ_drink_fee))
             keywords_drink_fee = keywordChain({'context': self.get_history_as_txt(), 'question': query})['text'].strip()
+            print(f"Drink fee keywords: {keywords_drink_fee}")
 
             doc = self.get_document(keywords_drink_fee, self.retriever_drink, 1)
 
