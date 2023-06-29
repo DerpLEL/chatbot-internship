@@ -84,7 +84,6 @@ Question:
 Search query:
 """
 
-
     '''Input: Điều 7 chương 2 gồm nội dung gì?
 Output: ("điều 7" + "chương II") | ("article 7" + "chapter II")'''
 
