@@ -215,9 +215,9 @@ Output:"""
         self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
         self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
 
-    def get_document(self, query, retriever):
-        # Get top 4 documents
-        res = retriever.search(search_text=query, top=3)
+    def get_document(self, query, retriever, n=3):
+        # Get top 3 documents
+        res = retriever.search(search_text=query, top=n)
 
         doc_num = 1
         doc = []
@@ -274,12 +274,12 @@ Output:"""
         self.add_to_history(query, response['output_text'])
         return response, doc
 
-
     def chat_private(self, query):
         label = self.classifier_chain(query)['text']
+        print(f"Label: {label}")
 
         keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
-        print(keywords)
+        print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
 
@@ -287,9 +287,9 @@ Output:"""
             # self.history_private = []
 
             keywordChain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ_drink_fee))
-            keywords_drink_fee = keywordChain({'context': self.get_history_as_txt(), 'question': query})
+            keywords_drink_fee = keywordChain({'context': self.get_history_as_txt(), 'question': query})['text'].strip()
 
-            doc = self.get_docs_using_keyword_string_for_drink_fee(keywords_drink_fee['text'], self.retriever_drink)
+            doc = self.get_document(keywords_drink_fee, self.retriever_drink, 1)
 
             input_pandas = self.drink_chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()}, return_only_outputs=False)
             blob_name = doc[0].metadata['metadata_storage_name']
