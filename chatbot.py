@@ -181,7 +181,7 @@ Output:"""
             credential=AzureKeyCredential(search_key),
             b=0.0,
             k1=0.3,
-            searchMode="all"
+            searchMode="any"
         )
 
         self.retriever_private = SearchClient(
@@ -190,7 +190,7 @@ Output:"""
             credential=AzureKeyCredential(search_key),
             b=0.0,
             k1=0.3,
-            searchMode="all"
+            searchMode="any"
         )
 
         self.retriever_drink = SearchClient(
@@ -199,7 +199,7 @@ Output:"""
             credential=AzureKeyCredential(search_key),
             b=0.0,
             k1=0.3,
-            searchMode="all"
+            searchMode="any"
         )
 
         self.retriever_policy = SearchClient(
@@ -208,7 +208,7 @@ Output:"""
             credential=AzureKeyCredential(search_key),
             b=0.0,
             k1=0.3,
-            searchMode="all"
+            searchMode="any"
         )
 
         self.qa_chain = load_qa_with_sources_chain(llm=self.llm, chain_type="stuff", prompt=PromptTemplate.from_template(self.chat_template))
