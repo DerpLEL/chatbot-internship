@@ -30,19 +30,18 @@ blob_service_client = BlobServiceClient.from_connection_string(storage_connectio
 class chatAI:
     keyword_templ = """<|im_start|>system
 Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
-Generate a search query based on the conversation and the new question. Use Roman numerals for chapter numbers.
-Replace AND with + and OR with |. Verbs and adjectives must be accompanied by |.
-Do not answer the question. Output queries must be in both English and Vietnamese in the forms of the provided examples.
+Generate a search query based on the conversation and the new question.Replace AND with + and OR with |. Verbs and adjectives must be accompanied by |.
+Do not answer the question. Output queries must be in both English and Vietnamese in this form: (<English keywords>) | (<Vietnamese keywords>). Examples are provided down below:
 
 EXAMPLES
 Input: Ai là giám đốc điều hành?
-Ouput: (giám +đốc +điều +hành) | (managing +director)
+Ouput:  (managing +director) | (giám +đốc +điều +hành)
 Input: Số người chưa đóng tiền nước tháng 5?
-Output: (tiền +nước +tháng +05 |chưa |đóng) | (May +drink +fee |not |paid)
+Output: (May +drink +fee |not |paid) | (tiền +nước +tháng +05 |chưa |đóng)
 Input: Ai đã đóng tiền nước tháng 4?
-Output: (tiền +nước +tháng +04 |đã |đóng) | (April +drink +fee |paid)
+Output: (April +drink +fee |paid) | (tiền +nước +tháng +04 |đã |đóng)
 Input: Danh sách người đóng tiền nước tháng 3?
-Output: (tiền +nước +tháng +03) | (March +drink +fee)
+Output: (March +drink +fee) | (tiền +nước +tháng +03)
 Input: Was Pepsico a customer of New Ocean?
 Output: Pepsico
 Input: What is FASF?
@@ -50,6 +49,7 @@ Output: FASF
 Input: What is the company's policy on leave?
 Ouput: leave | (ngày +nghỉ +phép)
 
+Consider the conversation history for your queries, as questions may be connected.
 Conversation history:{context}
 
 <|im_end|>
@@ -333,8 +333,8 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
         return self.chat_public(query)
 
     def chat_public(self, query):
-        # keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
-        keywords = query
+        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
+        # keywords = query
         print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
@@ -353,8 +353,8 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
         label = self.classifier_chain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
         print(f"Label: {label}")
 
-        # keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
-        keywords = query
+        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text'].strip()
+        # keywords = query
         print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
@@ -410,9 +410,12 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
 
         df = pd.read_excel(sas_url, skiprows=1)
         df = df[df['FullName'].notnull()]
-        df = df.iloc[:, 0:7]
+        df = df.iloc[:, df.columns.notna()]
 
-        result_pandas = eval(input_pandas)
+        try:
+            result_pandas = eval(input_pandas)
+        except Exception as e:
+            return {'output_text': f'Cannot generate response, error: {e}\nTrace: {input_pandas}'}, None
 
         return result_pandas
 
