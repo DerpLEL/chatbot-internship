@@ -29,8 +29,8 @@ blob_service_client = BlobServiceClient.from_connection_string(storage_connectio
 
 class chatAI:
     keyword_templ = """Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
-Generate a search query based on the conversation and the new question.Replace AND with + and OR with |. Verbs and adjectives must be accompanied by |.
-Do not answer the question. Output queries must be in both English and Vietnamese and MUST strictly follow this format: (<Vietnamese queries>) | (<English queries>). DO NOT generate more than 2 sets of ().
+Generate a search query based on the conversation and the new question.Replace AND with + and OR with |. Verbs, adjectives and stop words must be accompanied by |.
+Do not answer the question. Output queries must be in both English and Vietnamese and MUST strictly follow this format: (<Vietnamese queries>) | (<English queries>).
 Examples are provided down below:
 
 EXAMPLES
@@ -51,8 +51,11 @@ Ouput: (ngày +nghỉ +phép) | leave
 
 Chat history:{context}
 
-Input: {question}
-Output:"""
+Question:
+{question}
+
+Search query:
+"""
 
     question_prompt = """Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
 Generate a new question with full context based on the conversation and the given question. Do not answer the question.
