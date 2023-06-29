@@ -294,7 +294,10 @@ Output:"""
             doc = self.get_document(keywords_drink_fee, self.retriever_drink, 1)
 
             input_pandas = self.drink_chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()}, return_only_outputs=False)
-            blob_name = doc[0].metadata['metadata_storage_name']
+            try:
+                blob_name = doc[0].metadata['metadata_storage_name']
+            except Exception as e:
+                return {'output_text': f'Cannot generate response, error: {e}'}, None
         
             print(input_pandas['output_text'])
             temp_result = self.excel_drink_preprocess(input_pandas['output_text'], blob_name)
