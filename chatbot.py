@@ -440,7 +440,7 @@ Output:"""
                 q = lang.lower() + ', ' + query
 
             else:
-                q = keywords.split(', ')[1]
+                q = keywords
 
             doc = self.get_document(q, self.retriever_private)
 
