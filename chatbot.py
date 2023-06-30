@@ -57,23 +57,23 @@ Search query:
 
     keyword_templ = """Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
 Generate a search query along with the input language based on the conversation and the new question. The output query must adhere to the following criteria:
-- Output query must be in both English and Vietnamese and MUST strictly follow this format: <Input language>, (<Vietnamese queries>) | (<English queries>).
+- Output query must be in both English and Vietnamese and MUST strictly follow this format: input:<Input language>, (<Vietnamese queries>) | (<English queries>).
 - Replace AND with + and OR with |. Do not put queries outside of ().
 Examples are provided down below.
 
 Examples:
 Input: Ai là giám đốc điều hành của NOIS?
-Ouput: Vietnamese, (giám đốc điều hành) | (managing director)
+Ouput: input:Vietnamese, (giám đốc điều hành) | (managing director)
 Input: Số người chưa đóng tiền nước tháng 5?
-Output: Vietnamese, (tiền nước tháng 05) | (May drink fee)
+Output: input:Vietnamese, (tiền nước tháng 05) | (May drink fee)
 Input: Danh sách người đóng tiền nước tháng 3?
-Output: Vietnamese, (tiền nước tháng 03) | (March drink fee)
+Output: input:Vietnamese, (tiền nước tháng 03) | (March drink fee)
 Input: Was Pepsico a customer of New Ocean?
-Output: English, Pepsico
+Output: input:English, Pepsico
 Input: What is FASF?
-Output: English, FASF
+Output: input:English, FASF
 Input: What is the company's policy on leave?
-Ouput: English, (ngày nghỉ phép) | (leave)
+Ouput: input:English, (ngày nghỉ phép) | (leave)
 
 Chat history:{context}
 
@@ -431,7 +431,7 @@ Output:"""
 
         else:
             if self.semantic:
-                lang = keywords.split(', ')[0].lower()
+                lang = keywords.split(', ')[0].split(':')[1].lower()
                 q = lang + ', ' + query
 
             else:
