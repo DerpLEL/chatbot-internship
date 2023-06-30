@@ -56,25 +56,24 @@ Search query:
 """
 
     keyword_templ = """Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
-Generate a search query based on the conversation and the new question. The output query must adhere to the following criteria:
-- Output query must be in both English and Vietnamese and MUST strictly follow this format: (<Vietnamese queries>) | (<English queries>).
-- Do not generate queries with more than 2 sets of () and do not put queries outside of ().
-- Replace AND with + and OR with |.
+Generate a search query along with the input language based on the conversation and the new question. The output query must adhere to the following criteria:
+- Output query must be in both English and Vietnamese and MUST strictly follow this format: input:<Input language>, (<Vietnamese queries>) | (<English queries>).
+- Replace AND with + and OR with |. Do not put queries outside of ().
 Examples are provided down below.
 
 Examples:
 Input: Ai là giám đốc điều hành của NOIS?
-Ouput: (giám đốc điều hành) | (managing director)
+Ouput: input:Vietnamese, (giám đốc điều hành) | (managing director)
 Input: Số người chưa đóng tiền nước tháng 5?
-Output: (tiền nước tháng 05) | (May drink fee)
+Output: input:Vietnamese, (tiền nước tháng 05) | (May drink fee)
 Input: Danh sách người đóng tiền nước tháng 3?
-Output: (tiền nước tháng 03) | (March drink fee)
+Output: input:Vietnamese, (tiền nước tháng 03) | (March drink fee)
 Input: Was Pepsico a customer of New Ocean?
-Output: Pepsico
+Output: input:English, Pepsico
 Input: What is FASF?
-Output: FASF
+Output: input:English, FASF
 Input: What is the company's policy on leave?
-Ouput: (ngày nghỉ phép) | (leave)
+Ouput: input:English, (ngày nghỉ phép) | (leave)
 
 Chat history:{context}
 
@@ -290,8 +289,7 @@ Output:"""
         self.semantic_search = SearchClient(
             endpoint=search_endpoint,
             index_name=semantic_index,
-            credential=AzureKeyCredential(search_key),
-            queryType='semantic'
+            credential=AzureKeyCredential(search_key)
         )
 
         self.retriever_private = self.default_search
@@ -303,7 +301,21 @@ Output:"""
 
     def get_document(self, query, retriever, n=3):
         # Get top 3 documents
-        res = retriever.search(search_text=query, top=n)
+        if not self.semantic or not self.private:
+            res = retriever.search(search_text=query, top=n)
+
+        else:
+            temp = query.split(', ')
+            q = temp[0]
+            lang = 'en-us' if temp[1] == 'english' else 'vi-vn'
+
+            res = retriever.search(
+                search_text=q,
+                query_type='semantic',
+                query_language=lang,
+                semantic_configuration_name="default",
+                top=n,
+            )
 
         doc_num = 1
         doc = []
@@ -364,6 +376,8 @@ Output:"""
 
     def chat_public(self, query):
         keywords = self.keyword_chain({'question': query, 'context': self.get_history_as_txt()})['text']
+        print(f"Full keywords: {keywords}")
+        keywords = keywords.split(', ')[1]
         print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
@@ -414,7 +428,15 @@ Output:"""
             doc[0].page_content = result_doc
 
         else:
-            doc = self.get_document(query, self.retriever_private)
+            if self.semantic:
+                lang = keywords.split(', ')[0].split(':')[1].lower()
+                q = lang + ', ' + query
+                print(f"Semantic search with query: {q}")
+
+            else:
+                q = keywords.split(', ')[1]
+
+            doc = self.get_document(q, self.retriever_private)
 
         try:
             response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},

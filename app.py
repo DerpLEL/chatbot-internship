@@ -89,7 +89,7 @@ def predict():
         else:
             return jsonify({"answer": "Permission denied."})
 
-    response, doc = bot.chat(text)
+    response, doc = bot.chat(text.strip())
     print(doc)
     message = {"answer": response['output_text']}
 
