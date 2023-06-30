@@ -233,15 +233,20 @@ Output:"""
 
         return doc
 
-    def get_history_as_txt(self):
+    def get_history_as_txt(self, n=3):
         txt = ""
         hist = self.history_public
 
         if self.private:
             hist = self.history_private
 
-        history = hist[::-1]
-        for i in history[:3]:
+        if len(hist) <= n:
+            history = hist
+
+        else:
+            history = hist[len(hist) - n:]
+
+        for i in history:
             txt += f"\n<|im_start|>user\n{i['user']}\n<|im_end|>\n"
             txt += f"<|im_start|>assistant\n{i['AI']}\n<|im_end|>"
 
