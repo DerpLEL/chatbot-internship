@@ -307,7 +307,7 @@ Output:"""
         else:
             temp = query.split(', ')
             q = temp[0]
-            lang = 'en-us' if temp[1] == 'english' else 'vi-vn'
+            lang = 'en-US' if temp[1] == 'english' else 'vi-VN'
 
             res = retriever.search(
                 search_text=q,
