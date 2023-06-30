@@ -190,6 +190,7 @@ For example: If ask aboout fullname is 'Hưng', use must answer with format of d
 <|im_end|>
 <|im_start|>assistant
 """
+
     keyword_templ_drink_fee = """<|im_start|>system
 Given a sentence and a conversation about the companies New Ocean and NOIS, assistant will extract keywords based on the conversation and the sentence and translate them to Vietnamese if they're in English and vice versa.
 Your output will be on one line, in both languages if possible and separated by commas. Do not duplicate keywords.
@@ -223,7 +224,7 @@ Output:"""
             openai_api_base='https://openai-nois-intern.openai.azure.com/',
             openai_api_version="2023-03-15-preview",
             deployment_name='test-1',
-            openai_api_key='400568d9a16740b88aff437480544a39',
+            openai_api_key=os.getenv('OPENAI_API_KEY'),
             temperature=0.5,
             max_tokens=400
         )
@@ -233,7 +234,7 @@ Output:"""
             openai_api_base='https://openai-nois-intern.openai.azure.com/',
             openai_api_version="2023-03-15-preview",
             deployment_name='test-1',
-            openai_api_key='400568d9a16740b88aff437480544a39',
+            openai_api_key=os.getenv('OPENAI_API_KEY'),
             temperature=0.7,
             max_tokens=600
         )
@@ -314,7 +315,7 @@ Output:"""
 
         return doc
 
-    def get_history_as_txt(self, n=3):
+    def get_history_as_txt(self, n=4):
         txt = ""
         hist = self.history_public
 
