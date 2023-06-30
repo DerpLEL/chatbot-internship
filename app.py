@@ -83,7 +83,7 @@ def predict():
 
     elif text.strip() == "switch" and bot.private:
         bot.change_retriever()
-        return jsonify({"answer": f"Switch retriever for private case, now currently using: {'Default search' if not bot.semantic else 'Semantic search'}"})
+        return jsonify({"answer": f"Switched retriever for private case, now currently using: {'Default search' if not bot.semantic else 'Semantic search'}."})
 
     response, doc = bot.chat(text)
     print(doc)
