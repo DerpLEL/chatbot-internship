@@ -63,7 +63,7 @@ Examples are provided down below.
 
 Examples:
 Input: Ai là giám đốc điều hành của NOIS?
-Ouput: input:Vietnamese, (giám đốc điều hành NOIS) | (managing director NOIS)
+Ouput: input:Vietnamese, (giám đốc điều hành) | (managing director)
 Input: Số người chưa đóng tiền nước tháng 5?
 Output: input:Vietnamese, (tiền nước tháng 05) | (May drink fee)
 Input: Danh sách người đóng tiền nước tháng 3?
