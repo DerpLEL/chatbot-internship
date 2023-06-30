@@ -412,13 +412,14 @@ Output:"""
         return response, doc
 
     def excel_drink_preprocess(self, input_pandas, file_name):
-
-        sas_i = generate_blob_sas(account_name = account_name,
-                            container_name = self.container_drink_fee_name,
-                            blob_name = file_name,
-                            account_key=account_key,
-                            permission=BlobSasPermissions(read=True),
-                            expiry=datetime.utcnow() + timedelta(hours=1))
+        sas_i = generate_blob_sas(
+            account_name = account_name,
+            container_name = self.container_drink_fee_name,
+            blob_name = file_name,
+            account_key=account_key,
+            permission=BlobSasPermissions(read=True),
+            expiry=datetime.utcnow() + timedelta(hours=1)
+        )
 
         sas_url = 'https://' + account_name+'.blob.core.windows.net/' + self.container_drink_fee_name + '/' + file_name + '?' + sas_i
 
