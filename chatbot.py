@@ -63,7 +63,7 @@ Examples are provided down below.
 
 Examples:
 Input: Ai là giám đốc điều hành của NOIS?
-Ouput: input:Vietnamese, (giám đốc điều hành) | (managing director)
+Ouput: input:Vietnamese, (giám đốc điều hành NOIS) | (managing director NOIS)
 Input: Số người chưa đóng tiền nước tháng 5?
 Output: input:Vietnamese, (tiền nước tháng 05) | (May drink fee)
 Input: Danh sách người đóng tiền nước tháng 3?
@@ -95,7 +95,7 @@ Output: ("điều 7" + "chương II") | ("article 7" + "chapter II")'''
 Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. Your answer must adhere to the following criteria:
 - Be brief but friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
 - If the user greets you, respond accordingly.
-- If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese
+- Answer in {lang}.
 
 Sources:
 {summaries}
@@ -379,14 +379,17 @@ Output:"""
     def chat_public(self, query):
         keywords = self.keyword_chain({'question': query, 'context': self.get_history_as_txt()})['text']
         print(f"Full keywords: {keywords}")
-        keywords = keywords.split(', ')[1]
-        print(f"Query: {query}\nKeywords: {keywords}")
+        temp = keywords.split(', ')
+        keywords = temp[1]
+        lang = temp[0].split(':')[1]
+        print(f"Query: {query}\nKeywords: {keywords}\nLanguage: {lang}")
 
         chain = self.qa_chain
         doc = self.get_document(keywords, self.retriever_public)
 
         try:
-            response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},
+            response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(),
+                              'lang': lang},
                              return_only_outputs=False)
         except Exception as e:
             return {'output_text': f'Cannot generate response, error: {e}'}, doc
@@ -399,7 +402,10 @@ Output:"""
         print(f"Label: {label}")
 
         keywords = self.keyword_chain({'question': query, 'context': self.get_history_as_txt()})['text']
-        print(f"Query: {query}\nKeywords: {keywords}")
+        temp = keywords.split(', ')
+        keywords = temp[1]
+        lang = temp[0].split(':')[1]
+        print(f"Query: {query}\nKeywords: {keywords}\nLanguage: {lang}")
 
         chain = self.qa_chain
 
@@ -431,8 +437,7 @@ Output:"""
 
         else:
             if self.semantic:
-                lang = keywords.split(', ')[0].split(':')[1].lower()
-                q = lang + ', ' + query
+                q = lang.lower() + ', ' + query
 
             else:
                 q = keywords.split(', ')[1]
@@ -440,7 +445,8 @@ Output:"""
             doc = self.get_document(q, self.retriever_private)
 
         try:
-            response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},
+            response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(),
+                              'lang': lang},
                              return_only_outputs=False)
         except Exception as e:
             return {'output_text': f'Cannot generate response, error: {e}'}, doc
