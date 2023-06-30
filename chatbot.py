@@ -322,10 +322,12 @@ Output:"""
         if not self.semantic:
             self.semantic = True
             self.retriever_private = self.semantic_search
+            print("Using semantic search.")
 
         else:
             self.semantic = False
             self.retriever_private = self.default_search
+            print("Using default search.")
 
     def get_history_as_txt(self, n=4):
         txt = ""
