@@ -437,7 +437,7 @@ Output:"""
 
         sas_url = 'https://' + account_name+'.blob.core.windows.net/' + self.container_drink_fee_name + '/' + file_name + '?' + sas_i
 
-        df = pd.read_excel(sas_url, skiprows = 1)
+        df = pd.read_excel(sas_url, skiprows=1)
         df = df[df['FullName'].notnull()]
         df = df.iloc[:, df.columns.notna()]
 
