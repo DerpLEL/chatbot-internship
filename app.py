@@ -81,6 +81,10 @@ def predict():
         bot.clear_history()
         return jsonify({"answer": "Cleared history"})
 
+    elif text.strip() == "switch":
+        bot.change_retriever()
+        return jsonify({"answer": f"Switch retriever for private case, now currently using: {'Default search' if not bot.semantic else 'Semantic search'}"})
+
     response, doc = bot.chat(text)
     print(doc)
     message = {"answer": response['output_text']}

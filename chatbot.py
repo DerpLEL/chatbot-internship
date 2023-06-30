@@ -218,6 +218,7 @@ Output:"""
         self.private = False
         self.container_drink_fee_name = 'nois-drink-fee'
         self.container_client = blob_service_client.get_container_client(self.container_drink_fee_name)
+        self.semantic = False
 
         self.llm = AzureChatOpenAI(
             openai_api_type="azure",
@@ -259,7 +260,7 @@ Output:"""
             searchMode="any"
         )
 
-        self.retriever_private = SearchClient(
+        self.default_search = SearchClient(
             endpoint=search_endpoint,
             index_name=semantic_index,
             credential=AzureKeyCredential(search_key),
@@ -286,12 +287,14 @@ Output:"""
             searchMode="any"
         )
 
-        self.retriever_semantic = SearchClient(
+        self.semantic_search = SearchClient(
             endpoint=search_endpoint,
             index_name=semantic_index,
             credential=AzureKeyCredential(search_key),
             queryType='semantic'
         )
+
+        self.retriever_private = self.default_search
 
         self.qa_chain = load_qa_with_sources_chain(llm=self.llm, chain_type="stuff", prompt=PromptTemplate.from_template(self.chat_template))
         self.keyword_chain = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_templ))
@@ -314,6 +317,15 @@ Output:"""
             doc_num += 1
 
         return doc
+
+    def change_retriever(self):
+        if not self.semantic:
+            self.semantic = True
+            self.retriever_private = self.semantic_search
+
+        else:
+            self.semantic = False
+            self.retriever_private = self.default_search
 
     def get_history_as_txt(self, n=4):
         txt = ""
