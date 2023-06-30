@@ -81,9 +81,13 @@ def predict():
         bot.clear_history()
         return jsonify({"answer": "Cleared history"})
 
-    elif text.strip() == "switch" and bot.private:
-        bot.change_retriever()
-        return jsonify({"answer": f"Switched retriever for private case, now using: {'Default search' if not bot.semantic else 'Semantic search'}."})
+    elif text.strip() == "switch":
+        if bot.private:
+            bot.change_retriever()
+            return jsonify({"answer": f"Switched retriever for private case, now using: {'Default search' if not bot.semantic else 'Semantic search'}."})
+
+        else:
+            return jsonify({"answer": "Permission denied"})
 
     response, doc = bot.chat(text)
     print(doc)
