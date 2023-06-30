@@ -329,7 +329,7 @@ Output:"""
             self.retriever_private = self.default_search
             print("Using default search.")
 
-    def get_history_as_txt(self, n=4):
+    def get_history_as_txt(self, n=3):
         txt = ""
         hist = self.history_public
 
