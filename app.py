@@ -69,7 +69,7 @@ def login():
 
 @app.post("/predict")
 def predict():
-    text = request.get_json().get("message") 
+    text = request.get_json().get("message").strip()
     response = {}
     if 'claims_challenge' in session['flow']:
         bot.private = False
@@ -77,11 +77,11 @@ def predict():
     else:
         bot.private = True
 
-    if text.strip().lower() == "hist":
+    if text.lower() == "hist":
         bot.clear_history()
         return jsonify({"answer": "Cleared history."})
 
-    elif text.strip().lower() == "switch":
+    elif text.lower() == "switch":
         if bot.private:
             bot.change_retriever()
             return jsonify({"answer": f"Switched retriever for private case, now using: {'Default search' if not bot.semantic else 'Semantic search'}."})
@@ -89,7 +89,11 @@ def predict():
         else:
             return jsonify({"answer": "Permission denied."})
 
-    response, doc = bot.chat(text.strip())
+    elif text.lower() == "print":
+        history = bot.get_history_as_txt()
+        return jsonify({'answer': history})
+
+    response, doc = bot.chat(text)
     print(doc)
     message = {"answer": response['output_text']}
 
