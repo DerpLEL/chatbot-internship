@@ -439,7 +439,7 @@ Output:"""
 
         df = pd.read_excel(sas_url, skiprows = 1)
         df = df[df['FullName'].notnull()]
-        df = df.iloc[:, 0:7]
+        df = df.iloc[:, df.columns.notna()]
 
         try:
             result_pandas = eval(input_pandas) 
