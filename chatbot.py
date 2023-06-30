@@ -316,7 +316,6 @@ Output:"""
                 query_type='semantic',
                 query_language=lang,
                 semantic_configuration_name="default",
-                query_caption="extractive|highlight-false",
                 top=n
             )
 
