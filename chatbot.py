@@ -56,7 +56,9 @@ Search query:
 """
 
     keyword_templ = """Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
-Generate a search query along based on the conversation and the new question. Replace AND with + and OR with |. Output query must be in both English and Vietnamese and MUST strictly follow this format: input:<Input language>, (<Vietnamese queries>) | (<English queries>). Do not put queries outside of ().
+Generate a search query along based on the conversation and the new question. Replace AND with + and OR with |. 
+Do not put queries outside of ().
+Output query must be in both English and Vietnamese and MUST strictly follow this format: input:<Input language>, (<Vietnamese queries>) | (<English queries>).
 Examples are provided down below.
 
 Examples:
