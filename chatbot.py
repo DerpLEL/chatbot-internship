@@ -9,6 +9,7 @@ from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
 from azure.core.exceptions import ResourceExistsError
 from datetime import datetime, timedelta
+import ast
 
 import pandas as pd
 import openpyxl
@@ -224,6 +225,36 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
+    header_templ_drink_fee = """<|im_start|>system
+Sources:
+{summaries}
+
+You must follow this rule:
+1. You will answer the question "What are header of this file?".
+2. Your answer is in list type which includes all header of that file.
+3. Output just only code.
+4. Must NO COMMENT, NO RESULT.
+
+For Example:
+- Input:
+BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed: 3 Unnamed: 4 Unnamed: 5 Unnamed: 6 Unnamed: 7 Unnamed: 8
+0 STT Email FullName April Total Thực thu Note Tình trạng NaN NaN
+1 1 hung.bui@nois.vn BÙI TUẤN HƯNG 78200 78200 NaN Done NaN NaN
+2 2 hiep.dang@nois.vn ĐẶNG DUY HIỆP 30700 30700 NaN Done NaN NaN
+3 3 tai.dang@nois.vn ĐẶNG HỮU TÀI 22500 22500 NaN Done NaN NaN
+4 4 sang.dao@nois.vn ĐÀO MINH SÁNG 5000 NaN NaN NaN NaN NaN
+5 5 nam.do@nois.vn ĐỖ NGỌC NAM 6500 6500 NaN Done NaN NaN
+- Output:
+['STT', 'Email', 'FullName', 'April Total', 'Thực thu', 'Note', 'Tình trạng', 'NaN', 'NaN']
+
+<|im_end|>
+{context}
+<|im_start|>user
+{question}
+<|im_end|>
+<|im_start|>assistant
+"""
+
     def __init__(self):
         self.history_public = []
         self.history_private = []
@@ -313,6 +344,9 @@ Output:"""
         self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
         self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
         self.translate_chain = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.translate_template))
+        self.header_drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff",
+                                                             prompt=PromptTemplate.from_template(
+                                                                    self.header_templ_drink_fee))
 
     def get_document(self, query, retriever, n=3):
         # Get top 3 documents
@@ -457,27 +491,33 @@ Output:"""
         if label == "drink fee":
             # self.history_private = []
 
-            # keyword_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ_drink_fee))
-            # keywords_drink_fee = keyword_chain({'context': self.get_history_as_txt(), 'question': query})['text']
-            # print(f"Drink fee keywords: {keywords_drink_fee}")
+            # keywordChain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ_drink_fee))
+
+            # keywords_drink_fee = keywordChain({'context': self.get_history_as_txt(), 'question': query})
 
             doc = self.get_document(keywords, self.retriever_drink, 1)
 
-            input_pandas = self.drink_chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()}, return_only_outputs=False)
-            try:
-                blob_name = doc[0].metadata['metadata_storage_name']
-            except Exception as e:
-                return {'output_text': f'Cannot generate response, error: {e}'}, None
-        
+            input_pandas = self.drink_chain(
+                {'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},
+                return_only_outputs=False)
+
+            blob_name = doc[0].metadata['metadata_storage_name']
+
             print(input_pandas['output_text'])
-            temp_result = self.excel_drink_preprocess(input_pandas['output_text'], blob_name)
-            # print(temp_result)
-            result_doc = "Input: " + query +"\n Output: " + str(temp_result)
+
+            temp_result = self.excel_drink_preprocess(input_pandas['output_text'], blob_name, doc)
+
+            print(temp_result)
+
+            result_doc = "Input: " + query + "\n Output: " + str(temp_result)
+
             print(result_doc)
 
             if """count""" not in input_pandas['output_text']:
-                self.add_to_history(query, str(temp_result))
+                self.add_to_history(query, "")
+
                 return {'output_text': str(temp_result)}, doc
+
             doc[0].page_content = result_doc
 
         else:
@@ -499,24 +539,42 @@ Output:"""
         self.add_to_history(query, response['output_text'])
         return response, doc
 
-    def excel_drink_preprocess(self, input_pandas, file_name):
+    def excel_drink_preprocess(self, input_pandas, file_name, doc):
         sas_i = generate_blob_sas(
-            account_name = account_name,
-            container_name = self.container_drink_fee_name,
-            blob_name = file_name,
+            account_name=account_name,
+            container_name=self.container_drink_fee_name,
+            blob_name=file_name,
             account_key=account_key,
             permission=BlobSasPermissions(read=True),
             expiry=datetime.utcnow() + timedelta(hours=1)
         )
 
-        sas_url = 'https://' + account_name+'.blob.core.windows.net/' + self.container_drink_fee_name + '/' + file_name + '?' + sas_i
+        sas_url = 'https://' + account_name + '.blob.core.windows.net/' + self.container_drink_fee_name + '/' + file_name + '?' + sas_i
 
-        df = pd.read_excel(sas_url, skiprows=1)
-        df = df[df['FullName'].notnull()]
-        df = df.iloc[:, df.columns.notna()]
+        df = pd.read_excel(sas_url)
+
+        doc[0].page_content = df
+
+        header = self.header_drink_chain(
+            {'input_documents': doc, 'question': 'What is Header of this file?', 'context': ''},
+            return_only_outputs=False)
+
+        old_header = list(df.columns)
+
+        header_list = ast.literal_eval(header['output_text'])
+
+        target_rows = df[(df[old_header[0]] == header_list[0]) & (df[old_header[1]] == header_list[1]) & (
+                    df[old_header[3]] == header_list[3])]
+
+        df = pd.read_excel(sas_url, skiprows=target_rows.index[0] + 1)
+        last_row_index = df.index[df.isnull().all(axis=1)][0]
+        df = df.iloc[:last_row_index]
+        # df = df[df['FullName'].notnull()]
+        # df = df.iloc[:, df.columns.notna()]
 
         try:
-            result_pandas = eval(input_pandas) 
+            result_pandas = eval(input_pandas)
+
         except Exception as e:
             return input_pandas
 
