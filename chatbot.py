@@ -56,9 +56,10 @@ Search query:
 """
 
     keyword_templ = """Below is a history of the conversation so far, and a new question asked by the user that needs to be answered by querying relevant company documents.
-Generate a search query along based on the conversation and the new question. Replace AND with + and OR with |. 
-Do not put queries outside of ().
+Generate a search query along based on the conversation and the new question.
+Replace AND with + and OR with |. 
 Output query must be in both English and Vietnamese and MUST strictly follow this format: input:<Question language>, (<Vietnamese queries>) | (<English queries>).
+Do not put queries outside of ().
 Examples are provided down below.
 
 Examples:
@@ -93,9 +94,9 @@ Output: ("điều 7" + "chương II") | ("article 7" + "chapter II")'''
 
     chat_template = """<|im_start|>system
 Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. Your answer must adhere to the following criteria:
-1. Be brief but friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
-2. If the user greets you, respond accordingly.
-3. Answer the question using {lang}.
+1. Answer the question using {lang}.
+2. Be brief but friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
+3. If the user greets you, respond accordingly.
 
 Sources:
 {summaries}
@@ -301,10 +302,7 @@ Output:"""
         self.semantic_search = SearchClient(
             endpoint=search_endpoint,
             index_name=semantic_index,
-            credential=AzureKeyCredential(search_key),
-            b=0.0,
-            k1=0.3,
-            searchMode="any"
+            credential=AzureKeyCredential(search_key)
         )
 
         self.retriever_private = self.default_search
@@ -315,7 +313,7 @@ Output:"""
         self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
         self.translate_chain = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.translate_template))
 
-    def get_document(self, query, retriever, n=4):
+    def get_document(self, query, retriever, n=3):
         # Get top 3 documents
         if not self.semantic or not self.private:
             res = retriever.search(search_text=query, top=n)
@@ -364,7 +362,7 @@ Output:"""
 
         doc_num = 1
         doc = []
-        score_type = '@search.reranker_score' if self.semantic else '@search.score'
+        score_type = '@search.score' if not self.semantic or not self.private else '@search.reranker_score'
 
         for i in res:
             newdoc = Document(page_content=i['content'],
@@ -447,6 +445,7 @@ Output:"""
         print(f"Label: {label}")
 
         keywords = self.keyword_chain({'question': query, 'context': self.get_history_as_txt()})['text']
+        print(f"Full keywords: {keywords}")
         temp = keywords.split(', ')
         keywords = temp[1]
         lang = temp[0].split(':')[1]
