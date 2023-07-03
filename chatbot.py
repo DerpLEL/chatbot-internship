@@ -269,7 +269,7 @@ Output:"""
             credential=AzureKeyCredential(search_key),
             b=0.0,
             k1=0.3,
-            searchMode="any"
+            searchMode='any'
         )
 
         self.default_search = SearchClient(
@@ -278,7 +278,7 @@ Output:"""
             credential=AzureKeyCredential(search_key),
             b=0.0,
             k1=0.3,
-            searchMode="any"
+            searchMode='any'
         )
 
         self.retriever_drink = SearchClient(
@@ -287,7 +287,7 @@ Output:"""
             credential=AzureKeyCredential(search_key),
             b=0.0,
             k1=0.3,
-            searchMode="any"
+            searchMode='any'
         )
 
         self.retriever_policy = SearchClient(
@@ -296,13 +296,14 @@ Output:"""
             credential=AzureKeyCredential(search_key),
             b=0.0,
             k1=0.3,
-            searchMode="any"
+            searchMode='any'
         )
 
         self.semantic_search = SearchClient(
             endpoint=search_endpoint,
             index_name=semantic_index,
-            credential=AzureKeyCredential(search_key)
+            credential=AzureKeyCredential(search_key),
+            searchMode='all'
         )
 
         self.retriever_private = self.default_search
