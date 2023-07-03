@@ -23,6 +23,10 @@ class Chatbox{
                 this.onSendButton(chatBox)
             }
         })
+
+        const clearButton = chatBox.querySelector('.clear__button');
+
+        clearButton.addEventListener('click', () => this.clearChat(chatBox));
     }
 
     toggleState(chatbox){
@@ -86,6 +90,33 @@ class Chatbox{
             chatmessage.innerHTML = html;
 
         }
+
+        clearChat(chatbox) {
+            let msg1 = { name: "User", message: "hist" }
+            this.message.push(msg1)
+            fetch($SCRIPT_ROOT + '/predict', {
+                method: 'POST',
+                body: JSON.stringify({message: "hist" }),
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+            })
+            .then(r => r.json())
+            .then(r =>{
+                let msg2 = { name: "New Ocean's bot", message: r.answer};
+                this.message.push(msg2);
+                // this.updateChatText(chatbox)
+                textField.value = ' '
+            }).catch((error) => {
+                console.error('Error:', error);
+                // this.updateChatText(chatbox)
+                textField.value = ''
+            });
+            
+            this.message = [];
+            this.updateChatText(chatbox)
+        }    
 
 }
 

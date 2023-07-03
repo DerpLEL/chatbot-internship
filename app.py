@@ -70,12 +70,20 @@ def login():
 @app.post("/predict")
 def predict():
     text = request.get_json().get("message") 
-    response = {}
-    if 'claims_challenge' in session['flow']:
-        bot.private = False
 
+    response = {}
+    
+    if 'claims_challenge' in session['flow']:
+        bot.private = False  
+        bot.user = {"username": '', "mail": ''}
     else:
         bot.private = True
+        bot.user = {"username": session["user"]["name"], "mail": session["user"]["preferred_username"]}
+
+    if text.strip() == "hist":
+        bot.clear_history()
+        message = {"answer": "Cleared history."}
+        return jsonify(message)
 
     response, doc = bot.chat(text)
     print(doc)

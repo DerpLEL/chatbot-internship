@@ -115,6 +115,15 @@ body {
     border-top-right-radius: 20px;
 }
 
+.clear__button {
+    padding: 5px;
+    background: rgb(191, 193, 182);
+    border: none;
+    outline: none;
+    cursor: pointer;
+    border-radius: 20%;
+}
+
 /* HEADER */
 .chatbox__header {
     background: var(--primaryGradient);
