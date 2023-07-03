@@ -1,8 +1,8 @@
 from langchain.prompts import PromptTemplate
 from langchain.document_transformers import Document
-from azure.core.credentials import AzureKeyCredential
 from langchain.chains import LLMChain
 from azure.search.documents import SearchClient
+from azure.core.credentials import AzureKeyCredential
 from langchain.chat_models import AzureChatOpenAI
 from langchain.llms import AzureOpenAI
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
@@ -55,10 +55,10 @@ Question:
 Search query:
 """
 
-    keyword_templ = """Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
+    keyword_templ = """Below is a history of the conversation so far, and a new question asked by the user that needs to be answered by querying relevant company documents.
 Generate a search query along based on the conversation and the new question. Replace AND with + and OR with |. 
 Do not put queries outside of ().
-Output query must be in both English and Vietnamese and MUST strictly follow this format: input:<Input language>, (<Vietnamese queries>) | (<English queries>).
+Output query must be in both English and Vietnamese and MUST strictly follow this format: input:<Question language>, (<Vietnamese queries>) | (<English queries>).
 Examples are provided down below.
 
 Examples:
@@ -93,9 +93,9 @@ Output: ("điều 7" + "chương II") | ("article 7" + "chapter II")'''
 
     chat_template = """<|im_start|>system
 Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. Your answer must adhere to the following criteria:
-- Be brief but friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
-- If the user greets you, respond accordingly.
-- Use the {lang} language to answer.
+1. Be brief but friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
+2. If the user greets you, respond accordingly.
+3. Answer the question using {lang}.
 
 Sources:
 {summaries}
@@ -107,6 +107,18 @@ Chat history:{context}
 {question}
 <|im_end|>
 <|im_start|>assistant
+"""
+
+    translate_template = """Below is a history of the conversation so far, and a new question asked by the user.
+Translate the question based on the given conversation.
+
+Chat history:
+{context}
+
+Question:
+{question}
+
+Translated question:
 """
 
     backup_classifier_template = """Given an input sentence and a history of the conversation so far, determine if the sentence belongs in 1 of 3 categories, which are:
@@ -289,7 +301,10 @@ Output:"""
         self.semantic_search = SearchClient(
             endpoint=search_endpoint,
             index_name=semantic_index,
-            credential=AzureKeyCredential(search_key)
+            credential=AzureKeyCredential(search_key),
+            b=0.0,
+            k1=0.3,
+            searchMode="any"
         )
 
         self.retriever_private = self.default_search
@@ -298,8 +313,9 @@ Output:"""
         self.keyword_chain = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_templ))
         self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
         self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
+        self.translate_chain = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.translate_template))
 
-    def get_document(self, query, retriever, n=3):
+    def get_document(self, query, retriever, n=4):
         # Get top 3 documents
         if not self.semantic or not self.private:
             res = retriever.search(search_text=query, top=n)
@@ -311,7 +327,7 @@ Output:"""
             print(f"Semantic language: {lang}")
             print(f"Semantic query: {q}")
 
-            res = retriever.search(
+            res1 = retriever.search(
                 search_text=q,
                 query_type='semantic',
                 query_language=lang,
@@ -319,11 +335,40 @@ Output:"""
                 top=n
             )
 
+            translated_q = self.translate_chain({'question': q, 'context': self.get_history_as_txt()})['text']
+            print(f"Translated query: {translated_q}")
+            translated_lang = 'vi-VN' if lang == 'en-US' else 'en-US'
+            print(f"Translated semantic language: {translated_lang}")
+
+            res2 = retriever.search(
+                search_text=translated_q,
+                query_type='semantic',
+                query_language=translated_lang,
+                semantic_configuration_name="default",
+                top=n
+            )
+
+            res_combined = [[i['content'], i['@search.reranker_score'], i['metadata_storage_name']] for i in res1] + [
+                [i['content'], i['@search.reranker_score'], i['metadata_storage_name']] for i in res2]
+            res_combined.sort(key=lambda x: x[1], reverse=True)
+
+            res = []
+
+            for i in res_combined:
+                temp = dict()
+                temp['content'] = i[0]
+                temp['@search.reranker_score'] = i[1]
+                temp['metadata_storage_name'] = i[2]
+
+                res.append(temp)
+
         doc_num = 1
         doc = []
+        score_type = '@search.reranker_score' if self.semantic else '@search.score'
+
         for i in res:
             newdoc = Document(page_content=i['content'],
-                              metadata={'@search.score': i['@search.score'],
+                              metadata={score_type: i[score_type],
                                         'metadata_storage_name': i['metadata_storage_name'],
                                         'source': f'doc-{doc_num}'})
 
