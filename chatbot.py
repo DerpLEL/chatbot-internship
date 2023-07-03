@@ -85,6 +85,18 @@ Question:
 Search query:
 """
 
+    keyword_alt = '''Below is the history of the conversation so far and a new question posed by a user.
+Generate a search query based on the conversation and the new question. Translate the search query into Vietnamese if the query is in English.
+Translate the search query into English if the query is in Vietnamese.
+
+Chat History:{context}
+
+Question:
+{question}
+
+Search query:
+'''
+
     '''Input: Số người chưa đóng tiền nước tháng 5?
 Output: (tiền +nước +tháng +05 |chưa |đóng) | (May +drink +fee |not |paid)
 Input: Ai đã đóng tiền nước tháng 4?
@@ -95,7 +107,7 @@ Output: ("điều 7" + "chương II") | ("article 7" + "chapter II")'''
 
     chat_template = """<|im_start|>system
 Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. Your answer must adhere to the following criteria:
-1. Answer the question using {lang}.
+1. Answer in Vietnamese if the current question is in Vietnamese. Answer in English if the current question is in English.
 2. Be brief but friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
 3. If the user greets you, respond accordingly.
 
@@ -457,17 +469,16 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
     def chat_public(self, query):
         keywords = self.keyword_chain({'question': query, 'context': self.get_history_as_txt()})['text']
         print(f"Full keywords: {keywords}")
-        temp = keywords.split(', ')
-        keywords = temp[1]
-        lang = temp[0].split(':')[1]
-        print(f"Query: {query}\nKeywords: {keywords}\nLanguage: {lang}")
+        # temp = keywords.split(', ')
+        # keywords = temp[1]
+        # lang = temp[0].split(':')[1]
+        print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
         doc = self.get_document(keywords, self.retriever_public)
 
         try:
-            response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(),
-                              'lang': lang},
+            response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},
                              return_only_outputs=False)
         except Exception as e:
             return {'output_text': f'Cannot generate response, error: {e}'}, doc
@@ -499,23 +510,18 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
             input_pandas = self.drink_chain(
                 {'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()},
-                return_only_outputs=False)
+                return_only_outputs=False
+            )
 
             blob_name = doc[0].metadata['metadata_storage_name']
-
             print(input_pandas['output_text'])
-
             temp_result = self.excel_drink_preprocess(input_pandas['output_text'], blob_name, doc)
-
             print(temp_result)
-
             result_doc = "Input: " + query + "\n Output: " + str(temp_result)
-
             print(result_doc)
 
             if """count""" not in input_pandas['output_text']:
                 self.add_to_history(query, "")
-
                 return {'output_text': str(temp_result)}, doc
 
             doc[0].page_content = result_doc
@@ -567,8 +573,8 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
                     df[old_header[3]] == header_list[3])]
 
         df = pd.read_excel(sas_url, skiprows=target_rows.index[0] + 1)
-        last_row_index = df.index[df.isnull().all(axis=1)][0]
-        df = df.iloc[:last_row_index]
+        # last_row_index = df.index[df.isnull().all(axis=1)][0]
+        # df = df.iloc[:last_row_index]
         # df = df[df['FullName'].notnull()]
         # df = df.iloc[:, df.columns.notna()]
 
