@@ -87,7 +87,7 @@ Search query:
 
     keyword_templ = """Below is a history of the conversation so far, and a new question asked by the user that needs to be answered by querying relevant company documents.
 Generate a search query along based on the conversation and the new question.
-Output query MUST strictly follow this format: input:<Question language>, <queries>.
+Output query MUST strictly follow this format: input:<Question language>, <Queries>.
 Examples are provided down below.
 
 Examples:
