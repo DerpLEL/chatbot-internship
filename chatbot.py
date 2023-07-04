@@ -192,7 +192,8 @@ Output:
     classifier_template = """Given an input sentence and a history of the conversation so far, determine if the sentence belongs in 1 of 3 categories, which are:
 - drink fee
 - other
-Do not answer the question, only output the appropriate category.
+Output only includes the appropriate category.
+DO NOT answer if the question is a sentence.
 
 EXAMPLE
 Input: Ai chưa đóng tiền nước tháng 5?
