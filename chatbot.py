@@ -56,7 +56,7 @@ Question:
 Search query:
 """
 
-    keyword_templ = """Below is a history of the conversation so far, and a new question asked by the user that needs to be answered by querying relevant company documents.
+    keyword_templ_backup2 = """Below is a history of the conversation so far, and a new question asked by the user that needs to be answered by querying relevant company documents.
 Generate a search query along based on the conversation and the new question.
 Replace AND with + and OR with |. 
 Output query must be in both English and Vietnamese and MUST strictly follow this format: input:<Question language>, (<Vietnamese queries>) | (<English queries>).
@@ -85,9 +85,35 @@ Question:
 Search query:
 """
 
-    keyword_alt = '''Below is the history of the conversation so far and a new question posed by a user.
-Generate a search query based on the conversation and the new question. Translate the search query into Vietnamese if the query is in English.
-Translate the search query into English if the query is in Vietnamese.
+    keyword_templ = """Below is a history of the conversation so far, and a new question asked by the user that needs to be answered by querying relevant company documents.
+Generate a search query along based on the conversation and the new question.
+Output query MUST strictly follow this format: input:<Question language>, <queries>.
+Examples are provided down below.
+
+Examples:
+Input: Ai là giám đốc điều hành của NOIS?
+Ouput: input:Vietnamese, giám đốc điều hành NOIS
+Input: Số người chưa đóng tiền nước tháng 5?
+Output: input:Vietnamese, tiền nước tháng 05
+Input: Danh sách người đóng tiền nước tháng 3?
+Output: input:Vietnamese, tiền nước tháng 03
+Input: Was Pepsico a customer of New Ocean?
+Output: input:English, Pepsico
+Input: What is FASF?
+Output: input:English, FASF
+Input: What is the company's policy on leave?
+Ouput: input:English, leave
+
+Chat history:{context}
+
+Question:
+{question}
+
+Search query:
+"""
+
+    keyword_alt = '''Below is the history of the conversation so far and a new question asked by the user that needs to be answered by querying relevant company documents.
+Generate a search query based on the conversation and the new question.
 
 Chat History:{context}
 
@@ -107,7 +133,7 @@ Output: ("điều 7" + "chương II") | ("article 7" + "chapter II")'''
 
     chat_template = """<|im_start|>system
 Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. Your answer must adhere to the following criteria:
-1. Answer in Vietnamese if the current question is in Vietnamese. Answer in English if the current question is in English.
+1. If the latest question is in Vietnamese, answer in Vietnamese. If the latest question is in English, answer in English. 
 2. Be brief but friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
 3. If the user greets you, respond accordingly.
 
@@ -295,7 +321,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             max_tokens=600
         )
 
-        self.llm3 = AzureOpenAI(
+        self.llm3 = AzureChatOpenAI(
             openai_api_type="azure",
             openai_api_base='https://openai-nois-intern.openai.azure.com/',
             openai_api_version="2023-03-15-preview",
@@ -469,9 +495,9 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
     def chat_public(self, query):
         keywords = self.keyword_chain({'question': query, 'context': self.get_history_as_txt()})['text']
         print(f"Full keywords: {keywords}")
-        # temp = keywords.split(', ')
-        # keywords = temp[1]
-        # lang = temp[0].split(':')[1]
+        temp = keywords.split(', ')
+        keywords = temp[1]
+        lang = temp[0].split(':')[1]
         print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
@@ -495,7 +521,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         temp = keywords.split(', ')
         keywords = temp[1]
         lang = temp[0].split(':')[1]
-        print(f"Query: {query}\nKeywords: {keywords}\nLanguage: {lang}")
+        print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
 
