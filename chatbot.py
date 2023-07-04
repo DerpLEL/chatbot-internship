@@ -513,7 +513,11 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
                 return_only_outputs=False
             )
 
-            blob_name = doc[0].metadata['metadata_storage_name']
+            try:
+                blob_name = doc[0].metadata['metadata_storage_name']
+            except Exception:
+                return {'output_text': 'No drink fee document found.'}, None
+
             print(input_pandas['output_text'])
             temp_result = self.excel_drink_preprocess(input_pandas['output_text'], blob_name, doc)
             print(temp_result)
