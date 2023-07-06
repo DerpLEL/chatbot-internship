@@ -330,7 +330,7 @@ OUTPUT
             openai_api_type="azure",
             openai_api_base='https://openai-nois-intern.openai.azure.com/',
             openai_api_version="2023-03-15-preview",
-            deployment_name='test-1',
+            deployment_name='gpt-35-turbo',
             openai_api_key=os.getenv('OPENAI_API_KEY'),
             temperature=0.5,
             max_tokens=400
@@ -340,7 +340,7 @@ OUTPUT
             openai_api_type="azure",
             openai_api_base='https://openai-nois-intern.openai.azure.com/',
             openai_api_version="2023-03-15-preview",
-            deployment_name='test-1',
+            deployment_name='gpt-35-turbo',
             openai_api_key=os.getenv('OPENAI_API_KEY'),
             temperature=0.7,
             max_tokens=600
@@ -350,7 +350,7 @@ OUTPUT
             openai_api_type="azure",
             openai_api_base='https://openai-nois-intern.openai.azure.com/',
             openai_api_version="2023-03-15-preview",
-            deployment_name='test-1',
+            deployment_name='gpt-35-turbo',
             openai_api_key=os.getenv('OPENAI_API_KEY'),
             temperature=0.0,
             max_tokens=100,
