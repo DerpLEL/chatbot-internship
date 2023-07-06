@@ -330,7 +330,7 @@ OUTPUT
             openai_api_type="azure",
             openai_api_base='https://openai-nois-intern.openai.azure.com/',
             openai_api_version="2023-03-15-preview",
-            deployment_name='gpt-35-turbo',
+            deployment_name='gpt-35-turbo-16k',
             openai_api_key=os.getenv('OPENAI_API_KEY'),
             temperature=0.5,
             max_tokens=400
