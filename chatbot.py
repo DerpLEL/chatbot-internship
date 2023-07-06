@@ -137,6 +137,7 @@ Assistant helps the company employees and users with their questions about the c
 1. Use the {lang} language to answer.
 2. Be brief but friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
 3. If the user greets you, respond accordingly.
+{identity}
 
 Sources:
 {summaries}
@@ -325,6 +326,7 @@ OUTPUT
         self.container_drink_fee_name = 'nois-drink-fee'
         self.container_client = blob_service_client.get_container_client(self.container_drink_fee_name)
         self.semantic = False
+        self.user = {}
 
         self.llm = AzureChatOpenAI(
             openai_api_type="azure",
@@ -531,7 +533,7 @@ OUTPUT
 
         try:
             response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(),
-                              'lang': lang}, return_only_outputs=False)
+                              'lang': lang, 'identity': ''}, return_only_outputs=False)
         except Exception as e:
             return {'output_text': f'Cannot generate response, error: {e}'}, doc
 
@@ -539,6 +541,8 @@ OUTPUT
         return response, doc
 
     def chat_private(self, query):
+        identity = f"The user talking to you is named {self.user['username']}, with mail {self.user['mail']}"
+
         label = self.classifier_chain({'question': query, 'context': self.get_history_as_txt()})['text']
         print(f"Label: {label}")
 
@@ -593,7 +597,7 @@ OUTPUT
 
         try:
             response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(),
-                              'lang': lang},
+                              'lang': lang, 'identity': identity},
                              return_only_outputs=False)
         except Exception as e:
             return {'output_text': f'Cannot generate response, error: {e}'}, doc

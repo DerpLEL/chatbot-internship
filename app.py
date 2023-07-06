@@ -73,9 +73,11 @@ def predict():
     response = {}
     if 'claims_challenge' in session['flow']:
         bot.private = False
+        bot.user = {"username": '', "mail": ''}
 
     else:
         bot.private = True
+        bot.user = {"username": session["user"]["name"], "mail": session["user"]["preferred_username"]}
 
     if text.lower() == "hist":
         bot.clear_history()
