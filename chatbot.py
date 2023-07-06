@@ -447,18 +447,17 @@ OUTPUT
             # res_combined = [[i['content'], i['@search.reranker_score'], i['metadata_storage_name']] for i in res1] + [
             #     [i['content'], i['@search.reranker_score'], i['metadata_storage_name']] for i in res2]
             # res_combined.sort(key=lambda x: x[1], reverse=True)
+            # res = []
+            #
+            # for i in res_combined:
+            #     temp = dict()
+            #     temp['content'] = i[0]
+            #     temp['@search.reranker_score'] = i[1]
+            #     temp['metadata_storage_name'] = i[2]
+            #
+            #     res.append(temp)
 
-            res_combined = [[i['content'], i['@search.reranker_score'], i['metadata_storage_name']] for i in res1]
-
-            res = []
-
-            for i in res_combined:
-                temp = dict()
-                temp['content'] = i[0]
-                temp['@search.reranker_score'] = i[1]
-                temp['metadata_storage_name'] = i[2]
-
-                res.append(temp)
+            res = res1
 
         doc_num = 1
         doc = []
