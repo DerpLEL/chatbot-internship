@@ -133,10 +133,12 @@ Output: (tiền +nước +tháng +04 |đã |đóng) | (April drink fee paid)'''
 Output: ("điều 7" + "chương II") | ("article 7" + "chapter II")'''
 
     chat_template = """<|im_start|>system
-Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. Your answer must adhere to the following criteria:
+Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. 
+Your answer must adhere to the following criteria:
 1. Use the {lang} language to answer.
 2. Be brief but friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
 3. If the user greets you, respond accordingly.
+
 {identity}
 
 Sources:
@@ -541,7 +543,7 @@ OUTPUT
         return response, doc
 
     def chat_private(self, query):
-        identity = f"The user talking to you is named {self.user['username']}, with mail {self.user['mail']}"
+        identity = f"The user talking to you is named {self.user['username']}, with email {self.user['mail']}."
 
         label = self.classifier_chain({'question': query, 'context': self.get_history_as_txt()})['text']
         print(f"Label: {label}")
