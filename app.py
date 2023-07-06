@@ -20,14 +20,15 @@ def index():
 def chat():
     msg = request.form["msg"]
     
-    text1 = msg
-    
-    text2 = msg
+    text1 = '<div>' + msg + '</div>'
+    image = """<img src="https://acschatbotnoisintern.blob.core.windows.net/fasf-images/2.3.1.2.step3.png?se=2023-07-06T04%3A17%3A54Z&sp=r&sv=2022-11-02&sr=b&sig=2mhW1K%2B45Id%2Bdlf3fX/aZVY0Ot5jG6exgxVZC6kdV9g%3D" alt="Example Image">"""
+    text2 = '<div>' + msg + '</div>'
+    print(text1 + text2)
     # Check if any of the form fields are None
     if text1 is None or text2 is None:
         return 'Missing form data'
     # Do something with the text and image data
-    return text1 + text2
+    return text1 + image + text2
 
 
 def get_Chat_response(text):
