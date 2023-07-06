@@ -134,7 +134,7 @@ Output: ("điều 7" + "chương II") | ("article 7" + "chapter II")'''
 
     chat_template = """<|im_start|>system
 Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. Your answer must adhere to the following criteria:
-1. Use the {lang} language to answer. 
+1. Use the {lang} language to answer.
 2. Be brief but friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
 3. If the user greets you, respond accordingly.
 
