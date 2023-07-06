@@ -431,22 +431,24 @@ OUTPUT
                 top=n
             )
 
-            translated_q = self.translate_chain({'question': q, 'context': self.get_history_as_txt()})['text']
-            print(f"Translated query: {translated_q}")
-            translated_lang = 'vi-VN' if lang == 'en-US' else 'en-US'
-            print(f"Translated semantic language: {translated_lang}")
+            # translated_q = self.translate_chain({'question': q, 'context': self.get_history_as_txt()})['text']
+            # print(f"Translated query: {translated_q}")
+            # translated_lang = 'vi-VN' if lang == 'en-US' else 'en-US'
+            # print(f"Translated semantic language: {translated_lang}")
+            #
+            # res2 = retriever.search(
+            #     search_text=translated_q,
+            #     query_type='semantic',
+            #     query_language=translated_lang,
+            #     semantic_configuration_name="default",
+            #     top=n
+            # )
+            #
+            # res_combined = [[i['content'], i['@search.reranker_score'], i['metadata_storage_name']] for i in res1] + [
+            #     [i['content'], i['@search.reranker_score'], i['metadata_storage_name']] for i in res2]
+            # res_combined.sort(key=lambda x: x[1], reverse=True)
 
-            res2 = retriever.search(
-                search_text=translated_q,
-                query_type='semantic',
-                query_language=translated_lang,
-                semantic_configuration_name="default",
-                top=n
-            )
-
-            res_combined = [[i['content'], i['@search.reranker_score'], i['metadata_storage_name']] for i in res1] + [
-                [i['content'], i['@search.reranker_score'], i['metadata_storage_name']] for i in res2]
-            res_combined.sort(key=lambda x: x[1], reverse=True)
+            res_combined = [[i['content'], i['@search.reranker_score'], i['metadata_storage_name']] for i in res1]
 
             res = []
 
