@@ -59,9 +59,11 @@ Search query:
 
     chat_template = """<|im_start|>system
 Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. Your answer must adhere to the following criteria:
+You must follow this rule:
+- If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese 
 - Be brief but friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
 - If the user greets you, respond accordingly.
-- If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese
+
 {user_info}
 
 Sources:
@@ -109,7 +111,7 @@ Sources:
 You must follow this rule:
 1. If user require count or ask how many, you must write pandas code for file csv. The output must be 1 line.
 2. Output just only code.
-3. Must NO COMMENT, NO RESULT
+3. Must NO COMMENT, NO RESULT like this "Here is the code to get the list of people who haven't paid for their water bills in May with only their name, email, and status:"
 For example:
 Input: Danh sách những người đã đóng tiền tháng 5
 Output: df[df['Tình trạng'] == Done]
@@ -190,7 +192,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             openai_api_type="azure",
             openai_api_base='https://openai-nois-intern.openai.azure.com/',
             openai_api_version="2023-03-15-preview",
-            deployment_name='test-1',
+            deployment_name='gpt-35-turbo-16k',
             openai_api_key='400568d9a16740b88aff437480544a39',
             temperature=0.5,
             max_tokens=400
@@ -200,7 +202,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             openai_api_type="azure",
             openai_api_base='https://openai-nois-intern.openai.azure.com/',
             openai_api_version="2023-03-15-preview",
-            deployment_name='test-1',
+            deployment_name='gpt-35-turbo-16k',
             openai_api_key='400568d9a16740b88aff437480544a39',
             temperature=0.7,
             max_tokens=600
@@ -210,7 +212,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             openai_api_type="azure",
             openai_api_base='https://openai-nois-intern.openai.azure.com/',
             openai_api_version="2023-03-15-preview",
-            deployment_name='test-1',
+            deployment_name='gpt-35-turbo-16k',
             openai_api_key='400568d9a16740b88aff437480544a39',
             temperature=0.0,
             max_tokens=600
@@ -260,7 +262,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
     def get_document(self, query, retriever):
         # Get top 4 documents
-        res = retriever.search(search_text=query, top=3)
+        res = retriever.search(search_text=query, top=2)
 
         doc_num = 1
         doc = []
@@ -344,8 +346,6 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             input_pandas = self.drink_chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()}, return_only_outputs=False)
             blob_name = doc[0].metadata['metadata_storage_name']
         
-
-
             print(input_pandas['output_text'])
             temp_result = self.excel_drink_preprocess(input_pandas['output_text'], blob_name, doc)
             print(temp_result)
@@ -401,13 +401,13 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         sas_url = 'https://' + account_name+'.blob.core.windows.net/' + self.container_drink_fee_name + '/' + file_name + '?' + sas_i
 
         df = pd.read_excel(sas_url)
-        
         doc[0].page_content = df
         header = self.header_drink_chain({'input_documents': doc, 'question': 'What is Header of this file?', 'context': ''}, return_only_outputs=False)
         old_header = list(df.columns)
         header_list = ast.literal_eval(header['output_text'])
         target_rows = df[(df[old_header[0]] == header_list[0]) & (df[old_header[1]] == header_list[1]) & (df[old_header[3]] == header_list[3])]
         df = pd.read_excel(sas_url, skiprows = target_rows.index[0] + 1)
+        print(df)
 
         last_row_index = df.index[df.isnull().all(axis=1)][0]
         df = df.iloc[:last_row_index]
