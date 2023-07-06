@@ -577,7 +577,7 @@ OUTPUT
             print(result_doc)
 
             if """count""" not in input_pandas['output_text']:
-                self.add_to_history(query, "")
+                self.add_to_history(query, str(temp_result))
                 return {'output_text': str(temp_result)}, doc
 
             doc[0].page_content = result_doc
