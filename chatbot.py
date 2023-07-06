@@ -56,18 +56,19 @@ Question:
 Search query:
 """
 
-    keyword_templ_backup2 = """Below is a history of the conversation so far, and a new question asked by the user that needs to be answered by querying relevant company documents.
-Generate a search query along based on the conversation and the new question.
-Replace AND with + and OR with |. 
-Output query must be in both English and Vietnamese and MUST strictly follow this format: input:<Question language>, (<Vietnamese queries>) | (<English queries>).
-Do not put queries outside of ().
-Examples are provided down below.
+    keyword_templ = """Below is a history of the conversation so far, and a new question asked by the user that needs to be answered by querying relevant company documents.
+Generate a search query based on the conversation and the new question. Your output must follow these rules:
+- Replace AND with + and OR with |. 
+- Output queries must be in both English and Vietnamese and MUST strictly follow this format: input:<Question language>, (<Vietnamese queries>) | (<English queries>).
+
 
 Examples:
 Input: Ai là giám đốc điều hành của NOIS?
 Ouput: input:Vietnamese, (giám đốc điều hành NOIS) | (NOIS managing director)
 Input: Số người chưa đóng tiền nước tháng 5?
 Output: input:Vietnamese, (tiền nước tháng 05) | (May drink fee)
+Input: Who hasn't paid May drink fee?
+Output: input:English, (tiền nước tháng 05) | (May drink fee)
 Input: Danh sách người đóng tiền nước tháng 3?
 Output: input:Vietnamese, (tiền nước tháng 03) | (March drink fee)
 Input: Was Pepsico a customer of New Ocean?
@@ -85,7 +86,7 @@ Question:
 Search query:
 """
 
-    keyword_templ = """Below is a history of the conversation so far, and a new question asked by the user that needs to be answered by querying relevant company documents.
+    keyword_templ_backup2 = """Below is a history of the conversation so far, and a new question asked by the user that needs to be answered by querying relevant company documents.
 Generate a search query along based on the conversation and the new question.
 Output query MUST strictly follow this format: input:<Question language>, <Queries>.
 Examples are provided down below.
@@ -264,7 +265,7 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
-    header_templ_drink_fee = """<|im_start|>system
+    header_templ_drink_fee_backup = """<|im_start|>system
 Sources:
 {summaries}
 
@@ -292,6 +293,29 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 {question}
 <|im_end|>
 <|im_start|>assistant
+"""
+
+    header_templ_drink_fee = """Below is a excel file in text form, output the header of the given file.
+Your output header must follow these rules:
+1. Your answer is in list type which includes all header of that file.
+2. DO NOT output anything else other than the list of headers.
+
+EXAMPLE
+- Input:
+BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed: 3 Unnamed: 4 Unnamed: 5 Unnamed: 6 Unnamed: 7 Unnamed: 8
+0 STT Email FullName April Total Thực thu Note Tình trạng NaN NaN
+1 1 hung.bui@nois.vn BÙI TUẤN HƯNG 78200 78200 NaN Done NaN NaN
+2 2 hiep.dang@nois.vn ĐẶNG DUY HIỆP 30700 30700 NaN Done NaN NaN
+3 3 tai.dang@nois.vn ĐẶNG HỮU TÀI 22500 22500 NaN Done NaN NaN
+4 4 sang.dao@nois.vn ĐÀO MINH SÁNG 5000 NaN NaN NaN NaN NaN
+5 5 nam.do@nois.vn ĐỖ NGỌC NAM 6500 6500 NaN Done NaN NaN
+- Output:
+['STT', 'Email', 'FullName', 'April Total', 'Thực thu', 'Note', 'Tình trạng', 'NaN', 'NaN']
+
+EXCEL FILE
+{summaries}
+
+OUTPUT
 """
 
     def __init__(self):
@@ -383,7 +407,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
         self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
         self.translate_chain = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.translate_template))
-        self.header_drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff",
+        self.header_drink_chain = load_qa_with_sources_chain(llm=self.llm3, chain_type="stuff",
                                                              prompt=PromptTemplate.from_template(
                                                                     self.header_templ_drink_fee))
 
@@ -589,19 +613,25 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         sas_url = 'https://' + account_name + '.blob.core.windows.net/' + self.container_drink_fee_name + '/' + file_name + '?' + sas_i
 
         df = pd.read_excel(sas_url)
+        # print(df)
 
         doc[0].page_content = df
 
         header = self.header_drink_chain(
             {'input_documents': doc, 'question': 'What is Header of this file?', 'context': ''},
             return_only_outputs=False)
+        # print(header['output_text'])
 
-        old_header = list(df.columns)
+        old_header = df.columns.values
+        print(f"Old headers: {old_header}")
 
         header_list = ast.literal_eval(header['output_text'])
+        print(header_list)
 
-        target_rows = df[(df[old_header[0]] == header_list[0]) & (df[old_header[1]] == header_list[1]) & (
-                    df[old_header[3]] == header_list[3])]
+        # target_rows = df[(df[old_header[0]] == header_list[0]) & (df[old_header[1]] == header_list[1]) & (
+        #             df[old_header[3]] == header_list[3])]
+        target_rows = df[df[old_header[0]] == header_list[0]]
+        # print(f"Target row: {target_rows}")
 
         df = pd.read_excel(sas_url, skiprows=target_rows.index[0] + 1)
         # last_row_index = df.index[df.isnull().all(axis=1)][0]
