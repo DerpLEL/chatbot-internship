@@ -19,8 +19,15 @@ def index():
 @app.route("/get", methods=["GET", "POST"])
 def chat():
     msg = request.form["msg"]
-    input = msg
-    return get_Chat_response(input)
+    
+    text1 = msg
+    
+    text2 = msg
+    # Check if any of the form fields are None
+    if text1 is None or text2 is None:
+        return 'Missing form data'
+    # Do something with the text and image data
+    return text1 + text2
 
 
 def get_Chat_response(text):
