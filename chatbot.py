@@ -89,12 +89,15 @@ Chat history:{context}
 
     fasf_template = """<|im_start|>system
 Assistant helps the company employees and users with their questions about FASF application.
-You must follow this rule:
-- The answer must be in Vietnamese
-- All strings that start with "<" and end with ">" must be not changed.
-- All strings that start with "<" and end with ">" must be in the answer, in the same position in the original document.
-- Be brief but friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
+You are a diligent and meticulous Assistant, so you must understand and follow this rule:
+- The output must be in Vietnamese
+- All strings that start with "<" and end with ">" MUST be maintained whether the output is long or short.
+- All strings that start with "<" and end with ">" MUST be in the output, in the same position in the original document.
+- Be brief but friendly in your outputs. You may use the provided sources to help output the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
 - If the user greets you, respond accordingly.
+- If you have to list step of a process, you MUST output with "Bước" before number of step
+For example: Bước 1:...
+             Bước 2:...
 
 {user_info}
 
@@ -130,6 +133,30 @@ Input: Dịch vụ của NOIS là gì?
 Output: other
 Input: What is FASF?
 Output: other
+<|im_end|>
+
+Input: {question}
+<|im_start|>assistant
+Output:"""
+
+    classifier_fasf = """<|im_start|>system
+Given a sentence, assistant will determine if the sentence belongs in 1 of 2 categories, which are:
+- general
+- specific
+Do not answer the question, only output the appropriate category.
+EXAMPLE:
+Input_1: các bước cập nhật user trong hệ thống FASF?
+Output_1: general
+Input_2: quy trình cập nhật user trong hệ thống FASF?
+Output_2: general
+Input_2: cập nhật user trong hệ thống FASF?
+Output_2: general
+Input_3: bước 3 của cập nhật user trong hệ thống FASF?
+Output_3: specific
+Input_4: tôi xong bước 2 rồi, tiếp đến tôi làm gì
+Output_4: specific
+Input_5: nhóm quyền log in có nhánh cha gì
+Output_5: specific
 <|im_end|>
 
 Input: {question}
@@ -313,6 +340,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
         self.header_drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.header_templ_drink_fee))
         
+        self.fasf_classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_fasf))
         self.fasf_chain = load_qa_with_sources_chain(llm=self.llm, chain_type="stuff", prompt=PromptTemplate.from_template(self.fasf_template))
         self.text_fasf_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
 
@@ -365,40 +393,52 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         return self.chat_fasf(query)
     
     def chat_fasf(self, query):
-        label = self.classifier_chain(query)['text']
-
-        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
-        print(keywords)
-
+        label = self.fasf_classifier_chain(query)['text']
+        print(label)
+        # keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
+       
         chain = self.fasf_chain
+        doc = self.get_document(query, self.retriever_text_fasf)[:1]
 
         response = """"""
-        doc = self.get_document(query, self.retriever_text_fasf)[:1]
-        images = re.findall(r'<.*?>', doc[0].page_content)
+        temp_response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(),
+                    'user_info': ''},
+                             return_only_outputs=False)
 
-        for line in doc[0].page_content.split('\n'):
-            if any(search_string in line for search_string in images):
-                filename = line[line.index('<')+1:line.index('>')] + ".png"
-                link_image = self.get_image(filename, "fasf-images")
+        # images = re.findall(r'<.*?>', doc[0].page_content)
+        images = re.findall(r'<.*?>',  doc[0].page_content) 
+        print(images)
+        print(doc)
 
-                with urllib.request.urlopen(link_image) as url:
-                    f = io.BytesIO(url.read())
+        if label == "general":
+            for line in doc[0].page_content.split('\n'):
+                print(line)
+                if any(search_string in line for search_string in images):
+                    filename = line[line.index('<')+1:line.index('>')] + ".png"
+                    link_image = self.get_image(filename, "fasf-images")
 
-                img = Image.open(f)
+                    with urllib.request.urlopen(link_image) as url:
+                        f = io.BytesIO(url.read())
 
-                # Get the size of the image
-                w, h = img.size
+                    img = Image.open(f)
 
-                # if wanted to adjust the sized wanted to limit change here
-                if w > 500 and h >500:
-                    w /= 2
-                    h /= 2 
+                    # Get the size of the image
+                    w, h = img.size
 
-                response += f"""<img src="{link_image}" alt="Example Image" style="width: {w}px; height: {h}px;">"""
-            else:
-                response += '<div>' + line + '</div>' 
+                    # if wanted to adjust the sized wanted to limit change here
+                    if w > 500 and h >500:
+                        w /= 2
+                        h /= 2 
 
-
+                    response += f"""<img src="{link_image}" alt="Example Image" style="width: {w}px; height: {h}px; border: 3px solid yellow;">"""
+                else:
+                    response += '<div>' + line + '</div>'
+             
+        else:
+            for line in temp_response['output_text'].split('\n'):
+                print(line)
+                response += '<div>' + line + '</div>'
+                    
         return response
 
     def chat_public(self, query):
