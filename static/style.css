@@ -10,11 +10,15 @@ body,html{
 .chat{
 	margin-top: auto;
 	margin-bottom: auto;
+	margin-right: auto;
 }
 .card{
-	height: 500px;
+	height: 650px;	
+	width: 1200px;
 	border-radius: 15px !important;
 	background-color: rgba(0,0,0,0.4) !important;
+
+
 }
 .contacts_body{
 	padding:  0.75rem 0 !important;
