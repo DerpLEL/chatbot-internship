@@ -1,0 +1,8 @@
+BASE URL: https://hrm-nois-fake.azurewebsites.net/
+
+HRM system
+API DOCUMENTATION
+Endpoints:
+- /api/User: does not accept any input. Use GET with this endpoint to get a list of users within the HRM system.
+- /api/User/<id>: accepts an ID string as a path variable. Use GET with this endpoint along with a user's ID to get data of a specific user.
+- /api/LeaveApplication/<userId>: accepts an ID string as a path variable. Use GET with this endpoint along with a user's ID to get all leave applications submitted by a user.
