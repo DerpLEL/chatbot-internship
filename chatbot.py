@@ -384,7 +384,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
                     w, h = img.size
 
                     # if wanted to adjust the sized wanted to limit change here
-                    if w > 1000 or h >1000:
+                    if w > 900 or h >900:
                         w /= 2
                         h /= 2 
 
