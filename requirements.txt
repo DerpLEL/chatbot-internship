@@ -13,3 +13,6 @@ langchain==0.0.229
 Pillow==9.5.0
 torch==2.0.1
 transformers==4.30.2
+openai==0.27.8
+openapi-schema-pydantic==1.2.4
+openpyxl==3.1.2
