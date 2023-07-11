@@ -1,7 +1,5 @@
-azure_storage==0.37.0
 Flask==2.2.5
 langchain==0.0.229
 Pillow==9.5.0
-Pillow==10.0.0
 torch==2.0.1
 transformers==4.30.2
