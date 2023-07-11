@@ -60,4 +60,4 @@ jobs:
         with:
           app-name: 'usecase3-intern'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_335E984693884D12AD45B09F0BB404AC }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_18410D1A78914B49B84C80020B91D3DD }}
