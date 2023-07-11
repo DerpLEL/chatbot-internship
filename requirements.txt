@@ -1,3 +1,4 @@
+azure==5.0.0
 Flask==2.2.5
 langchain==0.0.229
 Pillow==9.5.0
