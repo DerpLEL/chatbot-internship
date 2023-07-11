@@ -1,4 +1,7 @@
-azure==5.0.0
+azure-core==1.27.1
+azure-search==1.0.0b2
+azure-search-documents==11.4.0b3
+azure-storage-blob==12.16.0
 Flask==2.2.5
 langchain==0.0.229
 Pillow==9.5.0
