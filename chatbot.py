@@ -229,8 +229,8 @@ Output:"""
         # keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
         chain = self.fasf_chain
         doc = self.get_document(query, self.retriever_text_fasf)
-        print(doc)
-        print(label)
+        # print(doc)
+        # print(label)
         response = """"""
         try:
             if label == "yes":
