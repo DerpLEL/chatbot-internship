@@ -9,11 +9,24 @@ from langchain.callbacks.manager import (
     CallbackManagerForToolRun,
 )
 from langchain.tools.base import BaseTool
+import requests
 
 
 def _print_func(text: str) -> None:
     print("\n")
     print(text)
+
+
+def chat_input():
+    res = ""
+
+    while not res:
+        reply = requests.get("http://localhost:5000/user").json()
+        print(f"Reply: {reply}")
+        res = reply['msg']
+
+    print(f"Message: {res} received.")
+    return res
 
 
 class HumanInputRun(BaseTool):
@@ -26,7 +39,7 @@ class HumanInputRun(BaseTool):
         "The input should be a question for the human."
     )
     prompt_func: Callable[[str], None] = Field(default_factory=lambda: _print_func)
-    input_func: Callable = Field(default_factory=lambda: input)
+    input_func: Callable = None
 
     def _run(
         self,
@@ -35,7 +48,7 @@ class HumanInputRun(BaseTool):
     ) -> str:
         """Use the Human input tool."""
         self.prompt_func(query)
-        return self.input_func()
+        return chat_input()
 
     async def _arun(
         self,

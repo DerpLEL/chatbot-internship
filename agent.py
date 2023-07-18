@@ -22,6 +22,7 @@ import numpy as np
 from langchain.callbacks.base import BaseCallbackHandler
 from typing import Any, Dict, List
 import requests
+from customHuman import *
 
 
 llm3 = AzureChatOpenAI(
@@ -261,6 +262,13 @@ def submitLeaveApplication(args: str):
     return reply
 
 
+def datetime_calc(query: str):
+    try:
+        return eval(query)
+    except Exception:
+        return exec(query)
+
+
 tool1 = [
     Tool(
         name='HRM get user data',
@@ -285,10 +293,12 @@ tool1 = [
     #         func=nothing,
     #         description='useful for filling in Action: after Thought: if the task can\'t be done or the task is cancelled.'
     #     ),
+
+    HumanInputRun()
 ]
 
-human = load_tools(['human'])
-tool1.extend(human)
+# human = load_tools(['human'])
+# tool1.extend(human)
 
 prefix1 = f"""You are an intelligent assistant helping user find his/her information in HRM system by using tool. 
 The user chatting with you is {get_userName(email)} with the email {email}. If question/data are not about them, tell them you don't have access.
@@ -355,6 +365,165 @@ prompt1 = ZeroShotAgent.create_prompt(
     input_variables=["input", "context", "agent_scratchpad"],
 )
 
+tool2 = [
+    Tool(
+        name='HRM get userId',
+        func=get_userId,
+        description='useful for getting the user\'s id by user\'s email. No need to input'
+    ),
+
+    Tool(
+        name='HRM get by name',
+        func=check_manager_name,
+        description='useful for getting the manager\'s id by manager\'s name. Input is a manager\'s name.'
+    ),
+
+    Tool(
+        name='HRM submit leave',
+        func=submitLeaveApplication,
+        description=f'''useful for submitting a leave applications for current user.
+Input of this tool must include 4 parameters concatenated into a string separated by a comma and space, which are: 
+1. user's id: you get by the tool HRM get userId. 
+2. the id of manager who approve user's application: firstly, ask user the name of the manager and then use the tool HRM get by name to find manager's id.
+3. start date: ask the user when they want to start their leave and infer the date from the user's answer.
+4. end date: ask the user when they want to end their leave and infer the date from the user's answer.'''
+    ),
+    #     Tool(
+    #         name='End conversation',
+    #         func=end_convo,
+    #         description="useful for ending a chat conversation at the user's request or when you have accomplished your task."
+    #     )
+
+    Tool(
+        name='Calculate time',
+        func=datetime_calc,
+        description='useful for calculating dates. Input is a python code utilizing the datetime library.'
+    ),
+
+    Tool(
+        name='HRM get applications',
+        func=get_leave_applications,
+        description='useful for getting leave applications of the current user, mostly for deletion tasks. Input is a "None" string.'
+    ),
+
+    Tool(
+        name='HRM delete leave application',
+        func=delete_leave_applications,
+        description='useful for deleting a specific leave application. Input is the ID of the leave application. Always run the HRM get applications first and ask the user which application they want to delete.'
+    ),
+
+    HumanInputRun(),
+]
+
+# human = load_tools(['human'])
+# tool2.extend(human)
+
+f'''If you cannot answer by using only 1 tool, try using other provided tools.
+If you cannot get any results from tools, say you don't know.
+Do not use any other sources other than the ones you obtain from tools.
+Suppose the current date is {date} (Year-Month-Day).'''
+
+date2 = dtime.strftime(dtime.today(), "%A %Y-%m-%d")
+print(date2)
+# date2 = "Friday, 2023-12-29"
+
+prefix2 = f"""You are an intelligent assistant helping user submit or delete leave applications through the HRM system using tools. 
+The user chatting with you has the email: {email}. 
+Suppose the current date is {date2} (Weekday Year-Month-Day).
+You have access to the following tools:"""
+
+temp2_backup = f'''
+
+Example:  
+Question: I'd like to submit leave application.
+Thought: The user chatting with you own the email {email}.
+Thought: Find the user's id by {email}.
+Action: HRM get userId
+Action Input: {email}
+Observation: {get_userId(email)}
+
+Thought: After having user's id, ask the user for the manager's name.
+Action: human
+Action Input: What is the name of your manager?
+Observation: lý minh quân
+Thought: find the manager's id by manager's name.
+Action: HRM get by name
+Action Input: lý minh quân
+Observation: 139
+
+Thought: Ask user the date of starting leave (according the format Year-Month-Day)?
+Action: human
+Action Inpunt: Let me know when do you want to start your leave?
+Observation: 2023-07-17
+
+Thought: Ask user the date of ending leave (according the format Year-Month-Day)?
+Action: human
+Action Input: How about the date of ending leave?
+Observation: 2023-07-18
+
+Thought: Got all details for submitting.
+Action: HRM submit leave
+Action Input: {get_userId(email)}, 139, 2023-07-17, 2023-07-18
+Observation: Successfully submitted.
+Thought: Leave application is submitted.
+Final Answer: Leave application is submitted.
+
+'''
+
+temp2 = f'''
+
+Example:  
+Question: I'd like to submit leave application.
+Thought: The user chatting with you own the email {email}.
+Thought: Find the user's id by {email}.
+Action: HRM get userId
+Action Input: {email}
+Observation: {get_userId(email)}
+
+Thought: After having user's id, ask the user for the manager's name.
+Action: human
+Action Input: What is the name of your manager?
+Observation: lý minh quân
+Thought: find the manager's id by manager's name.
+Action: HRM get by name
+Action Input: lý minh quân
+Observation: 139
+
+Thought: Ask user the date of starting leave.
+Action: human
+Action Input: Let me know when do you want to start your leave?
+Observation: 2023-07-17
+
+Thought: Ask user the date of ending leave.
+Action: human
+Action Input: How about the date of ending leave?
+Observation: 2023-07-18
+
+Thought: Got all details for submitting.
+Action: HRM submit leave
+Action Input: {get_userId(email)}, 139, 2023-07-17, 2023-07-18
+Observation: OK
+Thought: Leave application is submitted.
+Final Answer: Leave application is submitted.
+
+'''
+
+suffix2 = """Begin!
+
+{context}
+Question: {input}
+{agent_scratchpad} 
+"""
+
+suffix2 = temp2 + suffix2
+
+prompt2 = ZeroShotAgent.create_prompt(
+    tool2,
+    prefix=prefix2,
+    suffix=suffix2,
+    input_variables=["input", "context", "agent_scratchpad"],
+)
+
 
 class MyCustomHandler(BaseCallbackHandler):
     def on_tool_start(
@@ -362,7 +531,7 @@ class MyCustomHandler(BaseCallbackHandler):
     ) -> Any:
         """Run when tool starts running."""
         if serialized['name'] == 'human':
-            reply = requests.post("http://localhost:5000/agent", data={"msg": "agent_msg:" + input_str})
+            reply = requests.post("http://localhost:5000/agent", data={"msg": input_str})
             print("\n")
             print(reply.text)
             # print(input_str)
@@ -370,12 +539,17 @@ class MyCustomHandler(BaseCallbackHandler):
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
         """Run on agent end."""
         reply = requests.post("http://localhost:5000/agent",
-                              data={"msg": "agent_msg:" + finish.return_values['output']})
+                              data={"msg": finish.return_values['output']})
+
+    # def on_tool_end(self, output: str, **kwargs: Any) -> Any:
+    #     """Run when tool ends running."""
+    #     reply = requests.post("http://localhost:5000/agent",
+    #                           data={"msg": output})
+
 
 class Agent:
     def __init__(self):
         self.llm_chain1 = LLMChain(llm=llm3, prompt=prompt1)
-        cb = MyCustomHandler()
 
         self.agent1 = ZeroShotAgent(llm_chain=self.llm_chain1, tools=tool1, verbose=True,
                                stop=["\nObservation:", "<|im_end|>", "<|im_sep|>"])
@@ -388,7 +562,21 @@ class Agent:
             memory=self.history1
         )
 
+        self.llm_chain2 = LLMChain(llm=llm3, prompt=prompt2)
+        self.history2 = ConversationBufferWindowMemory(k=3, memory_key="context", human_prefix='User', ai_prefix='Assistant')
+
+        self.agent2 = ZeroShotAgent(llm_chain=self.llm_chain2, tools=tool2, verbose=True,
+                               stop=["\nObservation:", "<|im_end|>", "<|im_sep|>"])
+        self.agent_chain2 = AgentExecutor.from_agent_and_tools(
+            agent=self.agent2,
+            tools=tool2,
+            verbose=True,
+            handle_parsing_errors="True",
+            memory=self.history2
+        )
+
     def run1(self, query):
         return self.agent_chain1.run(input=query, callbacks=[MyCustomHandler()])
 
-
+    def run2(self, query):
+        return self.agent_chain2.run(input=query, callbacks=[MyCustomHandler()])

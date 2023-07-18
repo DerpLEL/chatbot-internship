@@ -10,7 +10,7 @@ bot = chatAI()
 
 app = Flask(__name__)
 
-hist = ""
+user_msg = ""
 
 bot_message = ""
 
@@ -19,14 +19,26 @@ def index():
     return render_template('chat.html')
 
 
-@app.route("/get", methods=["GET", "POST"])
-async def chat():
-    global agent_session
+def get_bot_response():
     global bot_message
+
+    while not bot_message:
+        pass
+
+    msg = bot_message
+    bot_message = ""
+
+    return msg
+
+
+@app.route("/get", methods=["GET", "POST"])
+def chat():
+    global agent_session
+    global user_msg
     msg = request.form["msg"]
 
     if msg.strip().lower() == "agent":
-        return bot.toggle_agent()
+        return bot.toggle_agent1()
 
     # Kickstart agent conversation
     if bot.use_agent and not agent_session:
@@ -34,27 +46,30 @@ async def chat():
         t1 = threading.Thread(target=run_agent, args=(msg,), daemon=True)
         t1.start()
 
-        while not bot_message:
-            pass
+        # while not bot_message:
+        #     pass
+        #
+        # new_msg = bot_message.split(":")[1]
+        # bot_message = ""
 
-        new_msg = bot_message.split(":")[1]
-        bot_message = ""
+        new_msg = get_bot_response()
 
         return new_msg
 
     # Maintain agent conversation, as long as agent_session is true
     if agent_session:
-        while not bot_message:
-            pass
+        print(f"Still in agent session, current user message: {msg}")
+        user_msg = msg
 
-        new_msg = bot_message.split(":")[1]
-        bot_message = ""
+        # while not bot_message:
+        #     pass
+        #
+        # new_msg = bot_message.split(":")[1]
+        # bot_message = ""
+
+        new_msg = get_bot_response()
 
         return new_msg
-
-    # if msg.startswith("agent_msg"):
-    #     new_msg = msg.split(":")[1]
-    #     return msg
 
     response = bot.chat(msg)
     
@@ -72,9 +87,9 @@ async def chat():
 
 
 def run_agent(query):
-    bot.agent.run1(query)
-
     global agent_session
+    bot.agent.run2(query)
+
     agent_session = False
     return
 
@@ -85,7 +100,15 @@ def get_message_agent():
     global bot_message
     bot_message = msg
 
-    return jsonify({"message": "OK"})
+    return jsonify({"msg": "OK"})
+
+@app.route("/user", methods=["GET"])
+def get_message_user():
+    global user_msg
+    msg = user_msg
+    user_msg = ""
+
+    return jsonify({"msg": msg})
 
 
 if __name__ == '__main__':

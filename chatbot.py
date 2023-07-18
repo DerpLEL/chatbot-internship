@@ -334,9 +334,6 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
-
-
-
     def __init__(self):
         self.use_agent = False
         self.agent = Agent()
@@ -399,7 +396,7 @@ Output:"""
     def chat(self, query):
         return self.chat_hrm(query)
 
-    def toggle_agent(self):
+    def toggle_agent1(self):
         if self.use_agent:
             self.use_agent = False
             return "Disabled agent."
