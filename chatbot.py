@@ -9,6 +9,8 @@ from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPerm
 from datetime import datetime, timedelta
 
 import re
+import requests
+import numpy as np
 
 # image processing
 from PIL import Image
@@ -16,7 +18,7 @@ import urllib.request
 import io
 
 fasf_text_index = "fasf-text-01-index"
-fasf_images_index = "fasf-images-index" 
+fasf_images_index = "fasf-images-index"
 
 search_endpoint = 'https://search-service01.search.windows.net'
 search_key = '73Swa5YqUR5IRMwUIqOH6ww2YBm3SveLv7rDmZVXtIAzSeBjEQe9'
@@ -27,15 +29,15 @@ search_key = '73Swa5YqUR5IRMwUIqOH6ww2YBm3SveLv7rDmZVXtIAzSeBjEQe9'
 account_name = 'acschatbotnoisintern'
 account_key = 'ohteFF8/tuPx3K0xtA/oIqXSKpx/MTnM4Ia0CbvLXJT1l0KJajB3zvX8A/DsNE9wm3gUq1TDlwve+AStS3nB0A=='
 storage_connection_string = 'DefaultEndpointsProtocol=https;AccountName=acschatbotnoisintern;AccountKey=ohteFF8/tuPx3K0xtA/oIqXSKpx/MTnM4Ia0CbvLXJT1l0KJajB3zvX8A/DsNE9wm3gUq1TDlwve+AStS3nB0A==;EndpointSuffix=core.windows.net'
-blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
 
 class chatAI:
     chat_template = """<|im_start|>system
-Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. Your answer must adhere to the following criteria:
+Assistant helps the company employees. Your answer must adhere to the following criteria:
 You must follow this rule:
-- If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese 
+- Answer in Vietnamese 
 - Be brief but friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
 - If the user greets you, respond accordingly.
+- If there is full information in the dataset, Your output will thank the application and ask the user if there are any additional services to use
 
 {user_info}
 
@@ -123,16 +125,29 @@ Output:"""
 Given a sentence and a conversation, assistant will extract keywords based on the conversation and the sentence.
 Your output will be on one line, separated by commas. Do not duplicate keywords.
 Assume the context is about the companies unless specified otherwise. Only return the keywords, do not output anything else.
+Output must have 2 data fields: 'time', 'cause'. If any field is missing, the value of that data field is ''
 
 EXAMPLE
-Input: tôi muốn nghỉ ngày mai vì đi khám bệnh
-Output: 'ngày mai','đi khám bệnh'
-Input: ngày mốt tôi nghỉ để đi học
-Output: 'ngày mốt','đi học'
+Input: buổi sáng
+Output: 'sáng',''
+Input: buổi chiều
+Output: 'chiều',''
+Input: nguyên ngày
+Output: 'cả nyày',''
+Input: với lí do đi công tác
+Output: '','đi công tác'
+Input: nhà có việc gấp
+Output: '','nhà có việc gấp'
+Input: vì phải đi đám cưới
+Output: '','phải đi đám cưới'
+Input: tôi muốn nghỉ ngày mai cả ngày vì đi khám bệnh
+Output: 'ngày mai cả ngày','đi khám bệnh'
+Input: nguyên ngày mốt tôi nghỉ để đi học
+Output: 'nguyên ngày mốt','đi học'
 Input: thứ 5 tuần sau tôi muốn nghỉ về quê
 Output: 'thứ 5 tuần sau','về quê'
-Input: ngày 3 tháng sau tôi muốn nghỉ để đi công tác
-Output: 'ngày 3 tháng sau','đi công tác'
+Input: cả ngày 3 tháng sau tôi muốn nghỉ để đi công tác
+Output: 'cả ngày 3 tháng sau','đi công tác'
 Input: tôi muốn nghỉ 2 ngày, ngày mai và ngày mốt
 Output: 'ngày mai và ngày mốt',''
 Input: tôi muốn nghỉ 3 ngày, ngày 17,18,19 vì lí do nhà có việc gấp
@@ -202,6 +217,7 @@ Output:"""
 Given a sentence and a conversation, assistant will extract keywords based on the conversation and the sentence.
 Your output will be on one line, separated by commas. Do not duplicate keywords.
 Assume the context is about the companies unless specified otherwise. Only return the keywords, do not output anything else.
+You should note that: "tomorrow" and "the day after tomorrow" are 2 different days
 The first keyword has values of begin date.
 The second keyword has values of end date.
 
@@ -333,6 +349,65 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
+    keyword_session = """<|im_start|>system
+Given a sentence and a conversation, assistant will extract keywords based on the conversation and the sentence.
+Your output will be on one line, separated by commas. Do not duplicate keywords.
+Assume the context is about the companies unless specified otherwise. Only return the keywords, do not output anything else.
+Output must have 2 data fields: 'session', 'date'. If any field is missing, the value of that data field is ''
+
+The first keyword has only values: '', 'sáng', 'chiều', 'cả ngày'
+If there is not any value of date, the second keyword has values: '','ngày mai','ngày mốt',...
+In Vietnamese, "all day" means "cả ngày", "nguyên ngày" or "từ sáng đến chiều". So if have any string like "cả ngày", "nguyên ngày" or "từ sáng đến chiều" in the input, the first keyword has value 'cả ngày'
+
+EXAMPLE
+Input: buổi 
+Output: '',''
+Input: buổi sáng
+Output: 'sáng',''
+Input: buổi chiều
+Output: 'chiều',''
+Input: nguyên ngày
+Output: 'cả nyày',''
+Input: ngày mai
+Output: '','ngày mai'
+Input: nguyên ngày mốt
+Output: 'cả ngày', 'ngày mốt'
+Input: thứ 5 tuần sau
+Output: '','thứ 5 tuần sau'
+Input: sáng mai
+Output: 'sáng','mai'
+Input: chiều thứ 6 tuần sau
+Output: 'chiều','thứ 6 tuần sau'
+Input: cả ngày thứ 3 2 tuần nữa tuần sau
+Output: 'cả ngày','thứ 3 2 tuần nữa tuần sau'
+Input: sáng 20/07/2023
+Output: 'sáng','20/07/2023'
+Input: chiều ngày 3 tháng sau
+Output: 'chiều','ngày 3 tháng sau'
+Input: thứ 2 cả ngày 
+Output: 'cả ngày','thứ 2'
+
+
+<|im_end|>
+{context}
+<|im_start|>user
+Input: {question}
+<|im_end|>
+<|im_start|>assistant
+Output:"""
+
+
+    ask_filling = """<|im_start|>system
+Given a sentence and a conversation, assistant will extract keywords based on the conversation and the sentence.
+
+
+<|im_end|>
+{context}
+<|im_start|>user
+Input: {question}
+<|im_end|>
+<|im_start|>assistant
+Output:"""
 
 
 
@@ -340,11 +415,13 @@ Output:"""
         self.history_hrm = []
         self.today_var = datetime.now().date()
         self.user = {"username":' ', "mail":' '}
+        self.conversation_type = []
         self.leave_application_form = {
             'start_date': '',
             'end_date': '',
             'duration': 0,
-            'note': ''
+            'note': '',
+            'periodType': -1,
         }
 
         self.llm = AzureChatOpenAI(
@@ -388,59 +465,133 @@ Output:"""
         self.chain_bANDe= LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_bANDe))
 
         #function check specific date
-        specific_date_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.check_specific_date))
-        chain_specific_weekday = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_specific_weekday))
-        chain_specific_date = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_specific_date))
+        self.specific_date_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.check_specific_date))
+        self.chain_specific_weekday = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_specific_weekday))
+        self.chain_specific_date = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_specific_date))
 
-
+        #function check 1 day
+        self.chain_session = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_session))
 
 
     def chat(self, query):
         return self.chat_hrm(query)
-    
+
     def chat_hrm(self, query):
-        label = self.classifier_hrm_chain(query)['text']  
-        response = """"""
+        if not self.conversation_type:
+            label = self.classifier_hrm_chain(query)['text']
+        else:
+            label = self.conversation_type[0]
+
+        response = """thien"""
         try:
             if label == "User":
                 response = label
             elif label == "LeaveApplication":
-                leave_application_type = self.leave_application_chain(query)['text']
+                if not self.conversation_type:
+                    leave_application_type = self.leave_application_chain(query)['text']
+                else:
+                    leave_application_type = self.conversation_type[1]
+
                 if leave_application_type == 'get':
                     pass
                 elif leave_application_type == 'post':
+                    self.conversation_type = ["LeaveApplication","post"]
                     keywords = self.chain_leave_application({'question': query, 'context':''})['text']
                     values_keywords = keywords.split(",")
                     time = values_keywords[0].strip("'")
                     note = values_keywords[1].strip("'")
                     self.leave_application_form['note'] = note
-                    
-                    if self.date_determine_chain(time)['text'] == "yes":
+
+                    if "es" in self.date_determine_chain(time)['text']:
                         keywords_bANDe = self.chain_bANDe({'question': query, 'context':''})['text']
-                        response = keywords_bANDe
+                        # response = keywords_bANDe
                         values_keywords_bANDe = keywords_bANDe.split(",")
                         begin_date = values_keywords_bANDe[0].strip("'")
                         end_date = values_keywords_bANDe[1].strip("'")
-                        self.leave_application_form['start_date'] = self.date_processing(begin_date)
-                        self.leave_application_form['end_date'] = self.date_processing(end_date)
-                        response = str(self.leave_application_form)
-                    else:
-                        pass
+                        if not self.leave_application_form['start_date']:
+                            self.leave_application_form['start_date'] = self.date_processing(begin_date)
+                        if not self.leave_application_form['end_date']:
+                            self.leave_application_form['end_date'] = self.date_processing(end_date)
 
+                        begin_month, begin_day, begin_year = self.leave_application_form['start_date'].split('/')
+                        begin_date_duration = begin_year + '-' + begin_month + '-' + begin_day
+                        end_month, end_day, end_year = self.leave_application_form['end_date'].split('/')
+                        end_date_duration = end_year + '-' + end_month + '-' + end_day
+                        self.leave_application_form['duration'] = int(np.busday_count(begin_date_duration, end_date_duration)) + 1
+                        self.leave_application_form['periodType'] = 0
+
+                        # response = str(self.leave_application_form)
+                    else:
+                        session_keywords = self.chain_session({'question': time, 'context':''})['text']
+                        # Split the string into a list using the comma as a delimiter
+                        split_string_session_keywords = session_keywords.split(",")
+                        session_off = split_string_session_keywords[0].strip("'")
+                        date_off = split_string_session_keywords[1].strip("'")
+                        if not self.leave_application_form['start_date']:
+                            self.leave_application_form['start_date'] = self.date_processing(date_off)
+                            self.leave_application_form['end_date'] = self.leave_application_form['start_date']
+                        if session_off == 'sáng':
+                            self.leave_application_form['periodType'] = 1
+                            self.leave_application_form['duration'] = 0.5
+                        elif session_off == 'chiều':
+                            self.leave_application_form['periodType'] = 2
+                            self.leave_application_form['duration'] = 0.5
+                        elif session_off == 'cả ngày':
+                            self.leave_application_form['periodType'] = 0
+                            self.leave_application_form['duration'] = 1
+
+                        # response = str(self.leave_application_form)
 
         except Exception as e:
-            return {'output_text': f'Cannot generate response, error: {e}'}, 'Thien'
+            return 'Có phải bạn đang muốn submit ngày nghỉ đúng không? Hiện tại tôi thấy hình như bạn thiếu thời gian nghỉ.'
 
-        self.add_to_history(query, response)         
+        leave_application_form_string = ''
+        if self.leave_application_form['start_date'] == '':
+          leave_application_form_string += 'Chưa cung cấp ngày bắt đầu nghỉ.'
+        if self.leave_application_form['end_date'] == '':
+          leave_application_form_string += 'Chưa cung cấp ngày kết thúc nghỉ.'
+        if self.leave_application_form['note'] == '':
+          leave_application_form_string += 'Chưa cung cấp nguyên nhân nghỉ.'
+        if self.leave_application_form['periodType'] == -1:
+          leave_application_form_string += 'Chưa cung cấp buổi nghỉ(sáng, chiều hay cả ngày).'
+          
+        if leave_application_form_string == '':
+            response = 'Đã cung cấp đủ thông tin. Đơn sẽ sớm được duyệt. Cảm ơn bạn đã gửi form. \nBạn có cần tôi giúp đỡ gì thêm không ạ?'
+            
+
+            response1 = requests.post('https://hrm-nois-fake.azurewebsites.net/api/LeaveApplication/Submit', json = {
+        "userId": 'c4edb6f7-56c8-444a-803d-5a6c77707e60',
+        "reviewUserId": '139',
+        "relatedUserId": "string",
+        "fromDate": self.leave_application_form['start_date'],
+        "toDate":self.leave_application_form['end_date'],
+        "leaveApplicationTypeId": 1,
+        "leaveApplicationNote": self.leave_application_form['note'],
+        "periodType": self.leave_application_form['periodType'],
+        "numberOffDay": self.leave_application_form['duration']
+    })
+            print(response1.text)
+
+            self.leave_application_form = []
+        else:
+          result_doc = "Input: " + "Quản lý, còn thiếu thông tin gì về Đơn nghỉ phép nữa không." +"\n Output: " + leave_application_form_string
+          doc = [Document(page_content= result_doc,
+                                metadata={'@search.score': 0,
+                                          'metadata_storage_name': 'local-source', 'source': f'doc-0'})]
+
+          response = self.qa_chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(),
+                                  'user_info': f'''The user chatting with you is named {self.user['username']}, with email: {self.user['mail']}. 
+                                  '''},
+                              return_only_outputs=False)['output_text']
         return response
 
     def date_processing(self, date_off):
         if "mai" in date_off:
             day_after_next = self.today_var + timedelta(days=1)
-            return day_after_next.strftime("%m/%d/%Y")
+            return day_after_next.strftime("%Y-%m-%d")
         elif "mốt" in date_off:
             day_after_next = self.today_var + timedelta(days=2)
-            return day_after_next.strftime("%m/%d/%Y")
+            return day_after_next.strftime("%Y-%m-%d")
         else:
             if 'no' in self.specific_date_chain(date_off)['text']:
                 keywords = self.chain_specific_weekday({'question': date_off, 'context':''})['text']
@@ -458,7 +609,7 @@ Output:"""
                 # Calculate the date of the next Monday
                 next_weekday = self.today_var + timedelta(days=weekday)
                 next_week = next_weekday + timedelta(weeks=week)
-                return next_week.strftime("%m/%d/%Y")
+                return next_week.strftime("%Y-%m-%d")
             else:
                 keywords = self.chain_specific_date({'question': date_off, 'context':''})['text']
                 lines = keywords.split("\n")
@@ -475,14 +626,14 @@ Output:"""
                     month = int(month_str) - 1
                     # Calculate the date of the 15th day of the month after next
                     day_of_month_after_next = datetime(year + ((self.today_var.month + month) // 12), ((self.today_var.month + month) % 12) + 1, date)
-                    return day_of_month_after_next.strftime("%m/%d/%Y")
+                    return day_of_month_after_next.strftime("%Y-%m-%d")
                 else:
                     if int(lines[1].split(': ')[1]) == 0:
                         month = self.today_var.month
                     else:
                         month = int(lines[1].split(': ')[1])
                     day_of_month_after_next = datetime(year, month, date)
-                    return day_of_month_after_next.strftime("%m/%d/%Y")
+                    return day_of_month_after_next.strftime("%Y-%m-%d")
 
 
     def get_history_as_txt(self, n=3):
@@ -508,3 +659,8 @@ Output:"""
 
     def clear_history(self):
         self.history_hrm = []
+
+
+# bot = chatAI()
+# response = bot.chat("tôi muốn nghỉ tới ngày 6 buổi sáng vì lí do đi học")
+# print(response)
