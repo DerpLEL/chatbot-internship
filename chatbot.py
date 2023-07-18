@@ -409,8 +409,6 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
-
-
     def __init__(self):
         self.history_hrm = []
         self.today_var = datetime.now().date()
@@ -482,11 +480,13 @@ Output:"""
         else:
             label = self.conversation_type[0]
 
+        label = self.classifier_hrm_chain(query)['text']
+        print(label)
         response = """thien"""
-        try:
-            if label == "User":
-                response = label
-            elif label == "LeaveApplication":
+        if label == "User":
+            response = label
+        elif label == "LeaveApplication":
+            try:
                 if not self.conversation_type:
                     leave_application_type = self.leave_application_chain(query)['text']
                 else:
@@ -541,48 +541,46 @@ Output:"""
                             self.leave_application_form['duration'] = 1
 
                         # response = str(self.leave_application_form)
+            except Exception as e:
+                return 'Có phải bạn đang muốn submit ngày nghỉ đúng không? Hiện tại tôi thấy hình như bạn thiếu thời gian nghỉ.'
 
-        except Exception as e:
-            return 'Có phải bạn đang muốn submit ngày nghỉ đúng không? Hiện tại tôi thấy hình như bạn thiếu thời gian nghỉ.'
+            leave_application_form_string = ''
+            if self.leave_application_form['start_date'] == '':
+                leave_application_form_string += 'Chưa cung cấp ngày bắt đầu nghỉ.'
+            if self.leave_application_form['end_date'] == '':
+                leave_application_form_string += 'Chưa cung cấp ngày kết thúc nghỉ.'
+            if self.leave_application_form['note'] == '':
+                leave_application_form_string += 'Chưa cung cấp nguyên nhân nghỉ.'
+            if self.leave_application_form['periodType'] == -1:
+                leave_application_form_string += 'Chưa cung cấp buổi nghỉ(sáng, chiều hay cả ngày).'
 
-        leave_application_form_string = ''
-        if self.leave_application_form['start_date'] == '':
-          leave_application_form_string += 'Chưa cung cấp ngày bắt đầu nghỉ.'
-        if self.leave_application_form['end_date'] == '':
-          leave_application_form_string += 'Chưa cung cấp ngày kết thúc nghỉ.'
-        if self.leave_application_form['note'] == '':
-          leave_application_form_string += 'Chưa cung cấp nguyên nhân nghỉ.'
-        if self.leave_application_form['periodType'] == -1:
-          leave_application_form_string += 'Chưa cung cấp buổi nghỉ(sáng, chiều hay cả ngày).'
-          
-        if leave_application_form_string == '':
-            response = 'Đã cung cấp đủ thông tin. Đơn sẽ sớm được duyệt. Cảm ơn bạn đã gửi form. \nBạn có cần tôi giúp đỡ gì thêm không ạ?'
-            
+            if leave_application_form_string == '':
+                response = 'Đã cung cấp đủ thông tin. Đơn sẽ sớm được duyệt. Cảm ơn bạn đã gửi form. \nBạn có cần tôi giúp đỡ gì thêm không ạ?'
+                
+                response1 = requests.post('https://hrm-nois-fake.azurewebsites.net/api/LeaveApplication/Submit', json = {
+            "userId": 'c4edb6f7-56c8-444a-803d-5a6c77707e60',
+            "reviewUserId": '139',
+            "relatedUserId": "string",
+            "fromDate": self.leave_application_form['start_date'],
+            "toDate":self.leave_application_form['end_date'],
+            "leaveApplicationTypeId": 1,
+            "leaveApplicationNote": self.leave_application_form['note'],
+            "periodType": self.leave_application_form['periodType'],
+            "numberOffDay": self.leave_application_form['duration']
+        })
+                print(response1.text)
 
-            response1 = requests.post('https://hrm-nois-fake.azurewebsites.net/api/LeaveApplication/Submit', json = {
-        "userId": 'c4edb6f7-56c8-444a-803d-5a6c77707e60',
-        "reviewUserId": '139',
-        "relatedUserId": "string",
-        "fromDate": self.leave_application_form['start_date'],
-        "toDate":self.leave_application_form['end_date'],
-        "leaveApplicationTypeId": 1,
-        "leaveApplicationNote": self.leave_application_form['note'],
-        "periodType": self.leave_application_form['periodType'],
-        "numberOffDay": self.leave_application_form['duration']
-    })
-            print(response1.text)
+                self.leave_application_form = []
+            else:
+                result_doc = "Input: " + "Quản lý, còn thiếu thông tin gì về Đơn nghỉ phép nữa không." +"\n Output: " + leave_application_form_string
+                doc = [Document(page_content= result_doc,
+                                        metadata={'@search.score': 0,
+                                                'metadata_storage_name': 'local-source', 'source': f'doc-0'})]
 
-            self.leave_application_form = []
-        else:
-          result_doc = "Input: " + "Quản lý, còn thiếu thông tin gì về Đơn nghỉ phép nữa không." +"\n Output: " + leave_application_form_string
-          doc = [Document(page_content= result_doc,
-                                metadata={'@search.score': 0,
-                                          'metadata_storage_name': 'local-source', 'source': f'doc-0'})]
-
-          response = self.qa_chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(),
-                                  'user_info': f'''The user chatting with you is named {self.user['username']}, with email: {self.user['mail']}. 
-                                  '''},
-                              return_only_outputs=False)['output_text']
+                response = self.qa_chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(),
+                                        'user_info': f'''The user chatting with you is named {self.user['username']}, with email: {self.user['mail']}. 
+                                        '''},
+                                    return_only_outputs=False)['output_text']
         return response
 
     def date_processing(self, date_off):
