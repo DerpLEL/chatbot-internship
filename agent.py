@@ -40,6 +40,8 @@ email = 'bao.ho@nois.vn'
 dtime = datetime.datetime
 date = dtime.now().strftime("%Y-%m-%d")
 
+humanTool = HumanInputRun()
+
 
 def get_users(query: str = None):
     return requests.get(url + '/api/User').json()['data']
@@ -80,6 +82,20 @@ def get_user_by_email(query: str = None):
 def output_to_user(query: str = None):
     #     print(query)
     return f'Message "{query}" sent to user.'
+
+
+def another_chat_input(query):
+    reply = requests.post("http://localhost:5000/agent", data={"msg": query})
+
+    res = ""
+
+    while not res:
+        reply = requests.get("http://localhost:5000/user").json()
+        print(f"Reply: {reply}")
+        res = reply['msg']
+
+    print(f"Message: {res} received.")
+    return res
 
 
 def get_userName(query: str = None):
@@ -136,15 +152,39 @@ def delete_leave_applications(target: str = "Default"):
         string += f"End date: {i['toDate']}\n"
         string += f"Number of day(s) off: {i['numberDayOff']}\n\n"
 
-    user_confirm = input(string + "Are you sure you wnat to delete this application? Type 1 for yes, 0 for no.\n")
+    inp = another_chat_input(
+        string + "Are you sure you want to delete this application? Type 1 to proceed with delete, type 0 to cancel\n").strip()
 
-    while user_confirm != '1' and user_confirm != '0':
-        user_confirm = input("Invalid input. Type 1 for yes, 0 for no.\n")
+    while inp != "1" and inp != "0":
+        inp = another_chat_input("Invalid input. Type 1 to proceed with delete, type 0 to cancel\n")
 
-    if user_confirm == '0':
-        return "User cancelled the leave application deletion process."
+    if inp == "0":
+        return "User has cancelled the deletion process."
 
     return requests.delete(url + f'/api/LeaveApplication/{target}').json()['message']
+
+
+# def confirm_delete_leave(target: str):
+#     applis = requests.get(url + f'/api/LeaveApplication/{get_userId(email)}').json()['data']
+#
+#     appli = [i for i in applis if i['id'] == target]
+#
+#     string = ""
+#     for i in appli:
+#         string += f"ID: {i['id']}\n"
+#         string += f"Start date: {i['fromDate']}\n"
+#         string += f"End date: {i['toDate']}\n"
+#         string += f"Number of day(s) off: {i['numberDayOff']}\n\n"
+#
+#     inp = another_chat_input(string + "Are you sure you want to delete this application? Type 1 to proceed with delete, type 0 to cancel\n").strip()
+#
+#     while inp != "1" and inp != "0":
+#         inp = another_chat_input("Invalid input. Type 1 to proceed with delete, type 0 to cancel\n")
+#
+#     if inp == "0":
+#         return "User has cancelled the deletion process."
+#
+#     return "User has confirmed the deletion of the selected leave application."
 
 
 def check_manager_name(name):
@@ -174,11 +214,11 @@ def post_method(user_id, manager_id, start_date, end_date):
     num_days = 0
 
     if end_dtime == start_dtime:
-        reply = input(
+        reply = another_chat_input(
             "Do you want to take the whole day off or only half day off? Type 1 for whole day off, and 0 for half day off.\n")
 
         while reply != "1" and reply != "0":
-            reply = input("Invalid input. Type 1 for whole day off, and 0 for half day off.\n")
+            reply = another_chat_input("Invalid input. Type 1 for whole day off, and 0 for half day off.\n")
 
         num_days = 0.5
 
@@ -196,13 +236,13 @@ def post_method(user_id, manager_id, start_date, end_date):
     - Number of day(s) off: {num_days}
 Is this information correct? Type 1 to submit, type 0 if you want to tell the bot to edit the form.\n'''
 
-    user_confirm = input(string)
+    user_confirm = another_chat_input(string)
 
     while user_confirm != "1" and user_confirm != "0":
-        user_confirm = input("Invalid input. Type 1 to submit, type 0 if you want to tell the bot to edit the form.\n")
+        user_confirm = another_chat_input("Invalid input. Type 1 to submit, type 0 if you want to tell the bot to edit the form.\n")
 
     if user_confirm.strip() != "1":
-        user_edit = input("Tell the bot what you want to edit in the form here:\n")
+        user_edit = another_chat_input("Tell the bot what you want to edit in the form here:\n")
 
         return user_edit
 
@@ -529,15 +569,21 @@ prompt2 = ZeroShotAgent.create_prompt(
 
 
 class MyCustomHandler(BaseCallbackHandler):
+    prev_msg = ""
+
     def on_tool_start(
         self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> Any:
         """Run when tool starts running."""
-        if serialized['name'] == 'human':
-            reply = requests.post("http://localhost:5000/agent", data={"msg": input_str})
+        if serialized['name'] in ['human']:
+            reply = requests.post("http://localhost:5000/agent", data={"msg": self.prev_msg + input_str})
+            self.prev_msg = ""
             print("\n")
             print(reply.text)
             # print(input_str)
+
+        if serialized['name'] == 'HRM get applications':
+            self.prev_msg = get_leave_applications()
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
         """Run on agent end."""
