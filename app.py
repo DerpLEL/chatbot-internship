@@ -37,23 +37,23 @@ async def chat():
         while not bot_message:
             pass
 
-        newMsg = bot_message.split(":")[1]
+        new_msg = bot_message.split(":")[1]
         bot_message = ""
 
-        return newMsg
+        return new_msg
 
     # Maintain agent conversation, as long as agent_session is true
     if agent_session:
         while not bot_message:
             pass
 
-        newMsg = bot_message.split(":")[1]
+        new_msg = bot_message.split(":")[1]
         bot_message = ""
 
-        return newMsg
+        return new_msg
 
     # if msg.startswith("agent_msg"):
-    #     newMsg = msg.split(":")[1]
+    #     new_msg = msg.split(":")[1]
     #     return msg
 
     response = bot.chat(msg)
