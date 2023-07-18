@@ -154,7 +154,7 @@ def delete_leave_applications(target: str = "Default"):
         string + "Are you sure you want to delete this application? Type 1 to proceed with delete, type 0 to cancel\n").strip()
 
     while inp != "1" and inp != "0":
-        inp = another_chat_input("Invalid input. Type 1 to proceed with delete, type 0 to cancel\n")
+        inp = another_chat_input("Invalid input. Type 1 to proceed with delete, type 0 to cancel.\n")
 
     if inp == "0":
         return "User has cancelled the deletion process."
@@ -240,7 +240,7 @@ Is this information correct? Type 1 to submit, type 0 if you want to tell the bo
         user_confirm = another_chat_input("Invalid input. Type 1 to submit, type 0 if you want to tell the bot to edit the form.\n")
 
     if user_confirm.strip() != "1":
-        user_edit = another_chat_input("Tell the bot what you want to edit in the form here:\n")
+        user_edit = another_chat_input("Tell the bot what you want to edit in the form.\n")
 
         return user_edit
 
