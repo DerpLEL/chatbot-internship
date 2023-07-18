@@ -40,8 +40,6 @@ email = 'bao.ho@nois.vn'
 dtime = datetime.datetime
 date = dtime.now().strftime("%Y-%m-%d")
 
-humanTool = HumanInputRun()
-
 
 def get_users(query: str = None):
     return requests.get(url + '/api/User').json()['data']
