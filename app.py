@@ -2,10 +2,17 @@ from flask import Flask, render_template, request, jsonify
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from chatbot import *
 import torch
+import threading
+
+agent_session = False
 
 bot = chatAI()
 
 app = Flask(__name__)
+
+hist = ""
+
+bot_message = ""
 
 @app.route("/")
 def index():
@@ -13,8 +20,41 @@ def index():
 
 
 @app.route("/get", methods=["GET", "POST"])
-def chat():
+async def chat():
+    global agent_session
+    global bot_message
     msg = request.form["msg"]
+
+    if msg.strip().lower() == "agent":
+        return bot.toggle_agent()
+
+    # Kickstart agent conversation
+    if bot.use_agent and not agent_session:
+        agent_session = True
+        t1 = threading.Thread(target=run_agent, args=(msg,), daemon=True)
+        t1.start()
+
+        while not bot_message:
+            pass
+
+        newMsg = bot_message.split(":")[1]
+        bot_message = ""
+
+        return newMsg
+
+    # Maintain agent conversation, as long as agent_session is true
+    if agent_session:
+        while not bot_message:
+            pass
+
+        newMsg = bot_message.split(":")[1]
+        bot_message = ""
+
+        return newMsg
+
+    # if msg.startswith("agent_msg"):
+    #     newMsg = msg.split(":")[1]
+    #     return msg
 
     response = bot.chat(msg)
     
@@ -31,21 +71,21 @@ def chat():
     return response
 
 
-def get_Chat_response(text):
+def run_agent(query):
+    bot.agent.run1(query)
 
-    # Let's chat for 5 lines
-    for step in range(5):
-        # encode the new user input, add the eos_token and return a tensor in Pytorch
-        new_user_input_ids = tokenizer.encode(str(text) + tokenizer.eos_token, return_tensors='pt')
+    global agent_session
+    agent_session = False
+    return
 
-        # append the new user input tokens to the chat history
-        bot_input_ids = torch.cat([chat_history_ids, new_user_input_ids], dim=-1) if step > 0 else new_user_input_ids
 
-        # generated a response while limiting the total chat history to 1000 tokens, 
-        chat_history_ids = model.generate(bot_input_ids, max_length=1000, pad_token_id=tokenizer.eos_token_id)
+@app.route("/agent", methods=["POST"])
+def get_message_agent():
+    msg = request.form["msg"]
+    global bot_message
+    bot_message = msg
 
-        # pretty print last ouput tokens from bot
-        return tokenizer.decode(chat_history_ids[:, bot_input_ids.shape[-1]:][0], skip_special_tokens=True)
+    return jsonify({"message": "OK"})
 
 
 if __name__ == '__main__':

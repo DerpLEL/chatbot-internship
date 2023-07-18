@@ -6,7 +6,6 @@ from azure.search.documents import SearchClient
 from langchain.chat_models import AzureChatOpenAI
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
-from datetime import datetime, timedelta
 
 import re
 
@@ -14,6 +13,8 @@ import re
 from PIL import Image
 import urllib.request
 import io
+from agent import *
+from datetime import datetime, timedelta
 
 fasf_text_index = "fasf-text-01-index"
 fasf_images_index = "fasf-images-index" 
@@ -337,6 +338,9 @@ Output:"""
 
 
     def __init__(self):
+        self.use_agent = False
+        self.agent = Agent()
+
         self.history_hrm = []
         self.today_var = datetime.now().date()
         self.user = {"username":' ', "mail":' '}
@@ -392,12 +396,18 @@ Output:"""
         chain_specific_weekday = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_specific_weekday))
         chain_specific_date = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_specific_date))
 
-
-
-
     def chat(self, query):
         return self.chat_hrm(query)
-    
+
+    def toggle_agent(self):
+        if self.use_agent:
+            self.use_agent = False
+            return "Disabled agent."
+
+        else:
+            self.use_agent = True
+            return "Enabled agent."
+
     def chat_hrm(self, query):
         label = self.classifier_hrm_chain(query)['text']  
         response = """"""
@@ -454,7 +464,7 @@ Output:"""
                     week = int(lines[1].split(": ")[1]) - 1
 
                 # Calculate the number of days until Monday (0 = Monday, 1 = Tuesday, etc.)
-                weekday  = (date - self.today_var.weekday()) % 7
+                weekday = (date - self.today_var.weekday()) % 7
                 # Calculate the date of the next Monday
                 next_weekday = self.today_var + timedelta(days=weekday)
                 next_week = next_weekday + timedelta(weeks=week)
