@@ -104,11 +104,14 @@ def get_leave_applications(query: str = None):
     userId = get_userId(email)
 
     applis = requests.get(url + f'/api/LeaveApplication/{userId}').json()['data']
+    if not applis:
+        return "This user hasn't submitted any leave applications."
 
     #     applis = [i for i in applis if i['reviewStatusName'] != "Đồng ý"]
 
     string = ""
     counter = 1
+
     for i in applis:
         string += f"Leave application {counter}:\n"
         string += f"ID: {i['id']}\n"
