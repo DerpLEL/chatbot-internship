@@ -230,7 +230,7 @@ def check_manager_name(name):
 
 
 def post_method(user_id, manager, start_date, end_date, leave_type, note):
-    typeOfLeave = {"paid": 1, "unpaid": 2, "sick": 5}
+    typeOfLeave = {"paid": 1, "unpaid": 2, "sick": 8}
 
     start_dtime = dtime.strptime(start_date, "%Y-%m-%d")
     end_dtime = dtime.strptime(end_date, '%Y-%m-%d')
