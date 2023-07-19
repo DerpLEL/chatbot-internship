@@ -151,7 +151,7 @@ def delete_leave_applications(target: str = "Default"):
         string += f"Number of day(s) off: {i['numberDayOff']}\n\n"
 
     inp = another_chat_input(
-        string + "Are you sure you want to delete this application? Type 1 to proceed with delete, type 0 to cancel\n").strip()
+        string + "Are you sure you want to delete this application? Type 1 to proceed with delete, type 0 to cancel.\n").strip()
 
     while inp != "1" and inp != "0":
         inp = another_chat_input("Invalid input. Type 1 to proceed with delete, type 0 to cancel.\n")
