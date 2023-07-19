@@ -231,6 +231,7 @@ def check_manager_name(name):
 
 def post_method(user_id, manager, start_date, end_date, leave_type, note):
     typeOfLeave = {"paid": 1, "unpaid": 2, "sick": 8}
+    typeOfPeriod = {"0": "All day", "1": "Morning", "2": "Afternoon"}
 
     start_dtime = dtime.strptime(start_date, "%Y-%m-%d")
     end_dtime = dtime.strptime(end_date, '%Y-%m-%d')
@@ -238,17 +239,18 @@ def post_method(user_id, manager, start_date, end_date, leave_type, note):
     manager_id = manager[0]
 
     num_days = 0
+    period = "0"
 
     if end_dtime == start_dtime:
-        reply = another_chat_input(
-            "Do you want to take the whole day off or only half day off? Type 1 for whole day off, and 0 for half day off.\n")
+        period = another_chat_input(
+            "Which period do you want to leave? Type only the number respectively:\n0. All day\n1. Only the morning\n2. Only the afternoon\n\n")
 
-        while reply != "1" and reply != "0":
-            reply = another_chat_input("Invalid input. Type 1 for whole day off, and 0 for half day off.\n")
+        while period != "0" and period != "1" and period != "2":
+            period = another_chat_input("Invalid input. Type only the number respectively:\n0. All day\n1. Only the morning\n2. Only the afternoon\n")
 
         num_days = 0.5
 
-        if reply == "1":
+        if period == "0":
             num_days = 1
 
     else:
@@ -261,6 +263,7 @@ def post_method(user_id, manager, start_date, end_date, leave_type, note):
     - End date: {end_date}
     - Type of leave: {typeOfLeave[leave_type]} ({leave_type})
     - Number of day(s) off: {num_days}
+    - Requested leave period: {period} ({typeOfPeriod[period]})
 Is this information correct? Type 1 to submit, type 0 if you want to tell the bot to edit the form.\n'''
 
     user_confirm = another_chat_input(string)
@@ -281,7 +284,7 @@ Is this information correct? Type 1 to submit, type 0 if you want to tell the bo
         "toDate": end_date,
         "leaveApplicationTypeId": typeOfLeave[leave_type],
         "leaveApplicationNote": note,
-        "periodType": 0,
+        "periodType": int(period),
         "numberOffDay": num_days
     })
 
