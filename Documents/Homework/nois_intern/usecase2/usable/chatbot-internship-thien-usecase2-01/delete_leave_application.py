@@ -8,16 +8,10 @@ from langchain.schema import Document
 from langchain.tools import BaseTool
 from langchain.agents import ZeroShotAgent, AgentExecutor, AgentType, initialize_agent, Tool, load_tools
 from langchain.agents.agent_toolkits.openapi import planner
-from langchain.requests import TextRequestsWrapper
-from langchain.memory import ConversationBufferWindowMemory
-from langchain.chains.api import open_meteo_docs
-from datetime import datetime, timedelta
+
 import requests
-import pandas as pd
-import os
-from azure.core.credentials import AzureKeyCredential
-from azure.search.documents import SearchClient
-from langchain.chains.qa_with_sources import load_qa_with_sources_chain
+
+
 
 
 classifier_usecase2 = """<|im_start|>system
@@ -64,7 +58,7 @@ Output:"""
 # User_clasifier
 classifier_user = """<|im_start|>system
 
-Given a sentence, assistant will determine if the sentence belongs in 1 of 3 categories, which are:
+Given a sentence, assistant will determine if the sentence belongs in 1 of 2 categories, which are:
 - get user
 - get manager
 
@@ -317,25 +311,41 @@ Output: 4
 
 SENTENCE: {output}
 OUTPUT:"""
-
+include_latest = """
+Given a sentence, translate the sentence to english and check the sentence included the word "recent" or similar or not
+output:
+- yes
+- no
+SENTENCE: {output}
+OUTPUT:"""
 delete_leaveapp_case_classifier = """
+
 Given a sentence, put the sentence in one of these category , and it must be 1 value only
-- delete by id
-- delete general
-- delete latest
+- general
+- recent
 
 DEFINITION:
-delete by id: when sentence included application id inside it
-delete general: when sentence only state intention wanted to delete leave application
-delete latest: when senetence stated that the user want to delete the latest leave application
+- id: when sentence included application id inside it
+- general: when sentence only state intention wanted to delete leave application in general
+- recent: THIS IS A SPECIAL CASE, OFTEN ASK BUT EASY MISTAKEN TO GENERAL CASE, carefully choose this category
+when sentence only state intention wanted to delete leave recent application, recently created application. included string like "vừa tạo", "gần nhất", "gần đây nhất"
+"recently", "recent", "latest"
 
 EXAMPLE:
 INPUT: cho tôi xóa đơn nghỉ phép abc13221312312312312
-OUTPUT: delete by id
+OUTPUT: id
 INPUT: cho tôi xóa đơn nghỉ phép
-OUTPUT: delete general
+OUTPUT: general
 INPUT: cho tôi xóa đơn nghỉ phép gần nhất
-OUTPUT: delete latest
+OUTPUT:  recent
+INPUT: tôi muốn xóa đơn xin nghỉ
+OUTPUT: general
+INPUT: xóa đơn xin nghỉ phép
+OUTPUT: general
+INPUT: cho tôi xóa đơn nghỉ phép gần nhất
+OUTPUT:  recent
+INPUT: cho tôi xóa đơn nghỉ phép tôi vừa tạo
+OUTPUT:  recent
 
 SENTENCE: {output}
 OUTPUT:"""
@@ -401,6 +411,7 @@ delete_value_keyword_get = LLMChain(llm=llm2, prompt=PromptTemplate.from_templat
 
 classifier_delete_leaveapp_case = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(delete_leaveapp_case_classifier))
 
+include_latest_check = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(include_latest))
 
 # function define
 def get_users(query: str = None):
@@ -413,15 +424,6 @@ def get_user_through_email(email):
 
     return f'Error: {response.status_code}'
 
-def get_user_by_id(ID: str):
-    reply = requests.get(url + f'/api/User/me?id={ID}')
-    if response.status_code != 200:
-        return f'Error: {response.status_code}'
-
-    if not reply.json()['data']:
-        return "Wrong ID, recheck your input."
-
-    return reply.json()['data']
 
 def check_manager_name(name):
     response = requests.get(url + '/api/User/manager-users').json()['data']
@@ -447,86 +449,93 @@ def delete_leave_application(application_id):
   if response.status_code == 200:
       print("You have successfully deleted leave application " + application_id)
 
+def new_line_formatter(response):
+    final_response = ''
+    paragraphs = response.split('\n\n')  # Split the response into paragraphs using '\n\n'
+
+    for i, paragraph in enumerate(paragraphs):
+        lines = paragraph.split('\n')
+        paragraph_html = '<div>' + '</div><div>'.join(lines) + '</div>'
+        final_response += paragraph_html
+        if i < len(paragraphs) - 1:
+            final_response += '<br>'  # Add an extra <div></div> between paragraphs
+
+    return final_response
 def display_leave_application(response): # input list of dictionaries response
   # displaying the application
   count = 1
   text =""
   for i in response:
-      text += ("Leave application number " + count +" :\n")
-      text += ("application id: " +i["id" +"\n"])
-      text += ("From date: " + i["fromDate" + "\n"])
-      text +=("To date: " + i["toDate"] + "\n")
-      text +=("Number day off: " + i["numberDayOff"] + "\n\n")
-      return text
+      text += ("Leave application number " + str(count) +" :\n")
+      text += ("Application id: " +str(i["id"])  +"\n")
+      text += ("From date: " + str(i["fromDate"])  + "\n")
+      text +=("To date: " + str(i["toDate"]) + "\n")
+      text +=("Number day off: " + str(i["numberDayOff"]) + "\n\n")
+      count+=1
+  
+  text = new_line_formatter(text)
+  print(text)
+  return text
   
   # seperate into 3 cases: delete with form id, delete asked in general -> then tell the number, delete latest,
 # after the general
 email = "bui.khanh@nois.vn"
 url = "https://hrm-nois-fake.azurewebsites.net/"
 
-
+history_delete = ''
 # start
 
-def run_leave_application_delete(email, query):
-
-    # replicate second command for genereal to delete 
-
-    # def next_command(response,history ):
-    # query = "cho tôi xóa đơn thứ 1"
-    # print("next query: " + query)
-    # keyword = delete_value_keyword_get(query)
-    # keyword = int(keyword['text'])
-    # keyword -= 1
-
-    # delete_id = response[keyword]["id"]
-    # # didnt add exception ( out of index)
-    # print("delete id: " + delete_id)
-    # delete_leave_application(delete_id)
-
-    # response = get_leave_application_through_id(user_id)
-    # # display the option
-
-
-
+def run_leave_application_delete(email, query, history):
     # delete
     # direct form id deletion case
 # Thien: check null của số ngày nghỉ
-    history = ""
+    global history_delete
     query = "tôi muốn xóa đơn xin nghỉ gần nhất"
     label = classifier_delete_leaveapp_case(query)['text']
     print(label)
-    if ( label == "delete by id"):
+    if ( label == "id"):
         key_value = delete_value_keyword_get(query)['text']
         print(key_value)
         delete_leave_application(key_value)
+
+        # create a check from list here, else return couldnt find 
         return "Đã xóa thành công"
 
     # implemented
     # numberic order id deletetion
-    elif ( label == "delete general"):
+    elif ( label == "general"):
         user_info = (get_user_through_email(email))
         user_id = user_info['id']
         print("user_id: " + user_id)
         response = get_leave_application_through_id(user_id)
         # display the option
         result = display_leave_application(response) # displaying all of it,
-        history += str(result)
+        history_delete += str(result)
 
-        print(result + "Bạn muốn tôi giúp gì tiếp?")
-        # later on after displaying the option
-        # key_value = delete_value_keyword_get(query)['text']
-        # next_command(response,history)
-        return "Đã xóa thành công"
-
-
+        response += str(result) + "\n Bạn muốn tôi xóa đơn nào?"
+        
+        print(history_delete)
+        return response
 
     # implemented
     # delete latest
-    elif ( label == "delete latest"):
+    elif ( label == "recent"):
+
         user_info = (get_user_through_email(email))
         user_id = user_info['id']
         print("user_id: " + user_id)
         response = get_leave_application_through_id(user_id)
-        print(response)
-        delete_leave_application(response[0]['id'])
-        return "Đã xóa thành công"
+        final_check  = include_latest_check(query)['text']
+
+        if final_check == "yes":
+            result = display_leave_application(response) # displaying all of it,
+            history_delete += str(result) + "\n Bạn muốn tôi xóa đơn nào?"
+
+            return history_delete
+        # none check
+        else:
+            if response == []:
+                return "danh sách đơn xin nghỉ phép trống"
+            else:
+                delete_leave_application(response[0]['id'])
+                return "Đã xóa thành công"

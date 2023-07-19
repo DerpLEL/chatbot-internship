@@ -3,21 +3,12 @@ from langchain.chat_models import AzureChatOpenAI
 from langchain.llms import AzureOpenAI
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from langchain.chains import LLMChain, APIChain
-from langchain.chains.api.prompt import API_RESPONSE_PROMPT
-from langchain.schema import Document
-from langchain.tools import BaseTool
-from langchain.agents import ZeroShotAgent, AgentExecutor, AgentType, initialize_agent, Tool, load_tools
+
+
 from langchain.agents.agent_toolkits.openapi import planner
-from langchain.requests import TextRequestsWrapper
-from langchain.memory import ConversationBufferWindowMemory
-from langchain.chains.api import open_meteo_docs
-from datetime import datetime, timedelta
+
 import requests
-import pandas as pd
-import os
-from azure.core.credentials import AzureKeyCredential
-from azure.search.documents import SearchClient
-from langchain.chains.qa_with_sources import load_qa_with_sources_chain
+
 
 
 url = "https://hrm-nois-fake.azurewebsites.net/"

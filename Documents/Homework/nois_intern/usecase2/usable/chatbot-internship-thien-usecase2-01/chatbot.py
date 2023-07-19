@@ -416,6 +416,7 @@ Output:"""
 
     def __init__(self):
         self.history_hrm = []
+        self.history_chat = []
         self.today_var = datetime.now().date()
         self.user = {"username":' ', "mail":' '}
         self.conversation_type = []
@@ -485,7 +486,6 @@ Output:"""
         else:
             label = self.conversation_type[0]
 
-        label = self.classifier_hrm_chain(query)['text']
         print(label)
         response = """thien"""
         if label == "User":
@@ -506,12 +506,17 @@ Output:"""
                     return response
                 
                 elif leave_application_type == "delete":
+                    self.conversation_type = ['LeaveApplication','delete']
                     email ="bui.khanh@nois.vn"
                     print("delete - pass")
-                    response = run_leave_application_delete(email, query)
-                    return response
+                    response = run_leave_application_delete(email, query, self.get_history_as_txt())
+                    if (response != "Đã xóa thành công"):
+                        print()
+                    else:
+                        return response
                 elif leave_application_type == 'post':
                     return "thien"
+        self.add_to_history(query, response)
         return response
 
     def date_processing(self, date_off):
@@ -567,7 +572,7 @@ Output:"""
 
     def get_history_as_txt(self, n=3):
         txt = ""
-        hist = self.history_hrm
+        hist = self.history_chat
 
         if len(hist) <= n:
             history = hist
@@ -582,7 +587,7 @@ Output:"""
         return txt
 
     def add_to_history(self, user_msg, ai_msg):
-        hist = self.history_hrm
+        hist = self.history_chat
 
         hist.append({'user': user_msg, 'AI': ai_msg})
 
