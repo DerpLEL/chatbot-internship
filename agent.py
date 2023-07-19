@@ -214,24 +214,26 @@ def check_manager_name(name):
 
     for data in response:
         if data['fullName'].lower() == name.lower():
-            return data['id']
+            return data['id'], data['fullName']
 
-    return -1
-
-
-def check_manager_id(managerId):
-    response = requests.get(url + '/api/User/manager-users').json()['data']
-
-    for data in response:
-        if data['id'] == int(managerId):
-            return True
-
-    return False
+    return -1, "Not found"
 
 
-def post_method(user_id, manager_id, start_date, end_date):
+# def check_manager_id(managerId):
+#     response = requests.get(url + '/api/User/manager-users').json()['data']
+#
+#     for data in response:
+#         if data['id'] == int(managerId):
+#             return True
+#
+#     return False
+
+
+def post_method(user_id, manager, start_date, end_date):
     start_dtime = dtime.strptime(start_date, "%Y-%m-%d")
     end_dtime = dtime.strptime(end_date, '%Y-%m-%d')
+
+    manager_id = manager[0]
 
     num_days = 0
 
@@ -252,7 +254,7 @@ def post_method(user_id, manager_id, start_date, end_date):
 
     string = f'''Leave application details:
     - UserId: {user_id}
-    - ManagerId: {manager_id}
+    - ManagerId: {manager_id} ({manager[1]})
     - Start date: {start_date}
     - End date: {end_date}
     - Number of day(s) off: {num_days}
@@ -274,8 +276,8 @@ Is this information correct? Type 1 to submit, type 0 if you want to tell the bo
         "relatedUserId": "string",
         "fromDate": start_date,
         "toDate": end_date,
-        "leaveApplicationTypeId": 0,
-        "leaveApplicationNote": "string",
+        "leaveApplicationTypeId": 2,
+        "leaveApplicationNote": "None",
         "periodType": 0,
         "numberOffDay": num_days
     })
@@ -284,6 +286,16 @@ Is this information correct? Type 1 to submit, type 0 if you want to tell the bo
 
 
 lst = []
+
+
+def sickday_allow():
+    response = requests.get(url + f'/api/User/dayoff-data?email={email}').json()['data']
+    return response['sickDayOffAllow']
+
+
+def dayoff_allow():
+    response = requests.get(url + f'/api/User/dayoff-data?email={email}').json()['data']
+    return response['dayOffAllow']
 
 
 def submitLeaveApplication(args: str):
@@ -296,7 +308,8 @@ def submitLeaveApplication(args: str):
     if '-' not in lst[0]:
         return "Incorrect ID. You can find the correct ID by using the HRM get by email tool."
 
-    if check_manager_name(lst[1]) == -1 and check_manager_id(lst[1]) == False:
+    manager_id, manager_name = check_manager_name(lst[1])
+    if manager_id == -1:
         return "Ask the user for the correct manager's name. The user either didn't give you a name or gave you the wrong name."
 
     if '-' not in lst[2]:
@@ -317,12 +330,23 @@ def submitLeaveApplication(args: str):
     if dtime.strptime(lst[3], "%Y-%m-%d").weekday() in [5, 6]:
         return "End date cannot be on the weekend, ask the user for another date."
 
+    if lst[4] not in ["unpaid", "paid", "sick"]:
+        return "Invalid leave type. Ask the user for the correct type of leave"
+
+    elif lst[4] in ["paid", "sick"]:
+        requested_dayoff = int(np.busday_count(lst[2], lst[3])) + 1
+
+        remainingDayOff = dayoff_allow() if lst[4] == "paid" else sickday_allow()
+
+        if remainingDayOff < requested_dayoff:
+            return """User does not have enough remaining day off for this application. Ask the user if they want to apply for a different type, change start or end dates, or cancel."""
+
     print("\nUserId: ", lst[0])
-    print("ReviewerId: ", lst[1])
+    print("ReviewerId: ", manager_id)
     print("Start date: ", lst[2])
     print("End date: ", lst[3])
 
-    reply = post_method(lst[0], int(lst[1]), lst[2], lst[3])
+    reply = post_method(lst[0], (manager_id, manager_name), lst[2], lst[3])
 
     return reply
 
@@ -437,21 +461,23 @@ tool2 = [
         description='useful for getting the user\'s id by user\'s email. No need to input'
     ),
 
-    Tool(
-        name='HRM get by name',
-        func=check_manager_name,
-        description='useful for getting the manager\'s id by manager\'s name. Input is a manager\'s name.'
-    ),
+    # Tool(
+    #     name='HRM get by name',
+    #     func=check_manager_name,
+    #     description='useful for getting the manager\'s id by manager\'s name. Input is a manager\'s name.'
+    # ),
 
     Tool(
         name='HRM submit leave',
         func=submitLeaveApplication,
         description=f'''useful for submitting a leave applications for current user.
-Input of this tool must include 4 parameters concatenated into a string separated by a comma and space, which are: 
+Input of this tool must include 6 parameters concatenated into a string separated by a comma and space, which are: 
 1. user's id: you get by the tool HRM get userId. 
-2. the id of manager who approve user's application: firstly, ask user the name of the manager and then use the tool HRM get by name to find manager's id.
+2. manager's name: ask user the name of the manager.
 3. start date: ask the user when they want to start their leave and infer the date from the user's answer.
 4. end date: ask the user when they want to end their leave and infer the date from the user's answer.
+5. type of leave: ask the user what type of leave they want to apply for, there are only 3 types of leave: paid, unpaid and sick.
+6. note (optional): ask the user whether they want to leave a note for the manager. Default value is "None".
 The leave application is successfully submitted only when this tool returns "OK".'''
     ),
     #     Tool(
@@ -539,35 +565,35 @@ Final Answer: Leave application is submitted.
 temp2 = f'''
 
 Example:  
-Question: I'd like to submit leave application.
+Question: I'd like to submit a leave application.
 Thought: The user chatting with you has the email {email}.
 Thought: Find the user's id by {email}.
 Action: HRM get userId
 Action Input: {email}
 Observation: {get_userId(email)}
-
-Thought: After having user's id, ask the user for the manager's name.
+Thought: After getting user's id, I need to ask the user for the manager's name.
 Action: human
-Action Input: What is the name of your manager?
+Action Input: Who is your manager?
 Observation: lý minh quân
-Thought: find the manager's id by manager's name.
-Action: HRM get by name
-Action Input: lý minh quân
-Observation: 139
-
 Thought: Ask user the date of starting leave.
 Action: human
 Action Input: Let me know when do you want to start your leave?
 Observation: 2023-07-17
-
 Thought: Ask user the date of ending leave.
 Action: human
 Action Input: How about the date of ending leave?
 Observation: 2023-07-18
-
+Thought: I need to ask the user what type of leave they want to apply for.
+Action: human
+Action Input: What type of leave do you want to apply for? There are 3 types: paid, unpaid and sick.
+Observation: unpaid
+Thought: I need to ask the user for their notes to the manager.
+Action: human
+Action Input: Do you want to leave any notes for the manager?
+Observation: "I have to visit my grandmother"
 Thought: Got all details for submitting.
 Action: HRM submit leave
-Action Input: {get_userId(email)}, 139, 2023-07-17, 2023-07-18
+Action Input: {get_userId(email)}, lý minh quân, 2023-07-17, 2023-07-18, unpaid, "I have to visit my grandmother"
 Observation: OK
 Thought: I now know the final answer
 Final Answer: Leave application is submitted.
