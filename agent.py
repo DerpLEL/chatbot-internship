@@ -538,8 +538,7 @@ temp2 = f'''
 
 Example:  
 Question: I'd like to submit leave application.
-Thought: The user chatting with you own the email {email}.
-Thought: Find the user's id by {email}.
+Thought: The user chatting with you has the email {email}. Find the user's id by {email}.
 Action: HRM get userId
 Action Input: {email}
 Observation: {get_userId(email)}
