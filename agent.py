@@ -592,7 +592,7 @@ Action Input: Do you want to leave any notes for the manager?
 Observation: "I have to visit my grandmother"
 Thought: Got all details for submitting.
 Action: HRM submit leave
-Action Input: {get_userId(email)}, lý minh quân, 2023-07-17, 2023-07-18, unpaid, "I have to visit my grandmother"
+Action Input: lý minh quân, 2023-07-17, 2023-07-18, unpaid, "I have to visit my grandmother"
 Observation: OK
 Thought: I now know the final answer
 Final Answer: Leave application is submitted.
