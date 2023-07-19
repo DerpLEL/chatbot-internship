@@ -250,7 +250,7 @@ Is this information correct? Type 1 to submit, type 0 if you want to tell the bo
     if user_confirm.strip() != "1":
         user_edit = another_chat_input("Tell the bot what you want to edit in the form.\n")
 
-        return user_edit
+        return "User feedback: " + user_edit
 
     response = requests.post('https://hrm-nois-fake.azurewebsites.net/api/LeaveApplication/Submit', json={
         "userId": user_id,
