@@ -29,7 +29,7 @@ llm3 = AzureChatOpenAI(
     openai_api_type="azure",
     openai_api_base='https://openai-nois-intern.openai.azure.com/',
     openai_api_version="2023-03-15-preview",
-    deployment_name='gpt-35-turbo',
+    deployment_name='gpt-35-turbo-16k',
     openai_api_key='400568d9a16740b88aff437480544a39',
     temperature=0.0,
     max_tokens=600
@@ -229,7 +229,9 @@ def check_manager_name(name):
 #     return False
 
 
-def post_method(user_id, manager, start_date, end_date):
+def post_method(user_id, manager, start_date, end_date, leave_type, note):
+    typeOfLeave = {"paid": 1, "unpaid": 2, "sick": 5}
+
     start_dtime = dtime.strptime(start_date, "%Y-%m-%d")
     end_dtime = dtime.strptime(end_date, '%Y-%m-%d')
 
@@ -257,6 +259,7 @@ def post_method(user_id, manager, start_date, end_date):
     - ManagerId: {manager_id} ({manager[1]})
     - Start date: {start_date}
     - End date: {end_date}
+    - Type of leave: {typeOfLeave[leave_type]} ({leave_type})
     - Number of day(s) off: {num_days}
 Is this information correct? Type 1 to submit, type 0 if you want to tell the bot to edit the form.\n'''
 
@@ -276,8 +279,8 @@ Is this information correct? Type 1 to submit, type 0 if you want to tell the bo
         "relatedUserId": "string",
         "fromDate": start_date,
         "toDate": end_date,
-        "leaveApplicationTypeId": 2,
-        "leaveApplicationNote": "None",
+        "leaveApplicationTypeId": typeOfLeave[leave_type],
+        "leaveApplicationNote": note,
         "periodType": 0,
         "numberOffDay": num_days
     })
@@ -302,7 +305,7 @@ def submitLeaveApplication(args: str):
     global lst
     lst = args.split(', ')
 
-    if len(lst) != 4:
+    if len(lst) != 6:
         return "Incorrect number of arguments, this function requires 4 arguments: user's id, manager's id, start date and end date."
 
     if '-' not in lst[0]:
@@ -339,14 +342,17 @@ def submitLeaveApplication(args: str):
         remainingDayOff = dayoff_allow() if lst[4] == "paid" else sickday_allow()
 
         if remainingDayOff < requested_dayoff:
-            return """User does not have enough remaining day off for this application. Ask the user if they want to apply for a different type, change start or end dates, or cancel."""
+            return f"""User does not have enough remaining day off for this application. Put these information into your question:
+Requested {lst[4]} leave day(s): {requested_dayoff}
+Remaining {lst[4]} leave day(s): {remainingDayOff}
+And ask the user if they want to apply for a different type, change start or end dates, or cancel."""
 
     print("\nUserId: ", lst[0])
     print("ReviewerId: ", manager_id)
     print("Start date: ", lst[2])
     print("End date: ", lst[3])
 
-    reply = post_method(lst[0], (manager_id, manager_name), lst[2], lst[3])
+    reply = post_method(lst[0], (manager_id, manager_name), lst[2], lst[3], lst[4], lst[5])
 
     return reply
 
