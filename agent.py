@@ -305,11 +305,10 @@ def submitLeaveApplication(args: str):
     global lst
     lst = args.split(', ')
 
-    if len(lst) != 6:
-        return "Incorrect number of arguments, this function requires 4 arguments: user's id, manager's id, start date and end date."
+    lst = [get_userId(email)] + lst
 
-    if '-' not in lst[0]:
-        return "Incorrect ID. You can find the correct ID by using the HRM get by email tool."
+    if len(lst) != 6:
+        return "Incorrect number of arguments, this function requires 5 arguments: manager's id, start date, end date, leave type and note."
 
     manager_id, manager_name = check_manager_name(lst[1])
     if manager_id == -1:
@@ -337,15 +336,15 @@ def submitLeaveApplication(args: str):
         return "Invalid leave type. Ask the user for the correct type of leave"
 
     elif lst[4] in ["paid", "sick"]:
-        requested_dayoff = int(np.busday_count(lst[2], lst[3])) + 1
+        requestedDayOff = int(np.busday_count(lst[2], lst[3])) + 1
 
         remainingDayOff = dayoff_allow() if lst[4] == "paid" else sickday_allow()
 
-        if remainingDayOff < requested_dayoff:
+        if remainingDayOff < requestedDayOff:
             return f"""User does not have enough remaining day off for this application. Put these information into your question:
-Requested {lst[4]} leave day(s): {requested_dayoff}
+Requested {lst[4]} leave day(s): {requestedDayOff}
 Remaining {lst[4]} leave day(s): {remainingDayOff}
-And ask the user if they want to apply for a different type, change start or end dates, or cancel."""
+And ask the user (using the tool human) if they want to apply for a different type, change start or end dates, or cancel."""
 
     print("\nUserId: ", lst[0])
     print("ReviewerId: ", manager_id)
@@ -461,11 +460,11 @@ prompt1 = ZeroShotAgent.create_prompt(
 )
 
 tool2 = [
-    Tool(
-        name='HRM get userId',
-        func=get_userId,
-        description='useful for getting the user\'s id by user\'s email. No need to input'
-    ),
+    # Tool(
+    #     name='HRM get userId',
+    #     func=get_userId,
+    #     description='useful for getting the user\'s id by user\'s email. No need to input'
+    # ),
 
     # Tool(
     #     name='HRM get by name',
@@ -477,13 +476,12 @@ tool2 = [
         name='HRM submit leave',
         func=submitLeaveApplication,
         description=f'''useful for submitting a leave applications for current user.
-Input of this tool must include 6 parameters concatenated into a string separated by a comma and space, which are: 
-1. user's id: you get by the tool HRM get userId. 
-2. manager's name: ask user the name of the manager.
-3. start date: ask the user when they want to start their leave and infer the date from the user's answer.
-4. end date: ask the user when they want to end their leave and infer the date from the user's answer.
-5. type of leave: ask the user what type of leave they want to apply for, there are only 3 types of leave: paid, unpaid and sick.
-6. note (optional): ask the user whether they want to leave a note for the manager. Default value is "None".
+Input of this tool must include 5 parameters concatenated into a string separated by a comma and space, which are: 
+1. manager's name: ask user the name of the manager.
+2. start date: ask the user when they want to start their leave and infer the date from the user's answer.
+3. end date: ask the user when they want to end their leave and infer the date from the user's answer.
+4. type of leave: ask the user what type of leave they want to apply for, there are only 3 types of leave: paid, unpaid and sick.
+5. note (optional): ask the user whether they want to leave a note for the manager. Default value is "None".
 The leave application is successfully submitted only when this tool returns "OK".'''
     ),
     #     Tool(
