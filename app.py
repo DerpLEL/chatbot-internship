@@ -40,6 +40,9 @@ def chat():
     if msg.strip().lower() == "agent":
         return bot.toggle_agent1()
 
+    elif msg.strip().lower() == "hist":
+        return bot.clear_agent_history()
+
     # Kickstart agent conversation
     if bot.use_agent and not agent_session:
         agent_session = True

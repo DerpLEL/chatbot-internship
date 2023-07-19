@@ -451,7 +451,8 @@ Input of this tool must include 4 parameters concatenated into a string separate
 1. user's id: you get by the tool HRM get userId. 
 2. the id of manager who approve user's application: firstly, ask user the name of the manager and then use the tool HRM get by name to find manager's id.
 3. start date: ask the user when they want to start their leave and infer the date from the user's answer.
-4. end date: ask the user when they want to end their leave and infer the date from the user's answer.'''
+4. end date: ask the user when they want to end their leave and infer the date from the user's answer.
+The leave application is successfully submitted only when this tool returns "OK".'''
     ),
     #     Tool(
     #         name='End conversation',
@@ -611,7 +612,8 @@ class MyCustomHandler(BaseCallbackHandler):
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
         """Run on agent end."""
         reply = requests.post("http://localhost:5000/agent",
-                              data={"msg": finish.return_values['output']})
+                              data={"msg": self.prev_msg + finish.return_values['output']})
+        self.prev_msg = ""
 
     # def on_tool_end(self, output: str, **kwargs: Any) -> Any:
     #     """Run when tool ends running."""

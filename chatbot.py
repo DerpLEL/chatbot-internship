@@ -515,3 +515,8 @@ Output:"""
 
     def clear_history(self):
         self.history_hrm = []
+
+    def clear_agent_history(self):
+        self.agent.history1.clear()
+        self.agent.history2.clear()
+        return "Cleared agent's history."
