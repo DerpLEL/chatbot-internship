@@ -276,7 +276,7 @@ Is this information correct? Type 1 to submit, type 0 if you want to tell the bo
     response = requests.post('https://hrm-nois-fake.azurewebsites.net/api/LeaveApplication/Submit', json={
         "userId": user_id,
         "reviewUserId": manager_id,
-        "relatedUserId": "string",
+        "relatedUserId": "None",
         "fromDate": start_date,
         "toDate": end_date,
         "leaveApplicationTypeId": typeOfLeave[leave_type],
