@@ -29,7 +29,7 @@ llm3 = AzureChatOpenAI(
     openai_api_type="azure",
     openai_api_base='https://openai-nois-intern.openai.azure.com/',
     openai_api_version="2023-03-15-preview",
-    deployment_name='gpt-35-turbo-16k',
+    deployment_name='gpt-35-turbo',
     openai_api_key='400568d9a16740b88aff437480544a39',
     temperature=0.0,
     max_tokens=600
@@ -538,7 +538,8 @@ temp2 = f'''
 
 Example:  
 Question: I'd like to submit leave application.
-Thought: The user chatting with you has the email {email}. Find the user's id by {email}.
+Thought: The user chatting with you has the email {email}.
+Thought: Find the user's id by {email}.
 Action: HRM get userId
 Action Input: {email}
 Observation: {get_userId(email)}
@@ -646,7 +647,9 @@ class Agent:
         )
 
     def run1(self, query):
+        self.history1.clear()
         return self.agent_chain1.run(input=query, callbacks=[MyCustomHandler()])
 
     def run2(self, query):
+        self.history2.clear()
         return self.agent_chain2.run(input=query, callbacks=[MyCustomHandler()])
