@@ -35,6 +35,14 @@ llm3 = AzureChatOpenAI(
     max_tokens=600
 )
 
+
+class ZSAgentMod(ZeroShotAgent):
+    @property
+    def llm_prefix(self) -> str:
+        """Prefix to append the llm call with."""
+        return "Thought: "
+
+
 url = "https://hrm-nois-fake.azurewebsites.net/"
 email = 'bao.ho@nois.vn'
 dtime = datetime.datetime
@@ -573,14 +581,6 @@ Thought: {agent_scratchpad}
 
 suffix2 = temp2 + suffix2
 
-
-class ZSAgentMod(ZeroShotAgent):
-    @property
-    def llm_prefix(self) -> str:
-        """Prefix to append the llm call with."""
-        return "Thought: "
-
-
 prompt2 = ZSAgentMod.create_prompt(
     tool2,
     prefix=prefix2,
@@ -622,8 +622,8 @@ class Agent:
     def __init__(self):
         self.llm_chain1 = LLMChain(llm=llm3, prompt=prompt1)
 
-        self.agent1 = ZeroShotAgent(llm_chain=self.llm_chain1, tools=tool1, verbose=True,
-                               stop=["\nObservation:", "<|im_end|>", "<|im_sep|>"])
+        self.agent1 = ZSAgentMod(llm_chain=self.llm_chain1, tools=tool1, verbose=True,
+                                 stop=["\nObservation:", "<|im_end|>", "<|im_sep|>"])
         self.history1 = ConversationBufferWindowMemory(k=3, memory_key="context", human_prefix='User', ai_prefix='Assistant')
         self.agent_chain1 = AgentExecutor.from_agent_and_tools(
             agent=self.agent1,
