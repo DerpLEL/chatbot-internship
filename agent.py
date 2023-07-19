@@ -568,7 +568,7 @@ Thought: Got all details for submitting.
 Action: HRM submit leave
 Action Input: {get_userId(email)}, 139, 2023-07-17, 2023-07-18
 Observation: OK
-Thought: Leave application is submitted.
+Thought: I now know the final answer
 Final Answer: Leave application is submitted.
 
 '''
