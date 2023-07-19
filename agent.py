@@ -131,7 +131,7 @@ def get_leave_applications(query: str = None):
         string += f"ID: {i['id']}\n"
         string += f"Start date: {i['fromDate']}\n"
         string += f"End date: {i['toDate']}\n"
-        string += f"Number of day(s) off: {i['numberDayOff']}\n\n"
+        string += f"Number of requested leave days: {i['numberDayOff']}\n\n"
 
         counter += 1
 
