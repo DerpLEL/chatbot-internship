@@ -573,7 +573,15 @@ Thought: {agent_scratchpad}
 
 suffix2 = temp2 + suffix2
 
-prompt2 = ZeroShotAgent.create_prompt(
+
+class ZSAgentMod(ZeroShotAgent):
+    @property
+    def llm_prefix(self) -> str:
+        """Prefix to append the llm call with."""
+        return "Thought: "
+
+
+prompt2 = ZSAgentMod.create_prompt(
     tool2,
     prefix=prefix2,
     format_instructions=format_instr,
@@ -628,8 +636,8 @@ class Agent:
         self.llm_chain2 = LLMChain(llm=llm3, prompt=prompt2)
         self.history2 = ConversationBufferWindowMemory(k=3, memory_key="context", human_prefix='User', ai_prefix='Assistant')
 
-        self.agent2 = ZeroShotAgent(llm_chain=self.llm_chain2, tools=tool2, verbose=True,
-                               stop=["\nObservation:", "<|im_end|>", "<|im_sep|>"])
+        self.agent2 = ZSAgentMod(llm_chain=self.llm_chain2, tools=tool2, verbose=True,
+                                 stop=["\nObservation:", "<|im_end|>", "<|im_sep|>"])
         self.agent_chain2 = AgentExecutor.from_agent_and_tools(
             agent=self.agent2,
             tools=tool2,
