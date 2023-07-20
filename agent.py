@@ -93,6 +93,9 @@ def get_user_by_email(query: str = None):
 
         for i in user_data.items():
             return_text += f"- {i[0]}: {i[1]}\n"
+            if i[0] == "maxDayOff":
+                remaining_day_off = requests.get(url + f'/api/User/dayoff-data?email={user_email}').json()['data']['dayOffAllow']
+                return_text += f"- remainingDayOff: {remaining_day_off}\n"
 
         return return_text
 
