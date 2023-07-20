@@ -572,10 +572,11 @@ temp2 = f'''
 
 ======
 Example 1:
-Question: Submit a leave application to trần đăng ninh for me, I'll start on 21.07, my leave ends on the 24th. I'm applying for paid leave, and no notes.
-Thought: User provided some starting information. I can try submitting the application.
+Question: Submit a leave application to trần đăng ninh for me, I'll start on 21.07, my leave ends on the 24th. I'm applying for sick leave, and no notes.
+Thought: User wants to submit a leave application to their manager trần đăng ninh. Their leave starts on 2023-07-21 and ends on
+2023-07-24. The user is applying for sick leave, no notes necessary. Since I have all the required information, I can try submitting the application.
 Action: HRM submit leave
-Action Input: trần đăng ninh, 2023-07-21, 2023-07-24, paid, None
+Action Input: trần đăng ninh, 2023-07-21, 2023-07-24, sick, None
 Observation: OK
 Thought: I now know the final answer
 Final Answer: Leave application is submitted.
@@ -612,7 +613,53 @@ Final Answer: Leave application is submitted.
 
 '''
 
+temp3 = f'''
+
+======
+Example 1:
+Question: Submit a leave application to trần đăng ninh for me, I'll start on 21.07, my leave ends on the 24th. I'm applying for sick leave, and no notes.
+Thought: User wants to submit a leave application to their manager trần đăng ninh. Their leave starts on 2023-07-21 and ends on
+2023-07-24. The user is applying for sick leave, no notes necessary. Since I have all the required information, I can try submitting the application.
+Action: HRM submit leave
+Action Input: trần đăng ninh, 2023-07-21, 2023-07-24, sick, None
+Observation: OK
+Thought: I now know the final answer
+Final Answer: Leave application is submitted.
+
+Example 2:  
+Question: I'd like to submit a leave application.
+Thought: User wants to submit a leave application. I need to ask the user for the manager's name, start and end dates, type of leave and notes. First I will ask the user for the manager's name.
+Action: human
+Action Input: Who is your manager?
+Observation: lý minh quân
+Thought: I need to ask the user when they want to start their leave.
+Action: human
+Action Input: When do you want to start your leave? (YYYY-MM-DD format is preferred)
+Observation: 17.07
+Thought: User wants to start their leave on 2023-07-17. Now I need to ask the user when they want to end their leave.
+Action: human
+Action Input: When will your leave end? (YYYY-MM-DD format is preferred)
+Observation: 18/7
+Thought: User wants to end their leave on 2023-07-18. Now I need to ask the user what type of leave they want to apply for.
+Action: human
+Action Input: What type of leave do you want to apply for? There are 3 types: paid, unpaid and sick.
+Observation: unpaid
+Thought: I need to ask the user for their notes to the manager.
+Action: human
+Action Input: Do you want to leave any notes for the manager?
+Observation: I have to visit my grandmother
+Thought: Got all details for submitting.
+Action: HRM submit leave
+Action Input: lý minh quân, 2023-07-17, 2023-07-18, unpaid, "I have to visit my grandmother"
+Observation: OK
+Thought: I now know the final answer
+Final Answer: Leave application is submitted.
+======
+
+'''
+
 suffix2 = """Submission steps in the example can be skipped if the user provides enough information.
+Ask the user for any missing information.
 Begin!
 
 {context}
@@ -620,7 +667,7 @@ Question: {input}
 Thought: {agent_scratchpad} 
 """
 
-suffix2 = temp2 + suffix2
+suffix2 = temp3 + suffix2
 
 prompt2 = ZSAgentMod.create_prompt(
     tool2,
