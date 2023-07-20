@@ -322,7 +322,8 @@ def submitLeaveApplication(args: str):
         return "Ask the user for the correct manager's name. The user either didn't give you a name or gave you the wrong name."
 
     if '-' not in lst[2]:
-        return "Ask the user when they want to start their leave. Infer the date based on the user's answer."
+        '''Ask the user when they want to start their leave. '''
+        return "Infer the date based on the user's answer."
 
     if dtime.strptime(lst[2], "%Y-%m-%d") < dtime.strptime(date, "%Y-%m-%d"):
         return "Start date cannot be earlier than current date, ask the user for another date."
@@ -331,7 +332,8 @@ def submitLeaveApplication(args: str):
         return "Start date cannot be on the weekend, ask the user for another date."
 
     if '-' not in lst[3]:
-        return "Ask the user when they want to end their leave. Infer the date based on the user's answer."
+        '''Ask the user when they want to end their leave. '''
+        return "Infer the date based on the user's answer."
 
     if dtime.strptime(lst[3], "%Y-%m-%d") < dtime.strptime(lst[2], "%Y-%m-%d"):
         return "End date cannot be earlier than start date, ask the user for another date."
