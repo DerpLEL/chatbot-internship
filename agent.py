@@ -31,7 +31,7 @@ llm3 = AzureChatOpenAI(
     openai_api_version="2023-03-15-preview",
     deployment_name='gpt-35-turbo',
     openai_api_key='400568d9a16740b88aff437480544a39',
-    temperature=0.2,
+    temperature=0.0,
     max_tokens=600,
 )
 
