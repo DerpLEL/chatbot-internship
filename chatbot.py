@@ -334,6 +334,30 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
+    choose_agent_prompt = '''<|im_start|>system
+Given a request/question, classify whether or not the given request/question belongs to one of these 2 classes:
+- info
+- subdel
+DO NOT answer the question/fulfill the request. Only classification is required.
+
+EXAMPLE
+Input: I want to submit a leave application.
+Output: subdel
+Input: I want to delete a leave application.
+Output: subdel
+Input: How many day-offs do I have left?
+Output: info
+Input: What is my job title?
+Output: info
+
+<|im_end|>
+
+<|im_start|>user
+Input: {question}
+<|im_end|>
+<|im_start|>assistant
+Output:'''
+
     def __init__(self):
         self.use_agent = False
         self.agent = Agent()
@@ -381,6 +405,7 @@ Output:"""
         #general
         self.qa_chain = load_qa_with_sources_chain(llm=self.llm, chain_type="stuff", prompt=PromptTemplate.from_template(self.chat_template))
         self.classifier_hrm_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_hrm))
+        self.classifier_agent_type = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.choose_agent_prompt))
 
         #post leave application
         self.leave_application_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_leave_application))
@@ -404,6 +429,9 @@ Output:"""
         else:
             self.use_agent = True
             return "Enabled agent."
+
+    def choose_agent(self, query):
+        return self.classifier_agent_type(query)['text']
 
     def chat_hrm(self, query):
         label = self.classifier_hrm_chain(query)['text']  

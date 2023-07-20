@@ -46,7 +46,13 @@ def chat():
     # Kickstart agent conversation
     if bot.use_agent and not agent_session:
         agent_session = True
-        t1 = threading.Thread(target=run_agent, args=(msg,), daemon=True)
+        agent_arg = 1
+        agent_type = bot.choose_agent(msg).strip()
+
+        if agent_type == "subdel":
+            agent_arg = 2
+
+        t1 = threading.Thread(target=run_agent, args=(msg,agent_arg,), daemon=True)
         t1.start()
 
         # while not bot_message:
@@ -89,9 +95,15 @@ def chat():
     return response
 
 
-def run_agent(query):
+def run_agent(query, agent_type):
     global agent_session
-    bot.agent.run2(query)
+    if agent_type == 1:
+        print("Running agent 1...")
+        bot.agent.run1(query)
+
+    else:
+        print("Running agent 2...")
+        bot.agent.run2(query)
 
     agent_session = False
     return
