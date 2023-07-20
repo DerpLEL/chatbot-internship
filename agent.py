@@ -23,6 +23,7 @@ from langchain.callbacks.base import BaseCallbackHandler
 from typing import Any, Dict, List
 import requests
 from customHuman import *
+import parsedatetime
 
 
 llm3 = AzureChatOpenAI(
@@ -363,10 +364,18 @@ And ask the user (using the tool human) if they want to apply for a different ty
 
 
 def datetime_calc(query: str):
-    try:
-        return eval(query)
-    except Exception:
-        return exec(query)
+    # try:
+    #     return eval(query)
+    # except Exception:
+    #     return exec(query)
+
+    cal = parsedatetime.Calendar()
+    parsed_date, _ = cal.parseDT(query)
+
+    if parsed_date:
+        return parsed_date
+    else:
+        return "Cannot parse given relative datetime."
 
 
 tool1 = [
@@ -496,10 +505,16 @@ The leave application is successfully submitted only when this tool returns "OK"
     #         description="useful for ending a chat conversation at the user's request or when you have accomplished your task."
     #     )
 
+    # Tool(
+    #     name='Calculate time',
+    #     func=datetime_calc,
+    #     description=f'useful for calculating dates. Input is a python code utilizing the datetime library.'
+    # ),
+
     Tool(
         name='Calculate time',
         func=datetime_calc,
-        description=f'useful for calculating dates. Input is a python code utilizing the datetime library.'
+        description=f'useful for calculating dates of relative time inputs (i.e next Tuesday, next Friday, etc). Input is the relative time taken from the user.'
     ),
 
     Tool(
