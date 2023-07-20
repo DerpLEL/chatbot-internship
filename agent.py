@@ -570,7 +570,7 @@ Final Answer: Leave application is submitted.
 
 temp2 = f'''
 
-Example:  
+Examples:  
 Question: I'd like to submit a leave application.
 Thought: I need to ask the user for the manager's name.
 Action: human
@@ -595,6 +595,14 @@ Observation: I have to visit my grandmother
 Thought: Got all details for submitting.
 Action: HRM submit leave
 Action Input: lý minh quân, 2023-07-17, 2023-07-18, unpaid, "I have to visit my grandmother"
+Observation: OK
+Thought: I now know the final answer
+Final Answer: Leave application is submitted.
+
+Question: Submit a leave application to trần đăng ninh for me, I'll start on 21.07, my leave ends on the 24th. I'm applying for paid leave, and no notes.
+Thought: User provided some starting information. I can try submitting the application.
+Action: HRM submit leave
+Action Input: trần đăng ninh, 2023-07-21, 2023-07-24, paid, None
 Observation: OK
 Thought: I now know the final answer
 Final Answer: Leave application is submitted.
