@@ -255,8 +255,7 @@ def post_method(user_id, manager, start_date, end_date, leave_type, note):
         num_days = int(np.busday_count(start_date, end_date)) + 1
 
     string = f'''Leave application details:
-    - UserId: {user_id}
-    - ManagerId: {manager_id} ({manager[1]})
+    - Manager: {manager[1]}
     - Start date: {start_date}
     - End date: {end_date}
     - Type of leave: {typeOfLeave[leave_type]} ({leave_type})
