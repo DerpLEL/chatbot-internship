@@ -294,9 +294,9 @@ Is this information correct? Type 1 to submit, type 0 if you want to tell the bo
 lst = []
 
 
-def sickday_allow():
-    response = requests.get(url + f'/api/User/dayoff-data?email={email}').json()['data']
-    return response['sickDayOffAllow']
+# def sickday_allow():
+#     response = requests.get(url + f'/api/User/dayoff-data?email={email}').json()['data']
+#     return response['sickDayOffAllow']
 
 
 def dayoff_allow():
@@ -341,12 +341,12 @@ def submitLeaveApplication(args: str):
     elif lst[4] in ["paid", "sick"]:
         requestedDayOff = int(np.busday_count(lst[2], lst[3])) + 1
 
-        remainingDayOff = dayoff_allow() if lst[4] == "paid" else sickday_allow()
+        remainingDayOff = dayoff_allow()
 
         if remainingDayOff < requestedDayOff:
             return f"""User does not have enough remaining day off for this application. Put these information into your question:
-Requested {lst[4]} leave day(s): {requestedDayOff}
-Remaining {lst[4]} leave day(s): {remainingDayOff}
+Requested leave day(s): {requestedDayOff}
+Remaining leave day(s): {remainingDayOff}
 And ask the user (using the tool human) if they want to apply for a different type, change start or end dates, or cancel."""
 
     print("\nUserId: ", lst[0])
