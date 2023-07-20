@@ -647,6 +647,8 @@ class MyCustomHandler(BaseCallbackHandler):
 
         if serialized['name'] == 'HRM get applications':
             self.prev_msg = get_leave_applications()
+            if self.prev_msg == "This user hasn't submitted any leave applications.":
+                self.prev_msg = ""
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
         """Run on agent end."""
