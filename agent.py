@@ -171,7 +171,8 @@ def delete_leave_applications(target: str = "Default"):
         string += f"ID: {i['id']}\n"
         string += f"Start date: {i['fromDate']}\n"
         string += f"End date: {i['toDate']}\n"
-        string += f"Number of day(s) off: {i['numberDayOff']}\n\n"
+        string += f"Type of leave: {i['leaveApplicationType']}\n"
+        string += f"Number of requested leave day(s): {i['numberDayOff']}\n\n"
 
     inp = another_chat_input(
         string + "Are you sure you want to delete this application? Type 1 to proceed with delete, type 0 to cancel.\n").strip()
