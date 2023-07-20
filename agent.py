@@ -627,7 +627,25 @@ Observation: OK
 Thought: I now know the final answer
 Final Answer: Leave application is submitted.
 
-Example 2:  
+Example 2:
+Question: I want to submit a leave application. My leave ends on 2023-08-18, my leave will be paid, no notes necessary.
+Thought: User wants to submit a leave application that ends on 2023-08-18. They are applying for paid leave, with no notes. Manager's name and start date are not provided.
+First I will ask the user for the manager's name.
+Action: human
+Action Input: Who is your manager?
+Observation: đào minh sáng
+Thought: The manager is đào minh sáng. I need to ask the user for the start date.
+Action: human
+Action Input: When do you want to start your leave? (YYYY-MM-DD format is preferred)
+Observation: 17-08
+Thought: The user wants to start their leave on 2023-08-17. Since I have all the required information, I can try submitting the application.
+Action: HRM submit leave
+Action Input: đào minh sáng, 2023-08-17, 2023-08-18, paid, None
+Observation: OK
+Thought: I now know the final answer
+Final Answer: Leave application is submitted.
+
+Example e:  
 Question: I'd like to submit a leave application.
 Thought: I need to ask the user for the manager's name.
 Action: human
