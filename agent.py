@@ -93,8 +93,6 @@ def get_user_by_email(query: str = None):
 
         for i in user_data.items():
             return_text += f"- {i[0]}: {i[1]}\n"
-            if i[0] == "maxDayOff":
-                return_text += f"- remainingOffDays: {user_data['maxDayOff'] - user_data['offDay']}\n"
 
         return return_text
 
