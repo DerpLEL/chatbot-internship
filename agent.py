@@ -628,7 +628,7 @@ Final Answer: Leave application is submitted.
 
 Example 2:  
 Question: I'd like to submit a leave application.
-Thought: User wants to submit a leave application. I need to ask the user for the manager's name, start and end dates, type of leave and notes. First I will ask the user for the manager's name.
+Thought: I need to ask the user for the manager's name.
 Action: human
 Action Input: Who is your manager?
 Observation: lý minh quân
