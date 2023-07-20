@@ -757,9 +757,9 @@ class Agent:
         )
 
     def run1(self, query):
-        # self.history1.clear()
+        self.history1.clear()
         return self.agent_chain1.run(input=query, callbacks=[MyCustomHandler()])
 
     def run2(self, query):
-        # self.history2.clear()
+        self.history2.clear()
         return self.agent_chain2.run(input=query, callbacks=[MyCustomHandler()])
