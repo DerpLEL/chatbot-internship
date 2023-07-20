@@ -29,11 +29,10 @@ llm3 = AzureChatOpenAI(
     openai_api_type="azure",
     openai_api_base='https://openai-nois-intern.openai.azure.com/',
     openai_api_version="2023-03-15-preview",
-    deployment_name='gpt-35-turbo-16k',
+    deployment_name='gpt-35-turbo',
     openai_api_key='400568d9a16740b88aff437480544a39',
     temperature=0.0,
     max_tokens=600,
-    top_p=0.95,
 )
 
 format_instr = '''
@@ -265,6 +264,7 @@ def post_method(user_id, manager, start_date, end_date, leave_type, note):
     - Type of leave: {typeOfLeave[leave_type]} ({leave_type})
     - Number of day(s) off: {num_days}
     - Requested leave period: {period} ({typeOfPeriod[period]})
+    - Notes: {note}
 Is this information correct? Type 1 to submit, type 0 if you want to tell the bot to edit the form.\n'''
 
     user_confirm = another_chat_input(string)
@@ -482,8 +482,8 @@ tool2 = [
         description=f'''useful for submitting a leave applications for current user.
 Input of this tool must include 5 parameters concatenated into a string separated by a comma and space, which are: 
 1. manager's name: ask user the name of the manager.
-2. start date: ask the user when they want to start their leave and infer the date from the user's answer.
-3. end date: ask the user when they want to end their leave and infer the date from the user's answer.
+2. start date: ask the user when they want to start their leave and infer the date from the user's answer. Date format must be YYYY-MM-DD.
+3. end date: ask the user when they want to end their leave and infer the date from the user's answer. Date format must be YYYY-MM-DD.
 4. type of leave: ask the user what type of leave they want to apply for, there are only 3 types of leave: paid, unpaid and sick.
 5. note (optional): ask the user whether they want to leave a note for the manager. Default value is "None".
 The leave application is successfully submitted only when this tool returns "OK".'''
@@ -497,7 +497,7 @@ The leave application is successfully submitted only when this tool returns "OK"
     Tool(
         name='Calculate time',
         func=datetime_calc,
-        description='useful for calculating dates. Input is a python code utilizing the datetime library.'
+        description=f'useful for calculating dates. Input is a python code utilizing the datetime library. Suppose the current date is {dtime.strftime(dtime.today(), "%A %Y-%m-%d")} (Weekday YYYY-MM-DD).'
     ),
 
     Tool(
@@ -524,7 +524,7 @@ Do not use any other sources other than the ones you obtain from tools.
 Suppose the current date is {date} (Year-Month-Day).'''
 
 date2 = dtime.strftime(dtime.today(), "%A %Y-%m-%d")
-print(date2)
+# print(date2)
 # date2 = "Friday, 2023-12-29"
 
 prefix2 = f"""You are an intelligent assistant helping user submit or delete leave applications through the HRM system using tools. 
@@ -578,13 +578,13 @@ Thought: I need to ask the user for the manager's name.
 Action: human
 Action Input: Who is your manager?
 Observation: lý minh quân
-Thought: Ask user the date of starting leave.
+Thought: I need to ask the user when they want to start their leave.
 Action: human
-Action Input: Let me know when do you want to start your leave?
+Action Input: When do you want to start your leave?
 Observation: 2023-07-17
-Thought: Ask user the date of ending leave.
+Thought: I need to ask the user when they want to end their leave.
 Action: human
-Action Input: How about the date of ending leave?
+Action Input: When will your leave end?
 Observation: 2023-07-18
 Thought: I need to ask the user what type of leave they want to apply for.
 Action: human
@@ -593,7 +593,7 @@ Observation: unpaid
 Thought: I need to ask the user for their notes to the manager.
 Action: human
 Action Input: Do you want to leave any notes for the manager?
-Observation: "I have to visit my grandmother"
+Observation: I have to visit my grandmother
 Thought: Got all details for submitting.
 Action: HRM submit leave
 Action Input: lý minh quân, 2023-07-17, 2023-07-18, unpaid, "I have to visit my grandmother"
