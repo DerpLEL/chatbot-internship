@@ -480,8 +480,8 @@ tool2 = [
         description=f'''useful for submitting a leave applications for current user.
 Input of this tool must include 5 parameters concatenated into a string separated by a comma and space, which are: 
 1. manager's name: ask user the name of the manager.
-2. start date: ask the user when they want to start their leave and infer the date from the user's answer. Date format must be YYYY-MM-DD.
-3. end date: ask the user when they want to end their leave and infer the date from the user's answer. Date format must be YYYY-MM-DD.
+2. start date: ask the user when they want to start their leave and infer the date from the user's answer.
+3. end date: ask the user when they want to end their leave and infer the date from the user's answer.
 4. type of leave: ask the user what type of leave they want to apply for, there are only 3 types of leave: paid, unpaid and sick.
 5. note (optional): ask the user whether they want to leave a note for the manager. Default value is "None".
 The leave application is successfully submitted only when this tool returns "OK".'''
@@ -601,7 +601,8 @@ Final Answer: Leave application is submitted.
 
 '''
 
-suffix2 = """Begin!
+suffix2 = """Submission steps in the example can be skipped if the user provides enough information.
+Begin!
 
 {context}
 Question: {input}
