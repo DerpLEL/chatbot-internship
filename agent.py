@@ -31,7 +31,7 @@ llm3 = AzureChatOpenAI(
     openai_api_version="2023-03-15-preview",
     deployment_name='gpt-35-turbo',
     openai_api_key='400568d9a16740b88aff437480544a39',
-    temperature=0.0,
+    temperature=0.2,
     max_tokens=600,
 )
 
@@ -570,7 +570,16 @@ Final Answer: Leave application is submitted.
 
 temp2 = f'''
 
-Examples:  
+Example 1:
+Question: Submit a leave application to trần đăng ninh for me, I'll start on 21.07, my leave ends on the 24th. I'm applying for paid leave, and no notes.
+Thought: User provided some starting information. I can try submitting the application.
+Action: HRM submit leave
+Action Input: trần đăng ninh, 2023-07-21, 2023-07-24, paid, None
+Observation: OK
+Thought: I now know the final answer
+Final Answer: Leave application is submitted.
+
+Example 2:  
 Question: I'd like to submit a leave application.
 Thought: I need to ask the user for the manager's name.
 Action: human
@@ -595,14 +604,6 @@ Observation: I have to visit my grandmother
 Thought: Got all details for submitting.
 Action: HRM submit leave
 Action Input: lý minh quân, 2023-07-17, 2023-07-18, unpaid, "I have to visit my grandmother"
-Observation: OK
-Thought: I now know the final answer
-Final Answer: Leave application is submitted.
-
-Question: Submit a leave application to trần đăng ninh for me, I'll start on 21.07, my leave ends on the 24th. I'm applying for paid leave, and no notes.
-Thought: User provided some starting information. I can try submitting the application.
-Action: HRM submit leave
-Action Input: trần đăng ninh, 2023-07-21, 2023-07-24, paid, None
 Observation: OK
 Thought: I now know the final answer
 Final Answer: Leave application is submitted.
