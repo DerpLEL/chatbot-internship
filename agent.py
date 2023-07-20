@@ -32,7 +32,8 @@ llm3 = AzureChatOpenAI(
     deployment_name='gpt-35-turbo-16k',
     openai_api_key='400568d9a16740b88aff437480544a39',
     temperature=0.0,
-    max_tokens=600
+    max_tokens=600,
+    top_p=0.95,
 )
 
 format_instr = '''
