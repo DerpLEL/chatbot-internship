@@ -645,7 +645,7 @@ Observation: OK
 Thought: I now know the final answer
 Final Answer: Leave application is submitted.
 
-Example e:  
+Example 3:  
 Question: I'd like to submit a leave application.
 Thought: I need to ask the user for the manager's name.
 Action: human
