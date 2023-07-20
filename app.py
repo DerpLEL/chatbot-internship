@@ -91,7 +91,7 @@ def chat():
 
 def run_agent(query):
     global agent_session
-    bot.agent.run1(query)
+    bot.agent.run2(query)
 
     agent_session = False
     return

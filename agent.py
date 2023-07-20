@@ -495,7 +495,7 @@ The leave application is successfully submitted only when this tool returns "OK"
     Tool(
         name='Calculate time',
         func=datetime_calc,
-        description=f'useful for calculating dates. Input is a python code utilizing the datetime library. Suppose the current date is {dtime.strftime(dtime.today(), "%A %Y-%m-%d")} (Weekday YYYY-MM-DD).'
+        description=f'useful for calculating dates. Input is a python code utilizing the datetime library.'
     ),
 
     Tool(
@@ -523,7 +523,7 @@ Suppose the current date is {date} (Year-Month-Day).'''
 
 date2 = dtime.strftime(dtime.today(), "%A %Y-%m-%d")
 # print(date2)
-# date2 = "Friday, 2023-12-29"
+# date2 = "Friday 2024-08-11"
 
 prefix2 = f"""You are an intelligent assistant helping user submit or delete leave applications through the HRM system using tools. 
 The user chatting with you has the email: {email}. 
@@ -578,13 +578,13 @@ Action Input: Who is your manager?
 Observation: lý minh quân
 Thought: I need to ask the user when they want to start their leave.
 Action: human
-Action Input: When do you want to start your leave?
-Observation: 2023-07-17
-Thought: I need to ask the user when they want to end their leave.
+Action Input: When do you want to start your leave? (YYYY-MM-DD format is preferred)
+Observation: 17.07
+Thought: User wants to start their leave on 2023-07-17. Now I need to ask the user when they want to end their leave.
 Action: human
-Action Input: When will your leave end?
-Observation: 2023-07-18
-Thought: I need to ask the user what type of leave they want to apply for.
+Action Input: When will your leave end? (YYYY-MM-DD format is preferred)
+Observation: 18/7
+Thought: User wants to end their leave on 2023-07-18. Now I need to ask the user what type of leave they want to apply for.
 Action: human
 Action Input: What type of leave do you want to apply for? There are 3 types: paid, unpaid and sick.
 Observation: unpaid
