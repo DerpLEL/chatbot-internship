@@ -570,6 +570,7 @@ Final Answer: Leave application is submitted.
 
 temp2 = f'''
 
+======
 Example 1:
 Question: Submit a leave application to trần đăng ninh for me, I'll start on 21.07, my leave ends on the 24th. I'm applying for paid leave, and no notes.
 Thought: User provided some starting information. I can try submitting the application.
@@ -607,6 +608,7 @@ Action Input: lý minh quân, 2023-07-17, 2023-07-18, unpaid, "I have to visit m
 Observation: OK
 Thought: I now know the final answer
 Final Answer: Leave application is submitted.
+======
 
 '''
 
