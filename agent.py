@@ -505,7 +505,7 @@ Input of this tool must include 5 parameters concatenated into a string separate
 3. end date: ask the user when they want to end their leave and infer the date from the user's answer.
 4. type of leave: ask the user what type of leave they want to apply for, there are only 3 types of leave: paid, unpaid and sick.
 5. note: ask the user whether they want to leave a note for the manager. Default value is "None".
-The leave application is successfully submitted only when this tool returns "OK".'''
+Until this tool returns "OK", the user's leave application IS NOT submitted.'''
     ),
     #     Tool(
     #         name='End conversation',
