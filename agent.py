@@ -283,7 +283,7 @@ Is this information correct? Type 1 to submit, type 0 if you want to tell the bo
     response = requests.post('https://hrm-nois-fake.azurewebsites.net/api/LeaveApplication/Submit', json={
         "userId": user_id,
         "reviewUserId": manager_id,
-        "relatedUserId": "None",
+        "relatedUserId": "",
         "fromDate": start_date,
         "toDate": end_date,
         "leaveApplicationTypeId": typeOfLeave[leave_type],
@@ -323,7 +323,7 @@ def submitLeaveApplication(args: str):
 
     if '-' not in lst[2]:
         '''Ask the user when they want to start their leave. '''
-        return "Infer the date based on the user's answer."
+        return "Infer the date based on the user's answer. Use a tool if possible."
 
     if dtime.strptime(lst[2], "%Y-%m-%d") < dtime.strptime(date, "%Y-%m-%d"):
         return "Start date cannot be earlier than current date, ask the user for another date."
@@ -333,7 +333,7 @@ def submitLeaveApplication(args: str):
 
     if '-' not in lst[3]:
         '''Ask the user when they want to end their leave. '''
-        return "Infer the date based on the user's answer."
+        return "Infer the date based on the user's answer. Use a tool if possible."
 
     if dtime.strptime(lst[3], "%Y-%m-%d") < dtime.strptime(lst[2], "%Y-%m-%d"):
         return "End date cannot be earlier than start date, ask the user for another date."
@@ -404,6 +404,12 @@ tool1 = [
     #         func=nothing,
     #         description='useful for filling in Action: after Thought: if the task can\'t be done or the task is cancelled.'
     #     ),
+
+    Tool(
+        name='HRM get applications',
+        func=get_leave_applications,
+        description='useful for getting leave applications of the current user, mostly for deletion tasks. Input is a "None" string.'
+    ),
 
     HumanInputRun()
 ]
@@ -514,9 +520,9 @@ The leave application is successfully submitted only when this tool returns "OK"
     # ),
 
     Tool(
-        name='Calculate time',
+        name='Calculate relative time',
         func=datetime_calc,
-        description=f'useful for calculating dates of relative time inputs (i.e next Tuesday, next Friday, etc). Input is the relative time taken from the user.'
+        description=f'useful for calculating relative time inputs (i.e next Tuesday, next Friday, etc). Input is a relative time string.'
     ),
 
     Tool(
