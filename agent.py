@@ -261,15 +261,20 @@ Is this information correct? Type 1 to submit, type 0 if you want to tell the bo
         "userId": user_id,
         "reviewUserId": manager_id,
         "relatedUserId": "",
-        "fromDate": start_date,
-        "toDate": end_date,
+        "fromDate": dtime.strftime(start_dtime, "%m/%d/%Y"),
+        "toDate": dtime.strftime(end_dtime, "%m/%d/%Y"),
         "leaveApplicationTypeId": typeOfLeave[leave_type],
         "leaveApplicationNote": note,
         "periodType": int(period),
         "numberOffDay": num_days
     })
 
-    return response.json()['message']
+    try:
+        return response.json()['message']
+
+    except KeyError:
+        print(response.text)
+        return "OK"
 
 
 lst = []
