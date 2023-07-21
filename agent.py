@@ -26,7 +26,7 @@ from customHuman import *
 import parsedatetime
 
 
-llm3 = AzureChatOpenAI(
+llm3 = AzureOpenAI(
     openai_api_type="azure",
     openai_api_base='https://openai-nois-intern.openai.azure.com/',
     openai_api_version="2023-03-15-preview",
@@ -35,6 +35,16 @@ llm3 = AzureChatOpenAI(
     temperature=0.0,
     max_tokens=600,
 )
+
+# llm3 = AzureChatOpenAI(
+#     openai_api_type="azure",
+#     openai_api_base='https://openai-nois-intern.openai.azure.com/',
+#     openai_api_version="2023-03-15-preview",
+#     deployment_name='gpt-35-turbo',
+#     openai_api_key='400568d9a16740b88aff437480544a39',
+#     temperature=0.0,
+#     max_tokens=600,
+# )
 
 format_instr = '''
 Structure your response with the following format:
