@@ -26,25 +26,25 @@ from customHuman import *
 import parsedatetime
 
 
-llm3 = AzureOpenAI(
-    openai_api_type="azure",
-    openai_api_base='https://openai-nois-intern.openai.azure.com/',
-    openai_api_version="2023-03-15-preview",
-    deployment_name='text-davinci-003',
-    openai_api_key='400568d9a16740b88aff437480544a39',
-    temperature=0.0,
-    max_tokens=600,
-)
-
-# llm3 = AzureChatOpenAI(
+# llm3 = AzureOpenAI(
 #     openai_api_type="azure",
 #     openai_api_base='https://openai-nois-intern.openai.azure.com/',
 #     openai_api_version="2023-03-15-preview",
-#     deployment_name='gpt-35-turbo',
+#     deployment_name='text-davinci-003',
 #     openai_api_key='400568d9a16740b88aff437480544a39',
 #     temperature=0.0,
 #     max_tokens=600,
 # )
+
+llm3 = AzureChatOpenAI(
+    openai_api_type="azure",
+    openai_api_base='https://openai-nois-intern.openai.azure.com/',
+    openai_api_version="2023-03-15-preview",
+    deployment_name='gpt-35-turbo-16k',
+    openai_api_key='400568d9a16740b88aff437480544a39',
+    temperature=0.0,
+    max_tokens=600,
+)
 
 format_instr = '''
 Structure your response with the following format:
@@ -221,7 +221,7 @@ def check_manager_name(name):
 
 
 def post_method(user_id, manager, start_date, end_date, leave_type, note):
-    typeOfLeave = {"paid": 1, "unpaid": 2, "sick": 8}
+    typeOfLeave = {"paid": 1, "unpaid": 2, "sick": 8, "social insurance": 9, "conference": 5, "other": 3,}
     typeOfPeriod = {"0": "All day", "1": "Morning", "2": "Afternoon"}
 
     start_dtime = dtime.strptime(start_date, "%Y-%m-%d")
@@ -271,8 +271,8 @@ Is this information correct? Type 1 to submit, type 0 if you want to tell the bo
         "userId": user_id,
         "reviewUserId": manager_id,
         "relatedUserId": "",
-        "fromDate": dtime.strftime(start_dtime, "%m/%d/%Y"),
-        "toDate": dtime.strftime(end_dtime, "%m/%d/%Y"),
+        "fromDate": start_date,
+        "toDate": end_date,
         "leaveApplicationTypeId": typeOfLeave[leave_type],
         "leaveApplicationNote": note,
         "periodType": int(period),
@@ -333,10 +333,10 @@ def submitLeaveApplication(args: str):
     if dtime.strptime(lst[3], "%Y-%m-%d").weekday() in [5, 6]:
         return "End date cannot be on the weekend, ask the user for another date."
 
-    if lst[4] not in ["unpaid", "paid", "sick"]:
+    if lst[4] not in ["unpaid", "paid", "sick", "social insurance", "conference", "other"]:
         return "Invalid leave type. Ask the user for the correct type of leave"
 
-    elif lst[4] in ["paid", "sick"]:
+    elif lst[4] in ["paid", "sick", "other (wedding or funeral)"]:
         requestedDayOff = int(np.busday_count(lst[2], lst[3])) + 1
 
         remainingDayOff = dayoff_allow()
@@ -351,6 +351,8 @@ And ask the user (using the tool human) if they want to apply for a different ty
     print("ReviewerId: ", manager_id)
     print("Start date: ", lst[2])
     print("End date: ", lst[3])
+    print("Type of leaving: ", lst[4])
+    print("Note: ", lst[5])
 
     reply = post_method(lst[0], (manager_id, manager_name), lst[2], lst[3], lst[4], lst[5])
 
@@ -495,7 +497,7 @@ Input of this tool must include 5 parameters concatenated into a string separate
 1. manager's name: ask user the name of the manager.
 2. start date: ask the user when they want to start their leave and infer the date from the user's answer.
 3. end date: ask the user when they want to end their leave and infer the date from the user's answer.
-4. type of leave: ask the user what type of leave they want to apply for, there are only 3 types of leave: paid, unpaid and sick.
+4. type of leave: ask the user what type of leave they want to apply for, there are only 6 types of leave: paid, unpaid, sick, social insurance, conference and other (wedding or funeral).
 5. note: ask the user whether they want to leave a note for the manager. Default value is "None".
 Until this tool returns "OK", the user's leave application IS NOT submitted.'''
     ),
