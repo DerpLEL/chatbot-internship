@@ -117,6 +117,7 @@ def get_message_agent():
 
     return jsonify({"msg": "OK"})
 
+
 @app.route("/user", methods=["GET"])
 def get_message_user():
     global user_msg
