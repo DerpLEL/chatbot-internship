@@ -1,6 +1,5 @@
 import datetime
 from typing import Any, Dict
-
 import numpy as np
 import parsedatetime
 from langchain.agents import ZeroShotAgent, AgentExecutor, Tool
@@ -9,20 +8,16 @@ from langchain.chains import LLMChain
 from langchain.chat_models import AzureChatOpenAI
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.schema import AgentFinish
-
 from customHuman import *
 
-# llm3 = AzureOpenAI(
-#     openai_api_type="azure",
-#     openai_api_base='https://openai-nois-intern.openai.azure.com/',
-#     openai_api_version="2023-03-15-preview",
-#     deployment_name='text-davinci-003',
-#     openai_api_key='400568d9a16740b88aff437480544a39',
-#     temperature=0.0,
-#     max_tokens=600,
-# )
-
 llm3 = AzureChatOpenAI(
+    # Initial an Azure Open AI chat.
+
+    # deployment_name: name of the model of Azure Open AI.
+    # open_api_key: the key endpoint provided in AzureOpenAI service. 
+    # temperature: the higher the temperature, the greater the randomness of output.
+    # max_tokens: the maximum tokens of ouput.
+
     openai_api_type="azure",
     openai_api_base='https://openai-nois-intern.openai.azure.com/',
     openai_api_version="2023-03-15-preview",
@@ -32,6 +27,7 @@ llm3 = AzureChatOpenAI(
     max_tokens=600,
 )
 
+# Create the format of agent for bot to follow.
 format_instr = '''
 Structure your response with the following format:
 
@@ -48,23 +44,25 @@ Thought: ```I now know the final answer```
 Final Answer: ```your final answer to the original input question```
 '''
 
-
 class ZSAgentMod(ZeroShotAgent):
     @property
     def llm_prefix(self) -> str:
         """Prefix to append the llm call with."""
         return "Thought: "
 
-
+# Set the API url
 url = "https://hrm-nois-fake.azurewebsites.net/"
 email = 'bao.ho@nois.vn'
+# Set the current date time
 dtime = datetime.datetime
 date = dtime.now().strftime("%Y-%m-%d")
 
 
 def another_chat_input(query):
+    """
+        This function is used to print the string to UI.
+    """
     reply = requests.post("http://localhost:5000/agent", data={"msg": query})
-
     res = ""
 
     while not res:
@@ -77,6 +75,10 @@ def another_chat_input(query):
 
 
 def get_user_by_email(query: str = None):
+    """
+        This function is used to get all user's data in HRM system via the email.
+        Using GET method with the given API.
+    """
     user_email = email
     if '@' in query and query != user_email:
         return f"Access denied, only the data of the current user {user_email} can be accessed."
@@ -99,6 +101,10 @@ def get_user_by_email(query: str = None):
 
 
 def get_userName(query: str = None):
+    """
+        This function is used to get user's name via the email.
+        Using GET method with the given API.
+    """
     user_email = email
     response = requests.get(url + f'/api/User/me?email={user_email}')
     if response.status_code == 200:
@@ -108,6 +114,10 @@ def get_userName(query: str = None):
 
 
 def get_userId(query: str = None):
+    """
+        This function is used to get user's ID via the email.
+        Using GET method with the given API.
+    """
     user_email = email
     response = requests.get(url + f'/api/User/me?email={user_email}')
     if response.status_code == 200:
@@ -117,13 +127,15 @@ def get_userId(query: str = None):
 
 
 def get_leave_applications(query: str = None):
+    """
+        This function is used to get all submitted leave applications of user via user's ID.
+        Using GET method with the given API.
+    """
     userId = get_userId(email)
-
     applis = requests.get(url + f'/api/LeaveApplication/{userId}').json()['data']
     if not applis:
         return "This user hasn't submitted any leave applications."
-
-    #     applis = [i for i in applis if i['reviewStatusName'] != "Đồng ý"]
+    #   applis = [i for i in applis if i['reviewStatusName'] != "Đồng ý"]
 
     string = ""
     counter = 1
@@ -135,15 +147,17 @@ def get_leave_applications(query: str = None):
         string += f"End date: {i['toDate']}\n"
         string += f"Type of leave: {i['leaveApplicationType']}\n"
         string += f"Number of requested leave day(s): {i['numberDayOff']}\n\n"
-
         counter += 1
-
     return string
 
 
 def delete_leave_applications(target: str = "Default"):
+    """
+        This function is used to delete 1 leave application which user want to delete.
+        The function also show all details of all leave applications.
+        Return is a value of DELETE method with given API.
+    """
     applis = requests.get(url + f'/api/LeaveApplication/{get_userId(email)}').json()['data']
-
     appli = [i for i in applis if i['id'] == target]
 
     string = ""
@@ -153,13 +167,10 @@ def delete_leave_applications(target: str = "Default"):
         string += f"End date: {i['toDate']}\n"
         string += f"Type of leave: {i['leaveApplicationType']}\n"
         string += f"Number of requested leave day(s): {i['numberDayOff']}\n\n"
-
     inp = another_chat_input(
         string + "Are you sure you want to delete this application? Type 1 to proceed with delete, type 0 to cancel.\n").strip()
-
     while inp != "1" and inp != "0":
         inp = another_chat_input("Invalid input. Type 1 to proceed with delete, type 0 to cancel.\n")
-
     if inp == "0":
         return "User has cancelled the deletion process."
 
@@ -167,8 +178,13 @@ def delete_leave_applications(target: str = "Default"):
 
 
 def check_manager_name(name):
+    """
+        This function is used to check if the manager's name was in list of managers.
+        Input:
+            name: the name of user's manager.
+        Return manager's ID if founded, else -1.
+    """
     response = requests.get(url + '/api/User/manager-users').json()['data']
-
     for data in response:
         if data['fullName'].lower() == name.lower():
             return data['id'], data['fullName']
@@ -177,6 +193,17 @@ def check_manager_name(name):
 
 
 def post_method(user_id, manager, start_date, end_date, leave_type, note):
+    """
+        This function is used to submit a leave application.
+        Input:
+            user_id: the ID of user who submit this application
+            manager: a pair value (manager's id, manager's name), manager is the manager of user.
+            start_date: the date user want to start leaving.
+            end_date: the date user want to end leaving.
+            leave_type: the type of leave such as paid leave, unpaid leave, etc.
+            note: the note user want to send to his/her manager.
+        Return is a value of DELETE method with given API.
+    """
     typeOfLeave = {"paid": 1, "unpaid": 2, "sick": 8, "social insurance": 9, "conference": 5, "other": 3,}
     typeOfPeriod = {"0": "All day", "1": "Morning", "2": "Afternoon"}
 
@@ -186,19 +213,14 @@ def post_method(user_id, manager, start_date, end_date, leave_type, note):
     manager_id = manager[0]
 
     period = "0"
-
     if end_dtime == start_dtime:
         period = another_chat_input(
             "Which period do you want to leave? Type only the number respectively:\n0. All day\n1. Only the morning\n2. Only the afternoon\n\n")
-
         while period != "0" and period != "1" and period != "2":
             period = another_chat_input("Invalid input. Type only the number respectively:\n0. All day\n1. Only the morning\n2. Only the afternoon\n")
-
         num_days = 0.5
-
         if period == "0":
             num_days = 1
-
     else:
         num_days = int(np.busday_count(start_date, end_date)) + 1
 
@@ -233,10 +255,8 @@ Is this information correct? Type 1 to submit, type 0 if you want to tell the bo
         "periodType": int(period),
         "numberOffDay": num_days
     })
-
     try:
         return response.json()['message']
-
     except KeyError:
         print(response.text)
         return "OK"
@@ -246,22 +266,11 @@ lst = []
 
 
 def dayoff_allow():
-    """
-        Input: Nothing
-        Output: field dayOffAllow from user's profile on HRM
-        Purpose: Get remaining day-offs of a user
-    """
     response = requests.get(url + f'/api/User/dayoff-data?email={email}').json()['data']
     return response['dayOffAllow']
 
 
 def submitLeaveApplication(args: str):
-    """
-        Input: a string containing 5 arguments separated by a comma with space ", "
-        Output: response message after sending a leave application from the post_method function.
-        Purpose: validates the bot's input and return suggestions depending
-        on what the bot got wrong.
-    """
     global lst
     lst = args.split(', ')
 
@@ -270,64 +279,57 @@ def submitLeaveApplication(args: str):
     if len(lst) != 6:
         return "Incorrect number of arguments, this function requires 5 arguments: manager's id, start date, end date, leave type and note."
 
-    # Manager check
     manager_id, manager_name = check_manager_name(lst[1])
     if manager_id == -1:
         return "Ask the user for the correct manager's name. The user either didn't give you a name or gave you the wrong name."
 
-    # Valid start date check 1, check if it's a valid date format
     if '-' not in lst[2]:
+        '''Ask the user when they want to start their leave. '''
         return "Infer the date based on the user's answer. Use a tool if possible."
 
-    # Valid start date check 2
     if dtime.strptime(lst[2], "%Y-%m-%d") < dtime.strptime(date, "%Y-%m-%d"):
         return "Start date cannot be earlier than current date, ask the user for another date."
 
-    # Valid start date check 3
     if dtime.strptime(lst[2], "%Y-%m-%d").weekday() in [5, 6]:
         return "Start date cannot be on the weekend, ask the user for another date."
 
-    # Valid end date check 1, check if it's a valid date format
     if '-' not in lst[3]:
+        '''Ask the user when they want to end their leave. '''
         return "Infer the date based on the user's answer. Use a tool if possible."
 
-    # Valid end date check 2
     if dtime.strptime(lst[3], "%Y-%m-%d") < dtime.strptime(lst[2], "%Y-%m-%d"):
         return "End date cannot be earlier than start date, ask the user for another date."
 
-    # Valid end date check 3
     if dtime.strptime(lst[3], "%Y-%m-%d").weekday() in [5, 6]:
         return "End date cannot be on the weekend, ask the user for another date."
 
-    # Valid leave type check
     if lst[4] not in ["unpaid", "paid", "sick", "social insurance", "conference", "other"]:
         return "Invalid leave type. Ask the user for the correct type of leave"
 
-    # If leave type is either paid, sick or other, checks if user has enough day-offs left
     elif lst[4] in ["paid", "sick", "other (wedding or funeral)"]:
         requestedDayOff = int(np.busday_count(lst[2], lst[3])) + 1
 
         remainingDayOff = dayoff_allow()
 
-        # If not enough, tell the bot to inform the user
         if remainingDayOff < requestedDayOff:
             return f"""User does not have enough remaining day off for this application. Put these information into your question:
 Requested leave day(s): {requestedDayOff}
 Remaining leave day(s): {remainingDayOff}
 And ask the user (using the tool human) if they want to apply for a different type, change start or end dates, or cancel."""
 
-    # Call the post_method function to send the leave application
+    print("\nUserId: ", lst[0])
+    print("ReviewerId: ", manager_id)
+    print("Start date: ", lst[2])
+    print("End date: ", lst[3])
+    print("Type of leaving: ", lst[4])
+    print("Note: ", lst[5])
+
     reply = post_method(lst[0], (manager_id, manager_name), lst[2], lst[3], lst[4], lst[5])
 
     return reply
 
 
 def datetime_calc(query: str):
-    """
-        Input: a string with relative datetime from the user (i.e. tomorrow, next Friday, next week, etc)
-        Output: a datetime string in the form of YYYY-MM-DD HH:MM:SS
-        Purpose: return a specific date based on the user's relative date inputs
-    """
     cal = parsedatetime.Calendar()
     parsed_date, _ = cal.parseDT(query)
 
@@ -337,7 +339,6 @@ def datetime_calc(query: str):
         return "Cannot parse given relative datetime."
 
 
-# Defining tools (from created functions) for the agent to use
 tool1 = [
     Tool(
         name='HRM get user data',
@@ -351,16 +352,15 @@ tool1 = [
         description='useful for getting leave applications of the current user, mostly for deletion tasks. Input is a "None" string.'
     ),
 
-    # This tool allows human inputs for agents to communicate with user
     HumanInputRun()
 ]
 
-# Prompt prefix, suffix containing examples for agent 1 (The info-asking agent)
-# User email and their username are embedded into the prompt as well as the examples
+
 prefix1 = f"""You are an intelligent assistant helping user find his/her information in HRM system by using tool. 
 The user chatting with you is {get_userName(email)} with the email {email}. If question/data are not about them, tell them you don't have access.
 DO NOT use data of the user {email} to answer questions about other users.
 You have access to the following tools:"""
+
 
 temp1 = f'''
 
@@ -390,10 +390,8 @@ Question: {input}
 {agent_scratchpad} 
 '''
 
-# Adding the example to the "Begin!" suffix
 suffix1 = temp1 + suffix1
 
-# Assembling the complete prompt from the prefix and suffix
 prompt1 = ZeroShotAgent.create_prompt(
     tool1,
     prefix=prefix1,
@@ -401,7 +399,6 @@ prompt1 = ZeroShotAgent.create_prompt(
     input_variables=["input", "context", "agent_scratchpad"],
 )
 
-# Defining tools for agent 2
 tool2 = [
     Tool(
         name='HRM submit leave',
@@ -440,8 +437,6 @@ Until this tool returns "OK", the user's leave application IS NOT submitted.'''
 
 date2 = dtime.strftime(dtime.today(), "%A %Y-%m-%d")
 
-# Prompt prefix, suffix with examples for agent 2 (The application submission/deletion agent)
-# User email and the current date will be embedded into the prompt.
 prefix2 = f"""You are an intelligent assistant helping user submit or delete leave applications through the HRM system using tools. 
 The user chatting with you has the email: {email}. 
 Suppose the current date is {date2} (Weekday Year-Month-Day).
@@ -532,46 +527,31 @@ prompt2 = ZSAgentMod.create_prompt(
 
 
 class MyCustomHandler(BaseCallbackHandler):
-    """
-        Agent callback class
-        Due the base langchain's agent being unable to output their Thoughts: and Observation:
-        directly to the UI, a callback class is created for this use-case by inheriting langchain's
-        BaseCallbackHandler to send message strings to the UI for the user to see
-    """
     prev_msg = ""
 
-    # The method on_tool_start runs whenever the agent uses any tools (function) given
     def on_tool_start(
         self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> Any:
-        # If the bot uses the human tool, the question will be sent to the UI using a custom endpoint
-        # The question will also include the prev_msg string, if the bot uses the human tool right after
-        # the HRM get applications tool
+        """Run when tool starts running."""
         if serialized['name'] in ['human']:
             reply = requests.post("http://localhost:5000/agent", data={"msg": self.prev_msg + input_str})
             self.prev_msg = ""
             print("\n")
             print(reply.text)
 
-        # Set prev_msg to the string from get_leave_applications() function
         if serialized['name'] == 'HRM get applications':
             self.prev_msg = get_leave_applications()
             if self.prev_msg == "This user hasn't submitted any leave applications.":
                 self.prev_msg = ""
 
-    # The method on_agent_finish runs whenever the agent finishes executing the user's request
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
-        # Sends one final message to the UI
+        """Run on agent end."""
         reply = requests.post("http://localhost:5000/agent",
                               data={"msg": self.prev_msg + finish.return_values['output']})
         self.prev_msg = ""
 
 
 class Agent:
-    """
-        The agent class, for initializing the 2 agents from constructed prompts, language models and the
-        custom callback class.
-    """
     def __init__(self):
         self.llm_chain1 = LLMChain(llm=llm3, prompt=prompt1)
 
@@ -599,12 +579,10 @@ class Agent:
             memory=self.history2
         )
 
-    # For running agent 1
     def run1(self, query):
         self.history1.clear()
         return self.agent_chain1.run(input=query, callbacks=[MyCustomHandler()])
 
-    # For running agent 2
     def run2(self, query):
         self.history2.clear()
         return self.agent_chain2.run(input=query, callbacks=[MyCustomHandler()])
