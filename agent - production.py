@@ -62,6 +62,20 @@ dtime = datetime.datetime
 date = dtime.now().strftime("%Y-%m-%d")
 
 
+def another_chat_input(query):
+    reply = requests.post("http://localhost:5000/agent", data={"msg": query})
+
+    res = ""
+
+    while not res:
+        reply = requests.get("http://localhost:5000/user").json()
+        print(f"Reply: {reply}")
+        res = reply['msg']
+
+    print(f"Message: {res} received.")
+    return res
+
+
 def get_user_by_email(query: str = None):
     user_email = email
     if '@' in query and query != user_email:
@@ -82,20 +96,6 @@ def get_user_by_email(query: str = None):
         return return_text
 
     return f'Error: {response.status_code}'
-
-
-def another_chat_input(query):
-    reply = requests.post("http://localhost:5000/agent", data={"msg": query})
-
-    res = ""
-
-    while not res:
-        reply = requests.get("http://localhost:5000/user").json()
-        print(f"Reply: {reply}")
-        res = reply['msg']
-
-    print(f"Message: {res} received.")
-    return res
 
 
 def get_userName(query: str = None):
@@ -185,7 +185,6 @@ def post_method(user_id, manager, start_date, end_date, leave_type, note):
 
     manager_id = manager[0]
 
-    num_days = 0
     period = "0"
 
     if end_dtime == start_dtime:
