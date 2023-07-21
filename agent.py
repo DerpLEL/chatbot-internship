@@ -190,29 +190,6 @@ def delete_leave_applications(target: str = "Default"):
     return requests.delete(url + f'/api/LeaveApplication/{target}').json()['message']
 
 
-# def confirm_delete_leave(target: str):
-#     applis = requests.get(url + f'/api/LeaveApplication/{get_userId(email)}').json()['data']
-#
-#     appli = [i for i in applis if i['id'] == target]
-#
-#     string = ""
-#     for i in appli:
-#         string += f"ID: {i['id']}\n"
-#         string += f"Start date: {i['fromDate']}\n"
-#         string += f"End date: {i['toDate']}\n"
-#         string += f"Number of day(s) off: {i['numberDayOff']}\n\n"
-#
-#     inp = another_chat_input(string + "Are you sure you want to delete this application? Type 1 to proceed with delete, type 0 to cancel\n").strip()
-#
-#     while inp != "1" and inp != "0":
-#         inp = another_chat_input("Invalid input. Type 1 to proceed with delete, type 0 to cancel\n")
-#
-#     if inp == "0":
-#         return "User has cancelled the deletion process."
-#
-#     return "User has confirmed the deletion of the selected leave application."
-
-
 def check_manager_name(name):
     response = requests.get(url + '/api/User/manager-users').json()['data']
 
