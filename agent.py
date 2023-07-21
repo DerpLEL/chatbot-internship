@@ -656,7 +656,7 @@ Final Answer: Leave application is submitted.
 Example 2:
 Question: I want to submit a leave application. My leave ends on 2023-08-18, my leave will be paid, no notes necessary.
 Thought: User wants to submit a leave application that ends on 2023-08-18. They are applying for paid leave, with no notes. Manager's name and start date are not provided.
-First I will ask the user for the manager's name.
+First I will ask the user for the manager's name. Then I will ask the user for the start date.
 Action: human
 Action Input: Who is your manager?
 Observation: đào minh sáng
