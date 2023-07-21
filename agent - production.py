@@ -1,30 +1,16 @@
-from langchain.prompts import PromptTemplate
-from langchain.chat_models import AzureChatOpenAI
-from langchain.llms import AzureOpenAI
-from langchain.chains.qa_with_sources import load_qa_with_sources_chain
-from langchain.chains import LLMChain, APIChain
-from langchain.chains.api.prompt import API_RESPONSE_PROMPT
-from langchain.schema import Document
-from langchain.tools import BaseTool
-from langchain.agents import ZeroShotAgent, AgentExecutor, AgentType, initialize_agent, Tool, load_tools
-from langchain.schema import AgentFinish
-from langchain.agents.agent_toolkits.openapi import planner
-from langchain.requests import TextRequestsWrapper
-from langchain.memory import ConversationBufferWindowMemory
-from langchain.chains.api import open_meteo_docs
 import datetime
-import requests
-import pandas as pd
-import os
-from azure.core.credentials import AzureKeyCredential
-from azure.search.documents import SearchClient
-import numpy as np
-from langchain.callbacks.base import BaseCallbackHandler
-from typing import Any, Dict, List
-import requests
-from customHuman import *
-import parsedatetime
+from typing import Any, Dict
 
+import numpy as np
+import parsedatetime
+from langchain.agents import ZeroShotAgent, AgentExecutor, Tool
+from langchain.callbacks.base import BaseCallbackHandler
+from langchain.chains import LLMChain
+from langchain.chat_models import AzureChatOpenAI
+from langchain.memory import ConversationBufferWindowMemory
+from langchain.schema import AgentFinish
+
+from customHuman import *
 
 # llm3 = AzureOpenAI(
 #     openai_api_type="azure",
@@ -76,21 +62,6 @@ dtime = datetime.datetime
 date = dtime.now().strftime("%Y-%m-%d")
 
 
-def get_users(query: str = None):
-    return requests.get(url + '/api/User').json()['data']
-
-
-def delAll(ID: str):
-    lst = []
-    get_reply = requests.get(url + f"/api/LeaveApplication/{ID}").json()
-    for i in get_reply['data']:
-        lst.append(i['id'])
-
-    for i in lst:
-        del_reply = requests.delete(url + f"/api/LeaveApplication/{i}")
-        print(del_reply.text)
-
-
 def get_user_by_email(query: str = None):
     user_email = email
     if '@' in query and query != user_email:
@@ -111,11 +82,6 @@ def get_user_by_email(query: str = None):
         return return_text
 
     return f'Error: {response.status_code}'
-
-
-def output_to_user(query: str = None):
-    #     print(query)
-    return f'Message "{query}" sent to user.'
 
 
 def another_chat_input(query):
@@ -210,16 +176,6 @@ def check_manager_name(name):
     return -1, "Not found"
 
 
-# def check_manager_id(managerId):
-#     response = requests.get(url + '/api/User/manager-users').json()['data']
-#
-#     for data in response:
-#         if data['id'] == int(managerId):
-#             return True
-#
-#     return False
-
-
 def post_method(user_id, manager, start_date, end_date, leave_type, note):
     typeOfLeave = {"paid": 1, "unpaid": 2, "sick": 8, "social insurance": 9, "conference": 5, "other": 3,}
     typeOfPeriod = {"0": "All day", "1": "Morning", "2": "Afternoon"}
@@ -290,11 +246,6 @@ Is this information correct? Type 1 to submit, type 0 if you want to tell the bo
 lst = []
 
 
-# def sickday_allow():
-#     response = requests.get(url + f'/api/User/dayoff-data?email={email}').json()['data']
-#     return response['sickDayOffAllow']
-
-
 def dayoff_allow():
     response = requests.get(url + f'/api/User/dayoff-data?email={email}').json()['data']
     return response['dayOffAllow']
@@ -360,11 +311,6 @@ And ask the user (using the tool human) if they want to apply for a different ty
 
 
 def datetime_calc(query: str):
-    # try:
-    #     return eval(query)
-    # except Exception:
-    #     return exec(query)
-
     cal = parsedatetime.Calendar()
     parsed_date, _ = cal.parseDT(query)
 
@@ -381,24 +327,6 @@ tool1 = [
         description='useful for getting data of the current user, data include fullName, birthday, bankAccountNumber, etc. This tool does not take any inputs.'
     ),
 
-    #     Tool(
-    #         name='Output to user',
-    #         func=output_to_user,
-    #         description='useful for sending messages to the user as they cannot see your thought, actions, etc. This tool takes in your message and sends it to the user.'
-    #     ),
-
-    #     Tool(
-    #         name='End conversation',
-    #         func=end_convo,
-    #         description='useful for ending the conversation if the user cancels the task or you cannot complete the task.'
-    #     ),
-
-    #     Tool(
-    #         name='Do nothing',
-    #         func=nothing,
-    #         description='useful for filling in Action: after Thought: if the task can\'t be done or the task is cancelled.'
-    #     ),
-
     Tool(
         name='HRM get applications',
         func=get_leave_applications,
@@ -408,36 +336,12 @@ tool1 = [
     HumanInputRun()
 ]
 
-# human = load_tools(['human'])
-# tool1.extend(human)
 
 prefix1 = f"""You are an intelligent assistant helping user find his/her information in HRM system by using tool. 
 The user chatting with you is {get_userName(email)} with the email {email}. If question/data are not about them, tell them you don't have access.
 DO NOT use data of the user {email} to answer questions about other users.
 You have access to the following tools:"""
 
-temp1_backup = f'''
-
-Examples: 
-Question: What is my date of birth?
-Thought: The user chatting with me has the email {email}.
-Thought: find the data of user by user's email.
-Action: HRM get user data
-Action Input: {email}
-Observation: ...
-Thought: I now know the final answer
-Final Answer: Your date of birth is ...
-
-Question: What is hung.bui@nois.vn's bank account number?
-Thought: The user chatting with me has the email {email}.
-Thought: the question is not about the current user, so I can't answer the question.
-Action: human
-Action Input: I'm sorry but I don't have access to that information, can I help you with anything else?
-Observation: No
-Thought: I now know the final answer
-Final Answer: 
-
-'''
 
 temp1 = f'''
 
@@ -477,18 +381,6 @@ prompt1 = ZeroShotAgent.create_prompt(
 )
 
 tool2 = [
-    # Tool(
-    #     name='HRM get userId',
-    #     func=get_userId,
-    #     description='useful for getting the user\'s id by user\'s email. No need to input'
-    # ),
-
-    # Tool(
-    #     name='HRM get by name',
-    #     func=check_manager_name,
-    #     description='useful for getting the manager\'s id by manager\'s name. Input is a manager\'s name.'
-    # ),
-
     Tool(
         name='HRM submit leave',
         func=submitLeaveApplication,
@@ -501,17 +393,6 @@ Input of this tool must include 5 parameters concatenated into a string separate
 5. note: ask the user whether they want to leave a note for the manager. Default value is "None".
 Until this tool returns "OK", the user's leave application IS NOT submitted.'''
     ),
-    #     Tool(
-    #         name='End conversation',
-    #         func=end_convo,
-    #         description="useful for ending a chat conversation at the user's request or when you have accomplished your task."
-    #     )
-
-    # Tool(
-    #     name='Calculate time',
-    #     func=datetime_calc,
-    #     description=f'useful for calculating dates. Input is a python code utilizing the datetime library.'
-    # ),
 
     Tool(
         name='Calculate relative time',
@@ -534,105 +415,14 @@ Until this tool returns "OK", the user's leave application IS NOT submitted.'''
     HumanInputRun(),
 ]
 
-# human = load_tools(['human'])
-# tool2.extend(human)
-
-f'''If you cannot answer by using only 1 tool, try using other provided tools.
-If you cannot get any results from tools, say you don't know.
-Do not use any other sources other than the ones you obtain from tools.
-Suppose the current date is {date} (Year-Month-Day).'''
 
 date2 = dtime.strftime(dtime.today(), "%A %Y-%m-%d")
-# print(date2)
-# date2 = "Friday 2024-08-11"
 
 prefix2 = f"""You are an intelligent assistant helping user submit or delete leave applications through the HRM system using tools. 
 The user chatting with you has the email: {email}. 
 Suppose the current date is {date2} (Weekday Year-Month-Day).
 You have access to the following tools:"""
 
-temp2_backup = f'''
-
-Example:  
-Question: I'd like to submit leave application.
-Thought: The user chatting with you own the email {email}.
-Thought: Find the user's id by {email}.
-Action: HRM get userId
-Action Input: {email}
-Observation: {get_userId(email)}
-
-Thought: After having user's id, ask the user for the manager's name.
-Action: human
-Action Input: What is the name of your manager?
-Observation: lý minh quân
-Thought: find the manager's id by manager's name.
-Action: HRM get by name
-Action Input: lý minh quân
-Observation: 139
-
-Thought: Ask user the date of starting leave (according the format Year-Month-Day)?
-Action: human
-Action Inpunt: Let me know when do you want to start your leave?
-Observation: 2023-07-17
-
-Thought: Ask user the date of ending leave (according the format Year-Month-Day)?
-Action: human
-Action Input: How about the date of ending leave?
-Observation: 2023-07-18
-
-Thought: Got all details for submitting.
-Action: HRM submit leave
-Action Input: {get_userId(email)}, 139, 2023-07-17, 2023-07-18
-Observation: Successfully submitted.
-Thought: Leave application is submitted.
-Final Answer: Leave application is submitted.
-
-'''
-
-temp2 = f'''
-
-======
-Example 1:
-Question: Submit a leave application to trần đăng ninh for me, I'll start on 21.07, my leave ends on the 24th. I'm applying for sick leave, and no notes.
-Thought: User wants to submit a leave application to their manager trần đăng ninh. Their leave starts on 2023-07-21 and ends on
-2023-07-24. The user is applying for sick leave, no notes necessary. Since I have all the required information, I can try submitting the application.
-Action: HRM submit leave
-Action Input: trần đăng ninh, 2023-07-21, 2023-07-24, sick, None
-Observation: OK
-Thought: I now know the final answer
-Final Answer: Leave application is submitted.
-
-Example 2:  
-Question: I'd like to submit a leave application.
-Thought: I need to ask the user for the manager's name.
-Action: human
-Action Input: Who is your manager?
-Observation: lý minh quân
-Thought: I need to ask the user when they want to start their leave.
-Action: human
-Action Input: When do you want to start your leave? (YYYY-MM-DD format is preferred)
-Observation: 17.07
-Thought: User wants to start their leave on 2023-07-17. Now I need to ask the user when they want to end their leave.
-Action: human
-Action Input: When will your leave end? (YYYY-MM-DD format is preferred)
-Observation: 18/7
-Thought: User wants to end their leave on 2023-07-18. Now I need to ask the user what type of leave they want to apply for.
-Action: human
-Action Input: What type of leave do you want to apply for? There are 6 types: paid, unpaid, sick, social insurance, conference and other.
-Observation: unpaid
-Thought: I need to ask the user for their notes to the manager.
-Action: human
-Action Input: Do you want to leave any notes for the manager?
-Observation: I have to visit my grandmother
-Thought: Got all details for submitting.
-Action: HRM submit leave
-Action Input: lý minh quân, 2023-07-17, 2023-07-18, unpaid, "I have to visit my grandmother"
-Observation: OK
-Thought: I now know the final answer
-Final Answer: Leave application is submitted.
-======
-
-'''
 
 temp3 = f'''
 
@@ -729,7 +519,6 @@ class MyCustomHandler(BaseCallbackHandler):
             self.prev_msg = ""
             print("\n")
             print(reply.text)
-            # print(input_str)
 
         if serialized['name'] == 'HRM get applications':
             self.prev_msg = get_leave_applications()
@@ -741,11 +530,6 @@ class MyCustomHandler(BaseCallbackHandler):
         reply = requests.post("http://localhost:5000/agent",
                               data={"msg": self.prev_msg + finish.return_values['output']})
         self.prev_msg = ""
-
-    # def on_tool_end(self, output: str, **kwargs: Any) -> Any:
-    #     """Run when tool ends running."""
-    #     reply = requests.post("http://localhost:5000/agent",
-    #                           data={"msg": output})
 
 
 class Agent:
