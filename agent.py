@@ -79,7 +79,7 @@ date = dtime.now().strftime("%Y-%m-%d")
 def get_users(query: str = None):
     return requests.get(url + '/api/User').json()['data']
 
-
+# Blah
 def delAll(ID: str):
     lst = []
     get_reply = requests.get(url + f"/api/LeaveApplication/{ID}").json()
