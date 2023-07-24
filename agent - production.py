@@ -61,6 +61,8 @@ date = dtime.now().strftime("%Y-%m-%d")
 def another_chat_input(query):
     """
         This function is used to print the string to UI.
+        Input: a query string.
+        Output: a query string in UI. 
     """
     reply = requests.post("http://localhost:5000/agent", data={"msg": query})
     res = ""
@@ -76,8 +78,10 @@ def another_chat_input(query):
 
 def get_user_by_email(query: str = None):
     """
-        This function is used to get all user's data in HRM system via the email.
+        This function is used to get all user's data in HRM system via the default email.
         Using GET method with the given API.
+        Input: no input.
+        Output: user's data.
     """
     user_email = email
     if '@' in query and query != user_email:
@@ -102,8 +106,10 @@ def get_user_by_email(query: str = None):
 
 def get_userName(query: str = None):
     """
-        This function is used to get user's name via the email.
+        This function is used to get user's name via the default email.
         Using GET method with the given API.
+        Input: no input.
+        Output: user's name.
     """
     user_email = email
     response = requests.get(url + f'/api/User/me?email={user_email}')
@@ -115,8 +121,10 @@ def get_userName(query: str = None):
 
 def get_userId(query: str = None):
     """
-        This function is used to get user's ID via the email.
+        This function is used to get user's ID via the default email.
         Using GET method with the given API.
+        Input: no input.
+        Output: user's ID.
     """
     user_email = email
     response = requests.get(url + f'/api/User/me?email={user_email}')
@@ -130,6 +138,8 @@ def get_leave_applications(query: str = None):
     """
         This function is used to get all submitted leave applications of user via user's ID.
         Using GET method with the given API.
+        Input: no input.
+        Output: a string with all details of submitted leave applications.
     """
     userId = get_userId(email)
     applis = requests.get(url + f'/api/LeaveApplication/{userId}').json()['data']
@@ -151,11 +161,12 @@ def get_leave_applications(query: str = None):
     return string
 
 
-def delete_leave_applications(target: str = "Default"):
+def delete_leave_applications(target: str):
     """
-        This function is used to delete 1 leave application which user want to delete.
-        The function also show all details of all leave applications.
-        Return is a value of DELETE method with given API.
+        This function is used to delete 1 leave application which user want to via default email.
+        The function also show all details of all leave applications for user to choose 1.
+        Input: no input.
+        Output: a value reponse of DELETE method with given API.
     """
     applis = requests.get(url + f'/api/LeaveApplication/{get_userId(email)}').json()['data']
     appli = [i for i in applis if i['id'] == target]
@@ -180,9 +191,8 @@ def delete_leave_applications(target: str = "Default"):
 def check_manager_name(name):
     """
         This function is used to check if the manager's name was in list of managers.
-        Input:
-            name: the name of user's manager.
-        Return manager's ID if founded, else -1.
+        Input: the name of user's manager.
+        Output: a pair value (manager's ID, manager's name)
     """
     response = requests.get(url + '/api/User/manager-users').json()['data']
     for data in response:
@@ -194,7 +204,7 @@ def check_manager_name(name):
 
 def post_method(user_id, manager, start_date, end_date, leave_type, note):
     """
-        This function is used to submit a leave application.
+        This function is used to ask, confirm some informations if missing and submit a leave application.
         Input:
             user_id: the ID of user who submit this application
             manager: a pair value (manager's id, manager's name), manager is the manager of user.
@@ -202,7 +212,7 @@ def post_method(user_id, manager, start_date, end_date, leave_type, note):
             end_date: the date user want to end leaving.
             leave_type: the type of leave such as paid leave, unpaid leave, etc.
             note: the note user want to send to his/her manager.
-        Return is a value of DELETE method with given API.
+        Output: a value response of POST method with given API.
     """
     typeOfLeave = {"paid": 1, "unpaid": 2, "sick": 8, "social insurance": 9, "conference": 5, "other": 3,}
     typeOfPeriod = {"0": "All day", "1": "Morning", "2": "Afternoon"}
@@ -211,8 +221,9 @@ def post_method(user_id, manager, start_date, end_date, leave_type, note):
     end_dtime = dtime.strptime(end_date, '%Y-%m-%d')
 
     manager_id = manager[0]
-
     period = "0"
+
+    # Choose one period of day if start date and end date of leaving are same. Calculate the number of dayoff.
     if end_dtime == start_dtime:
         period = another_chat_input(
             "Which period do you want to leave? Type only the number respectively:\n0. All day\n1. Only the morning\n2. Only the afternoon\n\n")
@@ -224,6 +235,7 @@ def post_method(user_id, manager, start_date, end_date, leave_type, note):
     else:
         num_days = int(np.busday_count(start_date, end_date)) + 1
 
+    # Ask user to confirm all the details
     string = f'''Leave application details:
     - Manager: {manager[1]}
     - Start date: {start_date}
@@ -244,6 +256,7 @@ Is this information correct? Type 1 to submit, type 0 if you want to tell the bo
 
         return "User feedback: " + user_edit
 
+    # Implement POST method
     response = requests.post('https://hrm-nois-fake.azurewebsites.net/api/LeaveApplication/Submit', json={
         "userId": user_id,
         "reviewUserId": manager_id,
