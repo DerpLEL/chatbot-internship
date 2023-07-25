@@ -24,7 +24,7 @@ from customHuman import *
 local_addr = "http://127.0.0.1:8000"
 deploy_addr = "https://usecase2-agent.azurewebsites.net"
 
-addr = local_addr
+addr = deploy_addr
 
 llm3 = AzureChatOpenAI(
     openai_api_type="azure",
