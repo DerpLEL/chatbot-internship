@@ -21,7 +21,7 @@ from customHuman import *
 # )
 
 # testing
-local_addr = "https://0.0.0.0:8000"
+local_addr = "http://127.0.0.1:8000"
 deploy_addr = "https://usecase2-agent.azurewebsites.net"
 
 addr = local_addr
