@@ -20,6 +20,11 @@ from customHuman import *
 #     max_tokens=600,
 # )
 
+local_addr = "https://0.0.0.0:8000"
+deploy_addr = "https://usecase2-agent.azurewebsites.net"
+
+addr = local_addr
+
 llm3 = AzureChatOpenAI(
     openai_api_type="azure",
     openai_api_base='https://openai-nois-intern.openai.azure.com/',
@@ -103,12 +108,12 @@ def output_to_user(query: str = None):
 
 
 def another_chat_input(query):
-    reply = requests.post("http://localhost:8000/agent", data={"msg": query}, timeout=15)
+    reply = requests.post(f"{addr}/agent", data={"msg": query}, timeout=15)
 
     res = ""
 
     while not res:
-        reply = requests.get("http://localhost:8000/user", timeout=15).json()
+        reply = requests.get(f"{addr}/user", timeout=15).json()
         print(f"Reply: {reply}")
         res = reply['msg']
 
@@ -709,7 +714,7 @@ class MyCustomHandler(BaseCallbackHandler):
     ) -> Any:
         """Run when tool starts running."""
         if serialized['name'] in ['human']:
-            reply = requests.post("http://localhost:8000/agent", data={"msg": self.prev_msg + input_str},
+            reply = requests.post(f"{addr}/agent", data={"msg": self.prev_msg + input_str},
                                   timeout=15)
             self.prev_msg = ""
             print("\n")
@@ -723,14 +728,14 @@ class MyCustomHandler(BaseCallbackHandler):
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
         """Run on agent end."""
-        reply = requests.post("http://localhost:8000/agent",
+        reply = requests.post(f"{addr}/agent",
                               data={"msg": self.prev_msg + finish.return_values['output']},
                               timeout=15)
         self.prev_msg = ""
 
     # def on_tool_end(self, output: str, **kwargs: Any) -> Any:
     #     """Run when tool ends running."""
-    #     reply = requests.post("http://localhost:8000/agent",
+    #     reply = requests.post(f"{addr}/agent",
     #                           data={"msg": output})
 
 

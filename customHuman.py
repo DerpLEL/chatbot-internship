@@ -11,6 +11,10 @@ from langchain.callbacks.manager import (
 from langchain.tools.base import BaseTool
 import requests
 
+local_addr = "https://0.0.0.0:8000"
+deploy_addr = "https://usecase2-agent.azurewebsites.net"
+
+addr = local_addr
 
 def _print_func(text: str) -> None:
     print("\n")
@@ -21,7 +25,7 @@ def chat_input():
     res = ""
 
     while not res:
-        reply = requests.get("http://localhost:8000/user", timeout=15).json()
+        reply = requests.get(f"{addr}/user", timeout=15).json()
         print(f"Reply: {reply}")
         res = reply['msg']
 
