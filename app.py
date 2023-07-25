@@ -12,6 +12,9 @@ user_msg = ""
 
 bot_message = ""
 
+# Toggle agent upon startup
+bot.toggle_agent1()
+
 @app.route("/")
 def index():
     return render_template('chat.html')
