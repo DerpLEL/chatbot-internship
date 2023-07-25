@@ -1,5 +1,4 @@
 from langchain.prompts import PromptTemplate
-from langchain.document_transformers import Document
 from azure.core.credentials import AzureKeyCredential
 from langchain.chains import LLMChain
 from azure.search.documents import SearchClient

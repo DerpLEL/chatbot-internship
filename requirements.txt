@@ -8,5 +8,3 @@ parsedatetime==2.6
 Pillow==9.5.0
 pydantic==1.10.11
 Requests==2.31.0
-torch==2.0.1
-transformers==4.30.2
