@@ -21,7 +21,7 @@ def chat_input():
     res = ""
 
     while not res:
-        reply = requests.get("http://localhost:5000/user").json()
+        reply = requests.get("http://localhost:8000/user", timeout=15).json()
         print(f"Reply: {reply}")
         res = reply['msg']
 
