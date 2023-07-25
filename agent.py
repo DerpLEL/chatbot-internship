@@ -103,12 +103,12 @@ def output_to_user(query: str = None):
 
 
 def another_chat_input(query):
-    reply = requests.post("http://localhost:5000/agent", data={"msg": query})
+    reply = requests.post("http://localhost:8000/agent", data={"msg": query})
 
     res = ""
 
     while not res:
-        reply = requests.get("http://localhost:5000/user").json()
+        reply = requests.get("http://localhost:8000/user").json()
         print(f"Reply: {reply}")
         res = reply['msg']
 
@@ -709,7 +709,7 @@ class MyCustomHandler(BaseCallbackHandler):
     ) -> Any:
         """Run when tool starts running."""
         if serialized['name'] in ['human']:
-            reply = requests.post("http://localhost:5000/agent", data={"msg": self.prev_msg + input_str})
+            reply = requests.post("http://localhost:8000/agent", data={"msg": self.prev_msg + input_str})
             self.prev_msg = ""
             print("\n")
             print(reply.text)
@@ -722,13 +722,13 @@ class MyCustomHandler(BaseCallbackHandler):
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
         """Run on agent end."""
-        reply = requests.post("http://localhost:5000/agent",
+        reply = requests.post("http://localhost:8000/agent",
                               data={"msg": self.prev_msg + finish.return_values['output']})
         self.prev_msg = ""
 
     # def on_tool_end(self, output: str, **kwargs: Any) -> Any:
     #     """Run when tool ends running."""
-    #     reply = requests.post("http://localhost:5000/agent",
+    #     reply = requests.post("http://localhost:8000/agent",
     #                           data={"msg": output})
 
 
