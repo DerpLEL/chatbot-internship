@@ -20,6 +20,7 @@ from customHuman import *
 #     max_tokens=600,
 # )
 
+# testing
 local_addr = "https://0.0.0.0:8000"
 deploy_addr = "https://usecase2-agent.azurewebsites.net"
 
