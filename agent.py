@@ -1,30 +1,14 @@
-from langchain.prompts import PromptTemplate
-from langchain.chat_models import AzureChatOpenAI
-from langchain.llms import AzureOpenAI
-from langchain.chains.qa_with_sources import load_qa_with_sources_chain
-from langchain.chains import LLMChain, APIChain
-from langchain.chains.api.prompt import API_RESPONSE_PROMPT
-from langchain.schema import Document
-from langchain.tools import BaseTool
-from langchain.agents import ZeroShotAgent, AgentExecutor, AgentType, initialize_agent, Tool, load_tools
-from langchain.schema import AgentFinish
-from langchain.agents.agent_toolkits.openapi import planner
-from langchain.requests import TextRequestsWrapper
-from langchain.memory import ConversationBufferWindowMemory
-from langchain.chains.api import open_meteo_docs
 import datetime
-import requests
-import pandas as pd
-import os
-from azure.core.credentials import AzureKeyCredential
-from azure.search.documents import SearchClient
+from typing import Any, Dict
 import numpy as np
-from langchain.callbacks.base import BaseCallbackHandler
-from typing import Any, Dict, List
-import requests
-from customHuman import *
 import parsedatetime
-
+from langchain.agents import ZeroShotAgent, AgentExecutor, Tool
+from langchain.callbacks.base import BaseCallbackHandler
+from langchain.chains import LLMChain
+from langchain.chat_models import AzureChatOpenAI
+from langchain.memory import ConversationBufferWindowMemory
+from langchain.schema import AgentFinish
+from customHuman import *
 
 # llm3 = AzureOpenAI(
 #     openai_api_type="azure",

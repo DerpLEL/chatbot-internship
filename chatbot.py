@@ -3,6 +3,7 @@ from azure.core.credentials import AzureKeyCredential
 from langchain.chains import LLMChain
 from azure.search.documents import SearchClient
 from langchain.chat_models import AzureChatOpenAI
+from langchain.schema import Document
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
 
