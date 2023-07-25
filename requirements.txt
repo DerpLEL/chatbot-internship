@@ -1,5 +1,6 @@
 azure-storage-blob
 azure-identity
+azure-search-documents
 Flask==2.2.5
 langchain==0.0.240
 numpy==1.25.0
