@@ -1,7 +1,5 @@
 from flask import Flask, render_template, request, jsonify
-from transformers import AutoModelForCausalLM, AutoTokenizer
 from chatbot import *
-import torch
 import threading
 
 agent_session = False
