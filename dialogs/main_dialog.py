@@ -14,7 +14,7 @@ from botbuilder.schema import HeroCard, CardImage
 
 from dialogs import LogoutDialog
 from simple_graph_client import SimpleGraphClient
-
+from .chatbot import *
 
 class MainDialog(LogoutDialog):
     def __init__(self, connection_name: str):
@@ -48,6 +48,8 @@ class MainDialog(LogoutDialog):
         )
 
         self.initial_dialog_id = "WFDialog"
+        self.bot = chatAI()
+        self.bot.private = True
 
     async def prompt_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         return await step_context.begin_dialog(OAuthPrompt.__name__)
@@ -92,6 +94,7 @@ class MainDialog(LogoutDialog):
         if step_context.result:
             token_response = step_context.result
             if token_response and token_response.token:
+                # print(f'{step_context.values["command"] = }')
                 parts = step_context.values["command"].split(" ")
                 command = parts[0]
 
@@ -112,8 +115,12 @@ class MainDialog(LogoutDialog):
                     )
 
                 else:
+
+                    reply, doc = self.bot.chat(step_context.values["command"])
+                    print(doc)
+
                     await step_context.context.send_activity(
-                        f"Your token is {token_response.token}"
+                        reply['output_text']
                     )
         else:
             await step_context.context.send_activity("We couldn't log you in.")

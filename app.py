@@ -32,7 +32,6 @@ CONFIG = DefaultConfig()
 SETTINGS = BotFrameworkAdapterSettings(CONFIG.APP_ID, CONFIG.APP_PASSWORD)
 ADAPTER = BotFrameworkAdapter(SETTINGS)
 
-
 # Catch-all for errors.
 async def on_error(context: TurnContext, error: Exception):
     # This check writes out errors to console log .vs. app insights.
@@ -85,11 +84,13 @@ async def messages(req: Request) -> Response:
         return Response(status=HTTPStatus.UNSUPPORTED_MEDIA_TYPE)
 
     activity = Activity().deserialize(body)
-    auth_header = req.headers["Authorization"] if "Authorization" in req.headers else ""
 
+    auth_header = req.headers["Authorization"] if "Authorization" in req.headers else ""
     response = await ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
+
     if response:
         return json_response(data=response.body, status=response.status)
+
     return Response(status=HTTPStatus.OK)
 
 
