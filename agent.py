@@ -9,6 +9,7 @@ from langchain.chat_models import AzureChatOpenAI
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.schema import AgentFinish
 from customHuman import *
+from message import *
 
 # llm3 = AzureOpenAI(
 #     openai_api_type="azure",
@@ -52,18 +53,10 @@ Thought: ```I now know the final answer```
 Final Answer: ```your final answer to the original input question```
 '''
 
-
-class MessageClass:
-    def __init__(self):
-        self.input = ""
-        self.output = ""
-
-    def reset(self):
-        self.input = ""
-        self.output = ""
-
-
 global_message = MessageClass()
+
+human_inp = HumanInputRun()
+human_inp.set_msg(global_message)
 
 
 class ZSAgentMod(ZeroShotAgent):
@@ -136,12 +129,12 @@ def another_chat_input(query, msg: MessageClass):
 
 
 def class_chat_input(query, msg: MessageClass = global_message):
-    msg.input = query
+    msg.output = query
 
-    while not msg.output:
+    while not msg.input:
         pass
 
-    res = msg.output
+    res = msg.input
     msg.reset()
 
     return res
@@ -203,11 +196,11 @@ def delete_leave_applications(target: str = "Default"):
         string += f"Type of leave: {i['leaveApplicationType']}\n"
         string += f"Number of requested leave day(s): {i['numberDayOff']}\n\n"
 
-    inp = another_chat_input(
+    inp = class_chat_input(
         string + "Are you sure you want to delete this application? Type 1 to proceed with delete, type 0 to cancel.\n").strip()
 
     while inp != "1" and inp != "0":
-        inp = another_chat_input("Invalid input. Type 1 to proceed with delete, type 0 to cancel.\n")
+        inp = class_chat_input("Invalid input. Type 1 to proceed with delete, type 0 to cancel.\n")
 
     if inp == "0":
         return "User has cancelled the deletion process."
@@ -248,11 +241,11 @@ def post_method(user_id, manager, start_date, end_date, leave_type, note):
     period = "0"
 
     if end_dtime == start_dtime:
-        period = another_chat_input(
+        period = class_chat_input(
             "Which period do you want to leave? Type only the number respectively:\n0. All day\n1. Only the morning\n2. Only the afternoon\n\n")
 
         while period != "0" and period != "1" and period != "2":
-            period = another_chat_input("Invalid input. Type only the number respectively:\n0. All day\n1. Only the morning\n2. Only the afternoon\n")
+            period = class_chat_input("Invalid input. Type only the number respectively:\n0. All day\n1. Only the morning\n2. Only the afternoon\n")
 
         num_days = 0.5
 
@@ -272,13 +265,13 @@ def post_method(user_id, manager, start_date, end_date, leave_type, note):
     - Notes: {note}
 Is this information correct? Type 1 to submit, type 0 if you want to tell the bot to edit the form.\n'''
 
-    user_confirm = another_chat_input(string)
+    user_confirm = class_chat_input(string)
 
     while user_confirm != "1" and user_confirm != "0":
-        user_confirm = another_chat_input("Invalid input. Type 1 to submit, type 0 if you want to tell the bot to edit the form.\n")
+        user_confirm = class_chat_input("Invalid input. Type 1 to submit, type 0 if you want to tell the bot to edit the form.\n")
 
     if user_confirm.strip() != "1":
-        user_edit = another_chat_input("Tell the bot what you want to edit in the form.\n")
+        user_edit = class_chat_input("Tell the bot what you want to edit in the form.\n")
 
         return "User feedback: " + user_edit
 
@@ -420,7 +413,7 @@ tool1 = [
         description='useful for getting leave applications of the current user, mostly for deletion tasks. Input is a "None" string.'
     ),
 
-    HumanInputRun()
+    human_inp
 ]
 
 # human = load_tools(['human'])
@@ -546,7 +539,7 @@ Until this tool returns "OK", the user's leave application IS NOT submitted.'''
         description='useful for deleting a specific leave application. Input is the ID of the leave application. Always run the HRM get applications first and ask the user which application they want to delete.'
     ),
 
-    HumanInputRun(),
+    human_inp,
 ]
 
 # human = load_tools(['human'])
@@ -734,17 +727,19 @@ prompt2 = ZSAgentMod.create_prompt(
 
 class MyCustomHandler(BaseCallbackHandler):
     prev_msg = ""
+    msg = global_message
 
     def on_tool_start(
         self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> Any:
         """Run when tool starts running."""
         if serialized['name'] in ['human']:
-            reply = requests.post(f"{addr}/agent", data={"msg": self.prev_msg + input_str},
-                                  timeout=15)
+            # reply = requests.post(f"{addr}/agent", data={"msg": self.prev_msg + input_str},
+            #                       timeout=15)
+            self.msg.output = self.prev_msg + input_str
             self.prev_msg = ""
-            print("\n")
-            print(reply.text)
+            # print("\n")
+            # print(reply.text)
             # print(input_str)
 
         if serialized['name'] == 'HRM get applications':
@@ -754,9 +749,10 @@ class MyCustomHandler(BaseCallbackHandler):
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
         """Run on agent end."""
-        reply = requests.post(f"{addr}/agent",
-                              data={"msg": self.prev_msg + finish.return_values['output']},
-                              timeout=15)
+        # reply = requests.post(f"{addr}/agent",
+        #                       data={"msg": self.prev_msg + finish.return_values['output']},
+        #                       timeout=15)
+        self.msg.output = self.prev_msg + finish.return_values['output']
         self.prev_msg = ""
 
     # def on_tool_end(self, output: str, **kwargs: Any) -> Any:
@@ -766,6 +762,8 @@ class MyCustomHandler(BaseCallbackHandler):
 
 
 class Agent:
+    msg = global_message
+
     def __init__(self):
         self.llm_chain1 = LLMChain(llm=llm3, prompt=prompt1)
 

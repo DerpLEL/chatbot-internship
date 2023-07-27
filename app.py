@@ -21,13 +21,18 @@ def index():
 
 
 def get_bot_response():
-    global bot_message
-
-    while not bot_message:
+    # global bot_message
+    #
+    # while not bot_message:
+    #     pass
+    #
+    # msg = bot_message
+    # bot_message = ""
+    while not bot.agent.msg.output:
         pass
 
-    msg = bot_message
-    bot_message = ""
+    msg = bot.agent.msg.output
+    bot.agent.msg.reset()
 
     return msg
 
@@ -69,7 +74,7 @@ def chat():
     # Maintain agent conversation, as long as agent_session is true
     if agent_session:
         print(f"Still in agent session, current user message: {msg}")
-        user_msg = msg
+        bot.agent.msg.input = msg
 
         # while not bot_message:
         #     pass
@@ -110,22 +115,22 @@ def run_agent(query, agent_type):
     return
 
 
-@app.route("/agent", methods=["POST"])
-def get_message_agent():
-    msg = request.form["msg"]
-    global bot_message
-    bot_message = msg
+# @app.route("/agent", methods=["POST"])
+# def get_message_agent():
+#     msg = request.form["msg"]
+#     global bot_message
+#     bot_message = msg
+#
+#     return jsonify({"msg": "OK"})
 
-    return jsonify({"msg": "OK"})
 
-
-@app.route("/user", methods=["GET"])
-def get_message_user():
-    global user_msg
-    msg = user_msg
-    user_msg = ""
-
-    return jsonify({"msg": msg})
+# @app.route("/user", methods=["GET"])
+# def get_message_user():
+#     global user_msg
+#     msg = user_msg
+#     user_msg = ""
+#
+#     return jsonify({"msg": msg})
 
 
 if __name__ == '__main__':

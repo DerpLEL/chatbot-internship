@@ -10,6 +10,7 @@ from langchain.callbacks.manager import (
 )
 from langchain.tools.base import BaseTool
 import requests
+from message import MessageClass
 
 local_addr = "http://127.0.0.1:8000"
 deploy_addr = "https://usecase2-agent.azurewebsites.net:8000"
@@ -21,13 +22,19 @@ def _print_func(text: str) -> None:
     print(text)
 
 
-def chat_input():
-    res = ""
+def chat_input(msg):
+    # res = ""
+    #
+    # while not res:
+    #     reply = requests.get(f"{addr}/user", timeout=15).json()
+    #     print(f"Reply: {reply}")
+    #     res = reply['msg']
 
-    while not res:
-        reply = requests.get(f"{addr}/user", timeout=15).json()
-        print(f"Reply: {reply}")
-        res = reply['msg']
+    while not msg.input:
+        pass
+
+    res = msg.input
+    msg.reset()
 
     print(f"Message: {res} received.")
     return res
@@ -44,6 +51,10 @@ class HumanInputRun(BaseTool):
     )
     prompt_func: Callable[[str], None] = Field(default_factory=lambda: _print_func)
     input_func: Callable = None
+    msg: MessageClass = None
+
+    def set_msg(self, message):
+        self.msg = message
 
     def _run(
         self,
@@ -52,7 +63,7 @@ class HumanInputRun(BaseTool):
     ) -> str:
         """Use the Human input tool."""
         self.prompt_func(query)
-        return chat_input()
+        return chat_input(self.msg)
 
     async def _arun(
         self,
