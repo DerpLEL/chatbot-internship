@@ -35,19 +35,19 @@ Examples are provided down below:
 
 EXAMPLES
 Input: Ai là giám đốc điều hành của NOIS?
-Ouput: giám đốc điều hành | managing director
+Ouput: (giám đốc điều hành) | (managing director)
 Input: Số người chưa đóng tiền nước tháng 5?
-Output: tiền nước tháng 05 chưa đóng | May drink fee not paid
+Output: (tiền nước tháng 05 chưa đóng) | (May drink fee not paid)
 Input: Ai đã đóng tiền nước tháng 4?
-Output: tiền nước tháng 04 đã đóng | April drink fee paid
+Output: (tiền nước tháng 04 đã đóng) | (April drink fee paid)
 Input: Danh sách người đóng tiền nước tháng 3?
-Output: tiền nước tháng 03 | March drink fee
+Output: (tiền nước tháng 03) | (March drink fee)
 Input: Was Pepsico a customer of New Ocean?
 Output: Pepsico
 Input: What is FASF?
 Output: FASF
 Input: What is the company's policy on leave?
-Ouput: ngày nghỉ phép | leave
+Ouput: (ngày nghỉ phép) | leave
 
 Chat history:{context}
 
@@ -186,7 +186,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         self.private = False
         self.container_drink_fee_name = 'nois-drink-fee'
         self.container_client = blob_service_client.get_container_client(self.container_drink_fee_name)
-        self.user = {"username":' ', "mail":' '}
+        self.user = {"username":'', "mail":''}
 
         self.llm = AzureChatOpenAI(
             openai_api_type="azure",

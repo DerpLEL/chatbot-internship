@@ -59,6 +59,13 @@ class MainDialog(LogoutDialog):
         # token directly from the prompt itself. There is an example of this in the next method.
         if step_context.result:
             await step_context.context.send_activity("You are now logged in.")
+            token_response = step_context.result
+
+            client = SimpleGraphClient(token_response.token)
+            me_info = await client.get_me()
+            self.bot.user['username'] = me_info['displayName']
+            self.bot.user['mail'] = me_info['mail']
+
             return await step_context.prompt(
                 TextPrompt.__name__,
                 PromptOptions(
@@ -115,7 +122,6 @@ class MainDialog(LogoutDialog):
                     )
 
                 else:
-
                     reply, doc = self.bot.chat(step_context.values["command"])
                     print(doc)
 
@@ -125,5 +131,5 @@ class MainDialog(LogoutDialog):
         else:
             await step_context.context.send_activity("We couldn't log you in.")
 
-        await step_context.context.send_activity("Type anything to try again.")
+        # await step_context.context.send_activity("Type anything to try again.")
         return await step_context.end_dialog()
