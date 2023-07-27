@@ -55,13 +55,10 @@ Final Answer: ```your final answer to the original input question```
 
 class MessageClass:
     def __init__(self):
-        self.input = ""
-        self.output = ""
-
-    def reset(self):
-        self.input = ""
-        self.output = ""
-
+        self.bot_input = ""
+        self.bot_output = ""
+        self.human_input = ""
+        self.human_output = ""
 
 global_message = MessageClass()
 
@@ -136,14 +133,16 @@ def another_chat_input(query, msg: MessageClass):
 
 
 def class_chat_input(query, msg: MessageClass = global_message):
-    msg.input = query
+    reply = requests.post(f"{addr}/agent", data={"msg": query}, timeout=15)
 
-    while not msg.output:
-        pass
+    res = ""
 
-    res = msg.output
-    msg.reset()
+    while not res:
+        reply = requests.get(f"{addr}/user", timeout=15).json()
+        print(f"Reply: {reply}")
+        res = reply['msg']
 
+    print(f"Message: {res} received.")
     return res
 
 
