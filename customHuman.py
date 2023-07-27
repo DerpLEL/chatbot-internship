@@ -14,7 +14,7 @@ import requests
 local_addr = "http://127.0.0.1:8000"
 deploy_addr = "https://usecase2-agent.azurewebsites.net:8000"
 
-addr = deploy_addr
+addr = local_addr
 
 def _print_func(text: str) -> None:
     print("\n")
