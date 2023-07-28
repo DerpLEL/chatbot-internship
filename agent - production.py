@@ -9,6 +9,7 @@ from langchain.chat_models import AzureChatOpenAI
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.schema import AgentFinish
 from customHuman import *
+from message import *
 
 llm3 = AzureChatOpenAI(
     # Initial an Azure Open AI chat.
@@ -44,11 +45,22 @@ Thought: ```I now know the final answer```
 Final Answer: ```your final answer to the original input question```
 '''
 
+
+# Define a message class to allow agent to communicate with user, used by the agent class and the custom callback
+# handler class. The message can be accessed from app.py as well.
+global_message = MessageClass()
+
+# Custom human input tool, inherited from langchain and added the global message variable.
+human_inp = HumanInputRun()
+human_inp.set_msg(global_message)
+
+
 class ZSAgentMod(ZeroShotAgent):
     @property
     def llm_prefix(self) -> str:
         """Prefix to append the llm call with."""
         return "Thought: "
+
 
 # Set the API url
 url = "https://hrm-nois-fake.azurewebsites.net/"
@@ -58,21 +70,15 @@ dtime = datetime.datetime
 date = dtime.now().strftime("%Y-%m-%d")
 
 
-def another_chat_input(query):
-    """
-        This function is used to print the string to UI.
-        Input: a query string.
-        Output: a query string in UI. 
-    """
-    reply = requests.post("http://localhost:5000/agent", data={"msg": query})
-    res = ""
+def class_chat_input(query, msg: MessageClass = global_message):
+    msg.output = query
 
-    while not res:
-        reply = requests.get("http://localhost:5000/user").json()
-        print(f"Reply: {reply}")
-        res = reply['msg']
+    while not msg.input:
+        pass
 
-    print(f"Message: {res} received.")
+    res = msg.input
+    msg.reset()
+
     return res
 
 
@@ -178,10 +184,10 @@ def delete_leave_applications(target: str):
         string += f"End date: {i['toDate']}\n"
         string += f"Type of leave: {i['leaveApplicationType']}\n"
         string += f"Number of requested leave day(s): {i['numberDayOff']}\n\n"
-    inp = another_chat_input(
+    inp = class_chat_input(
         string + "Are you sure you want to delete this application? Type 1 to proceed with delete, type 0 to cancel.\n").strip()
     while inp != "1" and inp != "0":
-        inp = another_chat_input("Invalid input. Type 1 to proceed with delete, type 0 to cancel.\n")
+        inp = class_chat_input("Invalid input. Type 1 to proceed with delete, type 0 to cancel.\n")
     if inp == "0":
         return "User has cancelled the deletion process."
 
@@ -225,10 +231,10 @@ def post_method(user_id, manager, start_date, end_date, leave_type, note):
 
     # Choose one period of day if start date and end date of leaving are same. Calculate the number of dayoff.
     if end_dtime == start_dtime:
-        period = another_chat_input(
+        period = class_chat_input(
             "Which period do you want to leave? Type only the number respectively:\n0. All day\n1. Only the morning\n2. Only the afternoon\n\n")
         while period != "0" and period != "1" and period != "2":
-            period = another_chat_input("Invalid input. Type only the number respectively:\n0. All day\n1. Only the morning\n2. Only the afternoon\n")
+            period = class_chat_input("Invalid input. Type only the number respectively:\n0. All day\n1. Only the morning\n2. Only the afternoon\n")
         num_days = 0.5
         if period == "0":
             num_days = 1
@@ -246,13 +252,13 @@ def post_method(user_id, manager, start_date, end_date, leave_type, note):
     - Notes: {note}
 Is this information correct? Type 1 to submit, type 0 if you want to tell the bot to edit the form.\n'''
 
-    user_confirm = another_chat_input(string)
+    user_confirm = class_chat_input(string)
 
     while user_confirm != "1" and user_confirm != "0":
-        user_confirm = another_chat_input("Invalid input. Type 1 to submit, type 0 if you want to tell the bot to edit the form.\n")
+        user_confirm = class_chat_input("Invalid input. Type 1 to submit, type 0 if you want to tell the bot to edit the form.\n")
 
     if user_confirm.strip() != "1":
-        user_edit = another_chat_input("Tell the bot what you want to edit in the form.\n")
+        user_edit = class_chat_input("Tell the bot what you want to edit in the form.\n")
 
         return "User feedback: " + user_edit
 
@@ -385,7 +391,7 @@ tool1 = [
     ),
 
     # This tool allows human inputs for agents to communicate with user
-    HumanInputRun()
+    human_inp,
 ]
 
 # Prompt prefix, suffix containing examples for agent 1 (The info-asking agent)
@@ -468,7 +474,7 @@ Until this tool returns "OK", the user's leave application IS NOT submitted.'''
         description='useful for deleting a specific leave application. Input is the ID of the leave application. Always run the HRM get applications first and ask the user which application they want to delete.'
     ),
 
-    HumanInputRun(),
+    human_inp,
 ]
 
 
@@ -573,19 +579,18 @@ class MyCustomHandler(BaseCallbackHandler):
         BaseCallbackHandler to send message strings to the UI for the user to see
     """
     prev_msg = ""
+    msg = global_message
 
     # The method on_tool_start runs whenever the agent uses any tools (function) given
     def on_tool_start(
         self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
     ) -> Any:
-        # If the bot uses the human tool, the question will be sent to the UI using a custom endpoint
+        # If the bot uses the human tool, the question will be sent to the UI through the message class
         # The question will also include the prev_msg string, if the bot uses the human tool right after
         # the HRM get applications tool
         if serialized['name'] in ['human']:
-            reply = requests.post("http://localhost:5000/agent", data={"msg": self.prev_msg + input_str})
+            self.msg.output = self.prev_msg + input_str
             self.prev_msg = ""
-            print("\n")
-            print(reply.text)
 
         # Set prev_msg to the string from get_leave_applications() function
         if serialized['name'] == 'HRM get applications':
@@ -595,9 +600,9 @@ class MyCustomHandler(BaseCallbackHandler):
 
     # The method on_agent_finish runs whenever the agent finishes executing the user's request
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
+        """Run on agent end."""
         # Sends one final message to the UI
-        reply = requests.post("http://localhost:5000/agent",
-                              data={"msg": self.prev_msg + finish.return_values['output']})
+        self.msg.output = self.prev_msg + finish.return_values['output']
         self.prev_msg = ""
 
 
@@ -606,6 +611,9 @@ class Agent:
         The agent class, for initializing the 2 agents from constructed prompts, language models and the
         custom callback class.
     """
+    # Agent needs to store the message class so the app.py can access the message.
+    msg = global_message
+
     def __init__(self):
         self.llm_chain1 = LLMChain(llm=llm3, prompt=prompt1)
 
