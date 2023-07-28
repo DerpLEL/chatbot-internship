@@ -31,9 +31,16 @@ class AuthBot(DialogBot):
             # To learn more about Adaptive Cards, see https://aka.ms/msbot-adaptivecards for more details.
             if member.id != turn_context.activity.recipient.id:
                 await turn_context.send_activity(
-                    "Welcome to Authentication Bot on MSGraph. Type anything to get logged in. Type 'logout' to "
-                    "sign-out. "
+                    "Hello bạn, tôi là trợ lý ảo của NOIS."
                 )
+                await turn_context.send_activity(
+                    "Để trò chuyện với tôi, bạn hãy Nhập bất cứ thứ gì để đăng nhập nha. Sau khi đăng nhập mà bạn muốn đăng xuất thì hãy Nhập 'logout' để đăng xuất nha."
+                )
+                await DialogHelper.run_dialog(
+            self.dialog,
+            turn_context,
+            self.conversation_state.create_property("DialogState"),
+        )
 
     async def on_token_response_event(self, turn_context: TurnContext):
         # Run the Dialog with the new Token Response Event Activity.

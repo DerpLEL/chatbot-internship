@@ -5,8 +5,6 @@ from langchain.chains.api.prompt import API_RESPONSE_PROMPT
 
 import requests
 
-
-
 url = "https://hrm-nois-fake.azurewebsites.net/"
 
 
@@ -22,7 +20,6 @@ Given a sentence, assistant will determine if the sentence belongs in 1 of 2 cat
 You answer the question "Is the user's question related to ?"
 
 EXAMPLE:
-
 Input: tôi muốn submit ngày nghỉ
 Output: LeaveApplication
 Input: tôi cần thông tin của tôi
@@ -41,9 +38,6 @@ Input: tôi muốn hủy lịch họp phòng meeting số 1.
 Output: Meeting
 
 <|im_end|>
-
-
-
 
 Input: {question}
 
@@ -128,7 +122,6 @@ if the input include "đơn" + "chấp thuận", do not return totalRecord, outp
 if the input include "đơn nghỉ " + "chấp thuận" or "đồng ý", do not return totalRecord, output should return "reviewStatusName"
 
 The keyword MUST follow one of these:
-
       "id": ,
       "registerDate": ,
       "fromDate": ,
@@ -190,10 +183,6 @@ Output: reviewStatusName
 #####
 Input: tổng đơn nghỉ được đồng ý
 Output: reviewStatusName
-
-
-
-
 
 
 SENTENCE: {output}

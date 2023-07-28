@@ -17,6 +17,8 @@ from simple_graph_client import SimpleGraphClient
 from .chatbot import *
 
 class MainDialog(LogoutDialog):
+    login = False
+
     def __init__(self, connection_name: str):
         super(MainDialog, self).__init__(MainDialog.__name__, connection_name)
 
@@ -57,28 +59,44 @@ class MainDialog(LogoutDialog):
     async def login_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         # Get the token from the previous step. Note that we could also have gotten the
         # token directly from the prompt itself. There is an example of this in the next method.
-        if step_context.result:
-            await step_context.context.send_activity("You are now logged in.")
-            token_response = step_context.result
+        # print(self.login)
+        # if self.login == False:
+            if step_context.result:
+                self.login = True
+                if self.login == False:
+                    await step_context.context.send_activity("Bạn đã đăng nhập thành công.")
+                token_response = step_context.result
 
-            client = SimpleGraphClient(token_response.token)
-            me_info = await client.get_me()
-            self.bot.user['username'] = me_info['displayName']
-            self.bot.user['mail'] = me_info['mail']
-
-            return await step_context.prompt(
-                TextPrompt.__name__,
-                PromptOptions(
-                    prompt=MessageFactory.text(
-                        "Would you like to do? (type 'me' or 'email')"
+                client = SimpleGraphClient(token_response.token)
+                me_info = await client.get_me()
+                self.bot.user['username'] = me_info['displayName']
+                self.bot.user['mail'] = me_info['mail']
+                
+                if self.login == False:
+                    return await step_context.prompt(
+                        TextPrompt.__name__,
+                        PromptOptions(
+                            prompt=MessageFactory.text(
+                                "Bạn có cần tôi giúp gì không?"
+                            )
+                        ),
                     )
-                ),
-            )
+                else:
+                    return await step_context.prompt(
+                        TextPrompt.__name__,
+                        PromptOptions(
+                            prompt=MessageFactory.text(
+                                "Bạn đợi 1 xíu ..."
+                            )
+                        ),
+                    )
+            
 
-        await step_context.context.send_activity(
-            "Login was not successful please try again."
-        )
-        return await step_context.end_dialog()
+            await step_context.context.send_activity(
+                "Bạn đã đăng nhập thất bại. Vui lòng đăng nhập lại."
+            )
+            return await step_context.end_dialog()
+        # return await step_context.next(None)
 
     async def command_step(
         self, step_context: WaterfallStepContext
@@ -124,9 +142,9 @@ class MainDialog(LogoutDialog):
                 else:
                     reply, doc = self.bot.chat(step_context.values["command"])
                     print("doc: " + str(doc))
-                    print("reply:"+ str(reply))
+                    print("reply:"+ str(reply)) 
                     if type(reply) == str:
-                        await step_context.context.send_activity(    reply   )
+                        await step_context.context.send_activity(reply)
                     else:                        
                         await step_context.context.send_activity(
                             reply['output_text']
@@ -135,4 +153,4 @@ class MainDialog(LogoutDialog):
             await step_context.context.send_activity("We couldn't log you in.")
 
         # await step_context.context.send_activity("Type anything to try again.")
-        return await step_context.end_dialog()
+        return await step_context.replace_dialog("WFDialog")

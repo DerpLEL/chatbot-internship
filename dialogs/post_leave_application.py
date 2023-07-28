@@ -412,7 +412,7 @@ leave_application_form = {
 confirm_delete = False
 
 
-def post_leave_application_func(user, query):
+def post_leave_application_func(user, query, token):
     # try:
         global leave_application_form
         global confirm_delete
@@ -467,17 +467,24 @@ def post_leave_application_func(user, query):
 
             # response = str(leave_application_form)
 
-        print(leave_application_form)
+        print(leave_application_form['start_date'], '%Y-%m-%d')
         leave_application_form_string = ''
-        if leave_application_form['start_date'] == '':
-            leave_application_form_string += 'Chưa cung cấp ngày bắt đầu nghỉ.'
-        if leave_application_form['end_date'] == '':
-            leave_application_form_string += 'Chưa cung cấp ngày kết thúc nghỉ.'
-        if leave_application_form['note'] == '':
-            leave_application_form_string += 'Chưa cung cấp nguyên nhân nghỉ.'
-        if leave_application_form['periodType'] == -1:
-            leave_application_form_string += 'Chưa cung cấp buổi nghỉ(sáng, chiều hay cả ngày).'
-        print(leave_application_form_string)
+        if datetime.strptime(leave_application_form['start_date'], '%Y-%m-%d').weekday() == 5 or datetime.strptime(leave_application_form['start_date'], '%Y-%m-%d').weekday() == 6:
+            leave_application_form['start_date'] = ''
+            leave_application_form_string += 'Hiện tại ngày bạn muốn submit nghỉ' + leave_application_form['start_date'] + 'là ngày cuối tuần. Bạn có thể kiểm tra lại ngày bạn muốn submit được không? Vì ngày bạn muốn nghỉ là ngày cuối tuần.'
+        if datetime.strptime(leave_application_form['end_date'], '%Y-%m-%d').weekday() == 5 or datetime.strptime(leave_application_form['end_date'], '%Y-%m-%d').weekday() == 6:
+            leave_application_form['end_date'] = ''
+            leave_application_form_string += 'Hiện tại ngày bạn muốn submit nghỉ' + leave_application_form['end_date'] + 'là ngày cuối tuần. Bạn có thể kiểm tra lại ngày bạn muốn submit được không? Vì ngày bạn muốn nghỉ là ngày cuối tuần.'
+        if leave_application_form['start_date'] and leave_application_form['end_date']:
+            if leave_application_form['start_date'] == '':
+                leave_application_form_string += 'Chưa cung cấp ngày bắt đầu nghỉ.'
+            if leave_application_form['end_date'] == '':
+                leave_application_form_string += 'Chưa cung cấp ngày kết thúc nghỉ.'
+            if leave_application_form['note'] == '':
+                leave_application_form_string += 'Chưa cung cấp nguyên nhân nghỉ.'
+            if leave_application_form['periodType'] == -1:
+                leave_application_form_string += 'Chưa cung cấp buổi nghỉ(sáng, chiều hay cả ngày).'
+        
         if leave_application_form_string == '':
             if leave_application_form['periodType'] == 0:
                 periodType = "Cả ngày"
@@ -502,18 +509,39 @@ def post_leave_application_func(user, query):
             confirm = confirm_chain(query)['text']
 
             if 'es' in confirm and not confirm_delete:
-                response_data = requests.post('https://hrm-nois-fake.azurewebsites.net/api/LeaveApplication/Submit', json = {
-            "userId": 'c4edb6f7-56c8-444a-803d-5a6c77707e60',
-            "reviewUserId": '139',
-            "relatedUserId": "string",
-            "fromDate": leave_application_form['start_date'],
-            "toDate":leave_application_form['end_date'],
-            "leaveApplicationTypeId": 1,
-            "leaveApplicationNote": leave_application_form['note'],
-            "periodType": leave_application_form['periodType'],
-            "numberOffDay": leave_application_form['duration'],
-        })
-                print(response_data.text)
+                url = "https://api-hrm.nois.vn/api/leaveapplication"
+                data = {
+                    "reviewUserId": 139,
+                    "relatedUserId": "",
+                    "fromDate": datetime.strptime(leave_application_form['start_date'], '%Y-%m-%d').strftime('%m/%d/%Y'),
+                    "toDate": datetime.strptime(leave_application_form['end_date'], '%Y-%m-%d').strftime('%m/%d/%Y'),
+                    "leaveApplicationTypeId": 2,
+                    "leaveApplicationNote": leave_application_form['note'],
+                    "numberOffDay": leave_application_form['duration']
+                }
+
+                headers = {
+                    "Authorization": f"Bearer {token}"
+                }
+
+                # Make the request
+                response = requests.post(url, json=data, headers=headers)
+
+                # Print the response status code and content
+                print(response.status_code)
+
+        #         response_data = requests.post('https://hrm-nois-fake.azurewebsites.net/api/LeaveApplication/Submit', json = {
+        #     "userId": 'c4edb6f7-56c8-444a-803d-5a6c77707e60',
+        #     "reviewUserId": '139',
+        #     "relatedUserId": "string",
+        #     "fromDate": leave_application_form['start_date'],
+        #     "toDate":leave_application_form['end_date'],
+        #     "leaveApplicationTypeId": 1,
+        #     "leaveApplicationNote": leave_application_form['note'],
+        #     "periodType": leave_application_form['periodType'],
+        #     "numberOffDay": leave_application_form['duration'],
+        # })
+        #         print(response_data.text)
 
                 leave_application_form = {
                 'start_date': '',

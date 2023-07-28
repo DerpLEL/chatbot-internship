@@ -37,10 +37,9 @@ account_key = 'ohteFF8/tuPx3K0xtA/oIqXSKpx/MTnM4Ia0CbvLXJT1l0KJajB3zvX8A/DsNE9wm
 storage_connection_string = 'DefaultEndpointsProtocol=https;AccountName=acschatbotnoisintern;AccountKey=ohteFF8/tuPx3K0xtA/oIqXSKpx/MTnM4Ia0CbvLXJT1l0KJajB3zvX8A/DsNE9wm3gUq1TDlwve+AStS3nB0A==;EndpointSuffix=core.windows.net'
 blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
 
-token = ""
+token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiI1OWI2N2I2YS1lNWYwLTQ1MzYtOTVmMy1hMzY3ZmY2OWVkODUiLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vNWUyYTNjYmQtMWE1Mi00NWFkLWI1MTQtYWI0Mjk1NmIzNzJjL3YyLjAiLCJpYXQiOjE2OTA1MjkwNzIsIm5iZiI6MTY5MDUyOTA3MiwiZXhwIjoxNjkwNTMzNzY0LCJhaW8iOiJBV1FBbS84VUFBQUFsek5GOXAyMmR0TGZJNkhiVlpBbFdmT2l5THJ1RmhuU1FhMlBYd3ZMd2JtMGVZSFczYnV5ZTVYNm91YmtrSVhjSTg4ZndOa2VhSWkwQWo1OEFvVGcvSmFVVzZtaEl5VVZqdXlsUVhrb0JzclRkSktqWk1YNHR4dUFyTnRTbVl4OSIsImF6cCI6Ijc2ZWE5MmQ2LTMzMDgtNDBkNS04NjRhLWIyN2ZiOGY1YjI3MyIsImF6cGFjciI6IjAiLCJuYW1lIjoiVGhpZW4gVHJhbiIsIm9pZCI6ImY1MjdhZGI1LWM5OGMtNDg4NS1iYjY3LThkMTc4NTI2ZDI1NCIsInByZWZlcnJlZF91c2VybmFtZSI6InRoaWVuLnRyYW5Abm9pcy52biIsInJoIjoiMC5BVWtBdlR3cVhsSWFyVVcxRkt0Q2xXczNMR3A3dGxudzVUWkZsZk9qWl85cDdZVkpBSE0uIiwicm9sZXMiOlsiVXNlciJdLCJzY3AiOiJhY2Nlc3NfYXNfdXNlciIsInN1YiI6Ik1oTGgzVnBVU2V1VE1FN2xlcjZ6Vk9VSno0Qkx6c3J0S2I4NTh3R1owMUkiLCJ0aWQiOiI1ZTJhM2NiZC0xYTUyLTQ1YWQtYjUxNC1hYjQyOTU2YjM3MmMiLCJ1dGkiOiJ5bTh2d0d6NEJFeWFHaUdrajc4RUFBIiwidmVyIjoiMi4wIn0.ccsYv_N8T7cNf-YrICo5pqF1QpEp62tQeKsVyC0hFGIf-ULzIIflC2VllvdubwvPmlMCpVpoVqg7EZtAS12RI7k_DcwAZN8ieVX5cvAkWs6uaGjW_vRHsuDsGhdqVa_g6LOyTUr024Shp8tYGqP3HdCqMBQP3kfT_3t3wQ_34pI_agUmqwsbq2RF28jZgyLkZMmvmGZ1fpYFA5BCZlU3BOjg3SumQz8hZZTcq0mTV1OYDXLBrnUxS94dpOTL2aev2ezph86oDGW83z3TPc0bZYmLAjeA7QnC-NFKRcgHSChCob68VbOwxZVKc1qRFHYsJetRaFQu6oGKAaYi_NAjzA"
 
 class chatAI:
-
     classifier_hrm = """<|im_start|>system
 Given a sentence, assistant will determine if the sentence belongs in 1 of 2 categories, which are:
 - LeaveApplication
@@ -434,18 +433,19 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         return response, doc
 
     def chat_hrm(self, query):
+
         print (self.conversation_type)
         if not self.conversation_type:
-            label = self.classifier_hrm_chain(query)['text']
+            label_hrm = self.classifier_hrm_chain(query)['text']
         else:
-            label = self.conversation_type[0]
+            label_hrm = self.conversation_type[0]
 
         response = """"""
 
-        if label == "User":
+        if label_hrm == "User":
             email ="bui.khanh@nois.vn"
             response = run_return_user_response(email, query)
-        elif label == "LeaveApplication":
+        elif label_hrm == "LeaveApplication":
             if not self.conversation_type:
                 leave_application_type = self.leave_application_chain(query)['text']
             else:
@@ -457,7 +457,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
                 response = run_get_leave_application(email, query)
             elif leave_application_type == 'post':
                 self.conversation_type = ['LeaveApplication', 'post']
-                post_leave_application_response = post_leave_application_func(self.user, query)
+                post_leave_application_response = post_leave_application_func(self.user, query, token)
                 response = post_leave_application_response[0]
                 if post_leave_application_response[1].status_code == 200:
                     self.conversation_type = []
@@ -475,7 +475,11 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         return response
 
     def chat_private(self, query):
-        label = self.classifier_chain(query)['text']
+        if not self.conversation_type:
+            label = self.classifier_chain(query)['text']
+        else:
+            label = "hrm"
+
         print("label" + label)
         keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
         print(keywords)

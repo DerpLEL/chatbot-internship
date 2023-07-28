@@ -40,9 +40,9 @@ async def on_error(context: TurnContext, error: Exception):
     traceback.print_exc()
 
     # Send a message to the user
-    await context.send_activity("The bot encountered an error or bug.")
+    await context.send_activity("Hiện tại hệ thống đang gặp một chút vấn đề. :((")
     await context.send_activity(
-        "To continue to run this bot, please fix the bot source code."
+        "Bạn có thể gửi tin nhắn vừa rồi sau một vài giây được không."
     )
 
     # Send a trace activity if we're talking to the Bot Framework Emulator
