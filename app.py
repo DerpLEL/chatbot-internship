@@ -21,13 +21,6 @@ def index():
 
 
 def get_bot_response():
-    # global bot_message
-    #
-    # while not bot_message:
-    #     pass
-    #
-    # msg = bot_message
-    # bot_message = ""
     while not bot.agent.msg.output:
         pass
 
@@ -61,12 +54,6 @@ def chat():
         t1 = threading.Thread(target=run_agent, args=(msg,agent_arg,), daemon=True)
         t1.start()
 
-        # while not bot_message:
-        #     pass
-        #
-        # new_msg = bot_message.split(":")[1]
-        # bot_message = ""
-
         new_msg = get_bot_response()
 
         return new_msg
@@ -75,12 +62,6 @@ def chat():
     if agent_session:
         print(f"Still in agent session, current user message: {msg}")
         bot.agent.msg.input = msg
-
-        # while not bot_message:
-        #     pass
-        #
-        # new_msg = bot_message.split(":")[1]
-        # bot_message = ""
 
         new_msg = get_bot_response()
 
