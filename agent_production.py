@@ -45,7 +45,6 @@ Thought: ```I now know the final answer```
 Final Answer: ```your final answer to the original input question```
 '''
 
-
 # Define a message class to allow agent to communicate with user, used by the agent class and the custom callback
 # handler class. The message can be accessed from app.py as well.
 global_message = MessageClass()
