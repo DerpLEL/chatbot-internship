@@ -723,7 +723,7 @@ Final Answer: Leave application is submitted.
 
 suffix2 = """Submission steps in the example can be skipped if the user provides enough information.
 Ask the user for any missing information.
-Translate your questions and answers into Vietnamese if the user uses Vietnamese.
+Translate your questions and answers into Vietnamese if presented with Vietnamese.
 Begin!
 
 {context}
