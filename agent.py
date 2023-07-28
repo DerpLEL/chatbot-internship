@@ -2,6 +2,7 @@ import datetime
 from typing import Any, Dict
 import numpy as np
 import parsedatetime
+import requests
 from langchain.agents import ZeroShotAgent, AgentExecutor, Tool
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.chains import LLMChain
@@ -186,7 +187,14 @@ def get_leave_applications(query: str = None):
 def delete_leave_applications(target: str = "Default"):
     applis = requests.get(url + f'/api/LeaveApplication/{get_userId(email)}').json()['data']
 
-    appli = [i for i in applis if i['id'] == target]
+    if ', ' in target:
+        target = target.split(', ')
+        appli = [i for i in applis if i['id'] in target]
+        notify = "Are you sure you want to delete these applications? "
+
+    else:
+        appli = [i for i in applis if i['id'] == target]
+        notify = "Are you sure you want to delete this application? "
 
     string = ""
     for i in appli:
@@ -197,13 +205,21 @@ def delete_leave_applications(target: str = "Default"):
         string += f"Number of requested leave day(s): {i['numberDayOff']}\n\n"
 
     inp = class_chat_input(
-        string + "Are you sure you want to delete this application? Type 1 to proceed with delete, type 0 to cancel.\n").strip()
+        string + notify + "Type 1 to proceed with delete, type 0 to cancel.\n").strip()
 
     while inp != "1" and inp != "0":
         inp = class_chat_input("Invalid input. Type 1 to proceed with delete, type 0 to cancel.\n")
 
     if inp == "0":
         return "User has cancelled the deletion process."
+
+    if isinstance(target, list):
+        string = ""
+        for i in target:
+            print(requests.delete(url + f'/api/LeaveApplication/{i}').json()['message'])
+            string += f"Leave application {i}'s deletion: OK\n"
+
+        return string
 
     return requests.delete(url + f'/api/LeaveApplication/{target}').json()['message']
 
@@ -536,7 +552,7 @@ Until this tool returns "OK", the user's leave application IS NOT submitted.'''
     Tool(
         name='HRM delete leave application',
         func=delete_leave_applications,
-        description='useful for deleting a specific leave application. Input is the ID of the leave application. Always run the HRM get applications first and ask the user which application they want to delete.'
+        description='useful for deleting specific leave application(s). Input is the ID of the leave application, if the user requests to delete multiple applications, separate them by a comma and space. Always run the HRM get applications first and ask the user which application they want to delete.'
     ),
 
     human_inp,
@@ -707,6 +723,7 @@ Final Answer: Leave application is submitted.
 
 suffix2 = """Submission steps in the example can be skipped if the user provides enough information.
 Ask the user for any missing information.
+Translate your questions and answers into Vietnamese if the user uses Vietnamese.
 Begin!
 
 {context}
