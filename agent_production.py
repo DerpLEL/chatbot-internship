@@ -308,51 +308,51 @@ def submitLeaveApplication(args: str):
     if len(lst) != 6:
         return "Incorrect number of arguments, this function requires 5 arguments: manager's id, start date, end date, leave type and note."
 
-        # Manager check
-        manager_id, manager_name = check_manager_name(lst[1])
-        if manager_id == -1:
-            return "Ask the user for the correct manager's name. The user either didn't give you a name or gave you the wrong name."
+    # Manager check
+    manager_id, manager_name = check_manager_name(lst[1])
+    if manager_id == -1:
+        return "Ask the user for the correct manager's name. The user either didn't give you a name or gave you the wrong name."
 
-        # Valid start date check 1, check if it's a valid date format
-        if '-' not in lst[2]:
-            return "Infer the date based on the user's answer. Use a tool if possible."
+    # Valid start date check 1, check if it's a valid date format
+    if '-' not in lst[2]:
+        return "Infer the date based on the user's answer. Use a tool if possible."
 
-        # Valid start date check 2
-        if dtime.strptime(lst[2], "%Y-%m-%d") < dtime.strptime(date, "%Y-%m-%d"):
-            return "Start date cannot be earlier than current date, ask the user for another date."
+    # Valid start date check 2
+    if dtime.strptime(lst[2], "%Y-%m-%d") < dtime.strptime(date, "%Y-%m-%d"):
+        return "Start date cannot be earlier than current date, ask the user for another date."
 
-        # Valid start date check 3
-        if dtime.strptime(lst[2], "%Y-%m-%d").weekday() in [5, 6]:
-            return "Start date cannot be on the weekend, ask the user for another date."
+    # Valid start date check 3
+    if dtime.strptime(lst[2], "%Y-%m-%d").weekday() in [5, 6]:
+        return "Start date cannot be on the weekend, ask the user for another date."
 
-        # Valid end date check 1, check if it's a valid date format
-        if '-' not in lst[3]:
-            return "Infer the date based on the user's answer. Use a tool if possible."
+    # Valid end date check 1, check if it's a valid date format
+    if '-' not in lst[3]:
+        return "Infer the date based on the user's answer. Use a tool if possible."
 
-        # Valid end date check 2
-        if dtime.strptime(lst[3], "%Y-%m-%d") < dtime.strptime(lst[2], "%Y-%m-%d"):
-            return "End date cannot be earlier than start date, ask the user for another date."
+    # Valid end date check 2
+    if dtime.strptime(lst[3], "%Y-%m-%d") < dtime.strptime(lst[2], "%Y-%m-%d"):
+        return "End date cannot be earlier than start date, ask the user for another date."
 
-        # Valid end date check 3
-        if dtime.strptime(lst[3], "%Y-%m-%d").weekday() in [5, 6]:
-            return "End date cannot be on the weekend, ask the user for another date."
+    # Valid end date check 3
+    if dtime.strptime(lst[3], "%Y-%m-%d").weekday() in [5, 6]:
+        return "End date cannot be on the weekend, ask the user for another date."
 
-        # Valid leave type check
-        if lst[4] not in ["unpaid", "paid", "sick", "social insurance", "conference", "other"]:
-            return "Invalid leave type. Ask the user for the correct type of leave"
+    # Valid leave type check
+    if lst[4] not in ["unpaid", "paid", "sick", "social insurance", "conference", "other"]:
+        return "Invalid leave type. Ask the user for the correct type of leave"
 
-        # If leave type is either paid, sick or other, checks if user has enough day-offs left
-        elif lst[4] in ["paid", "sick", "other (wedding or funeral)"]:
-            requestedDayOff = int(np.busday_count(lst[2], lst[3])) + 1
+    # If leave type is either paid, sick or other, checks if user has enough day-offs left
+    elif lst[4] in ["paid", "sick", "other (wedding or funeral)"]:
+        requested_day_off = int(np.busday_count(lst[2], lst[3])) + 1
 
-            remainingDayOff = dayoff_allow()
+        remaining_day_off = dayoff_allow()
 
-        # If not enough, tell the bot to inform the user
-            if remainingDayOff < requestedDayOff:
-                return f"""User does not have enough remaining day off for this application. Put these information into your question:
-    Requested leave day(s): {requestedDayOff}
-    Remaining leave day(s): {remainingDayOff}
-    And ask the user (using the tool human) if they want to apply for a different type, change start or end dates, or cancel."""
+    # If not enough, tell the bot to inform the user
+        if remaining_day_off < requested_day_off:
+            return f"""User does not have enough remaining day off for this application. Put these information into your question:
+Requested leave day(s): {requested_day_off}
+Remaining leave day(s): {remaining_day_off}
+And ask the user (using the tool human) if they want to apply for a different type, change start or end dates, or cancel."""
 
     # Call the post_method function to send the leave application
     reply = post_method(lst[0], (manager_id, manager_name), lst[2], lst[3], lst[4], lst[5])

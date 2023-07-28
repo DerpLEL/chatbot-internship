@@ -13,7 +13,7 @@ import re
 from PIL import Image
 import urllib.request
 import io
-from agent import *
+from agent_production import *
 from datetime import datetime, timedelta
 
 fasf_text_index = "fasf-text-01-index"
