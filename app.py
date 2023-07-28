@@ -96,23 +96,5 @@ def run_agent(query, agent_type):
     return
 
 
-# @app.route("/agent", methods=["POST"])
-# def get_message_agent():
-#     msg = request.form["msg"]
-#     global bot_message
-#     bot_message = msg
-#
-#     return jsonify({"msg": "OK"})
-
-
-# @app.route("/user", methods=["GET"])
-# def get_message_user():
-#     global user_msg
-#     msg = user_msg
-#     user_msg = ""
-#
-#     return jsonify({"msg": msg})
-
-
 if __name__ == '__main__':
     app.run(port=8000)
