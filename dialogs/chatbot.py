@@ -481,7 +481,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
             print(f"History to be updated to SQL: {res}\n")
             cursor.execute(f"""UPDATE history
-            SET chat = N'{res}' WHERE email = '{email}';""")
+SET chat = N'{res}' WHERE email = '{email}';""")
             conn.commit()
             return
 
