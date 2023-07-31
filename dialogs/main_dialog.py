@@ -67,10 +67,10 @@ class MainDialog(LogoutDialog):
                     await step_context.context.send_activity("Bạn đã đăng nhập thành công.")
                 token_response = step_context.result
 
-                client = SimpleGraphClient(token_response.token)
-                me_info = await client.get_me()
-                self.bot.user['username'] = me_info['displayName']
-                self.bot.user['mail'] = me_info['mail']
+                # client = SimpleGraphClient(token_response.token)
+                # me_info = await client.get_me()
+                # self.bot.user['username'] = me_info['displayName']
+                # self.bot.user['mail'] = me_info['mail']
                 
                 if self.login == False:
                     return await step_context.prompt(
