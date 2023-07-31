@@ -562,13 +562,13 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
     def chat_private(self, query, email, name):
         if not self.conversation_type:
-            label = self.classifier_chain({'question': query, 'context': self.get_history_as_txt(email)})['text']
+            label = self.classifier_chain({'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
 
         else:
             label = "hrm"
 
         print("label" + label)
-        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt(email)})['text']
+        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
         print(keywords)
 
         chain = self.qa_chain
@@ -607,7 +607,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             doc = self.get_document(keywords, self.retriever_private)
 
         try:
-            response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(email),
+            response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt_sql(email),
                                 'user_info': f'''The user chatting with you is named {name}, with email: {email}. 
                                 '''},
                              return_only_outputs=False)
@@ -615,7 +615,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         except Exception as e:
             return {'output_text': f'Cannot generate response, error: {e}'}, doc
 
-        self.add_to_history(query, response['output_text'], email)
+        self.add_to_history_sql(query, response['output_text'], email)
         return response, doc
 
     # def get_docs_using_keyword_string_for_drink_fee(self, keyword, retriever):
