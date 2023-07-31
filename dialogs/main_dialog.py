@@ -140,9 +140,14 @@ class MainDialog(LogoutDialog):
                     )
 
                 else:
-                    reply, doc = self.bot.chat(step_context.values["command"])
+                    client = SimpleGraphClient(token_response.token)
+                    me_info = await client.get_me()
+
+                    reply, doc = self.bot.chat(step_context.values["command"], me_info['mail'])
+
                     print("doc: " + str(doc))
-                    print("reply:"+ str(reply)) 
+                    print("reply:" + str(reply))
+
                     if type(reply) == str:
                         await step_context.context.send_activity(reply)
                     else:                        

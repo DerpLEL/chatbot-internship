@@ -382,12 +382,12 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         return doc
 
 # history
-    def get_history_as_txt(self, n=3):
+    def get_history_as_txt(self, email, n=3):
         txt = ""
         hist = self.history_public
 
         if self.private:
-            hist = self.history_private
+            hist = self.history_private[email]
 
         if len(hist) <= n:
             history = hist
@@ -401,39 +401,41 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
         return txt
 
-    def add_to_history(self, user_msg, ai_msg):
+    def add_to_history(self, user_msg, ai_msg, email):
         hist = self.history_public
         if self.private:
-            hist = self.history_private
+            hist = self.history_private[email]
 
         hist.append({'user': user_msg, 'AI': ai_msg})
         print(hist)
 
-    def chat(self, query):
+    def chat(self, query, email):
         if self.private:
-            return self.chat_private(query)
+            if email not in self.history_private:
+                self.history_private[email] = []
+
+            return self.chat_private(query, email)
 
         return self.chat_public(query)
 
     def chat_public(self, query):
-        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
+        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt(None)})['text']
         print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
         doc = self.get_document(keywords, self.retriever_public)
 
         try:
-            response = response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(),
+            response = response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(None),
                     'user_info': ''},
                              return_only_outputs=False)
         except Exception as e:
             return {'output_text': f'Cannot generate response, error: {e}'}, doc
 
-        self.add_to_history(query, response['output_text'])
+        self.add_to_history(query, response['output_text'], None)
         return response, doc
 
-    def chat_hrm(self, query):
-
+    def chat_hrm(self, query, email):
         print (self.conversation_type)
         if not self.conversation_type:
             label_hrm = self.classifier_hrm_chain(query)['text']
@@ -443,7 +445,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         response = """"""
 
         if label_hrm == "User":
-            email ="bui.khanh@nois.vn"
+            # email ="bui.khanh@nois.vn"
             response = run_return_user_response(email, query)
         elif label_hrm == "LeaveApplication":
             if not self.conversation_type:
@@ -453,7 +455,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
             print(leave_application_type)
             if leave_application_type == 'get':
-                email ="bui.khanh@nois.vn"
+                # email ="bui.khanh@nois.vn"
                 response = run_get_leave_application(email, query)
             elif leave_application_type == 'post':
                 self.conversation_type = ['LeaveApplication', 'post']
@@ -463,9 +465,9 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
                     self.conversation_type = []
             elif leave_application_type == 'delete':
                 self.conversation_type = ['LeaveApplication','delete']
-                email ="bui.khanh@nois.vn"
+                # email ="bui.khanh@nois.vn"
                 print("delete - pass")
-                response = run_leave_application_delete(email, query, self.get_history_as_txt())
+                response = run_leave_application_delete(email, query, self.get_history_as_txt(email))
                 if (response != "Đã xóa thành công"):
                     print()
                 else:
@@ -474,14 +476,14 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         
         return response
 
-    def chat_private(self, query):
+    def chat_private(self, query, email):
         if not self.conversation_type:
             label = self.classifier_chain(query)['text']
         else:
             label = "hrm"
 
         print("label" + label)
-        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
+        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt(email)})['text']
         print(keywords)
 
         chain = self.qa_chain
@@ -494,7 +496,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
             doc = self.get_document(keywords, self.retriever_drink)[:1]
 
-            input_pandas = self.drink_chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()}, return_only_outputs=False)
+            input_pandas = self.drink_chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(email)}, return_only_outputs=False)
             blob_name = doc[0].metadata['metadata_storage_name']
         
             print(input_pandas['output_text']) 
@@ -504,7 +506,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             print(result_doc)
 
             if """count""" not in input_pandas['output_text']:
-                self.add_to_history(query, "")
+                self.add_to_history(query, "", email)
                 return {'output_text': str(temp_result)}, doc
             doc[0].page_content = result_doc
 
@@ -512,14 +514,14 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             doc = self.get_document(keywords, self.retriever_policy)
 
         elif label == "hrm":
-            response = self.chat_hrm(query)
-            self.add_to_history(query, response)
+            response = self.chat_hrm(query, email)
+            self.add_to_history(query, response, email)
             return response, ""
         else:
             doc = self.get_document(keywords, self.retriever_private)
 
         try:
-            response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(),
+            response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(email),
                                 'user_info': f'''The user chatting with you is named {self.user['username']}, with email: {self.user['mail']}. 
                                 '''},
                              return_only_outputs=False)
@@ -527,7 +529,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         except Exception as e:
             return {'output_text': f'Cannot generate response, error: {e}'}, doc
 
-        self.add_to_history(query, response['output_text'])
+        self.add_to_history(query, response['output_text'], email)
         return response, doc
 
     # def get_docs_using_keyword_string_for_drink_fee(self, keyword, retriever):
