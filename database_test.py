@@ -72,14 +72,15 @@ def get_history_as_txt_sql(email):
 #
 # conn.commit()
 
-cursor.execute("""UPDATE history
-SET chat = N'test thử cái gì đó'
-WHERE email = 'bao.ho@nois.vn';""")
+# cursor.execute("""UPDATE history
+# SET chat = N''
+# WHERE email = 'bao.ho@nois.vn';""")
+#
+# conn.commit()
+#
+# cursor.execute("""SELECT chat FROM history;""")
+# rows = cursor.fetchall()
+#
+# for i in rows:
+#     print(i[0])
 
-conn.commit()
-
-cursor.execute("""SELECT chat FROM history;""")
-rows = cursor.fetchall()
-
-for i in rows:
-    print(i[0])
