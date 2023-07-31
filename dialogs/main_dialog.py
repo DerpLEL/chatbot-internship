@@ -143,7 +143,7 @@ class MainDialog(LogoutDialog):
                     client = SimpleGraphClient(token_response.token)
                     me_info = await client.get_me()
 
-                    reply, doc = self.bot.chat(step_context.values["command"], me_info['mail'])
+                    reply, doc = self.bot.chat(step_context.values["command"], me_info['mail'], me_info['displayName'])
 
                     print("doc: " + str(doc))
                     print("reply:" + str(reply))

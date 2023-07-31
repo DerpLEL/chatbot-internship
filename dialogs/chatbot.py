@@ -409,12 +409,12 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         hist.append({'user': user_msg, 'AI': ai_msg})
         print(hist)
 
-    def chat(self, query, email):
+    def chat(self, query, email, name):
         if self.private:
             if email not in self.history_private:
                 self.history_private[email] = []
 
-            return self.chat_private(query, email)
+            return self.chat_private(query, email, name)
 
         return self.chat_public(query)
 
@@ -476,7 +476,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         
         return response
 
-    def chat_private(self, query, email):
+    def chat_private(self, query, email, name):
         if not self.conversation_type:
             label = self.classifier_chain(query)['text']
         else:
@@ -522,7 +522,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
         try:
             response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(email),
-                                'user_info': f'''The user chatting with you is named {self.user['username']}, with email: {self.user['mail']}. 
+                                'user_info': f'''The user chatting with you is named {name}, with email: {email}. 
                                 '''},
                              return_only_outputs=False)
 
