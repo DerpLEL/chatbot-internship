@@ -281,7 +281,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
     def __init__(self):
         self.conversation_type = []
         self.history_public = []
-        self.history_private = []
+        self.history_private = {}
         self.private = False
         self.container_drink_fee_name = 'nois-drink-fee'
         self.container_client = blob_service_client.get_container_client(self.container_drink_fee_name)
