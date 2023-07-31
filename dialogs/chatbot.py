@@ -69,6 +69,7 @@ Output: Meeting
 Input: {question}
 <|im_start|>assistant
 Output:"""
+
     classifier_leave_application = """<|im_start|>system
 Given a sentence, assistant will determine if the sentence belongs in 1 of 3 categories, which are:
 - get
@@ -160,14 +161,14 @@ Chat history:{context}
 <|im_start|>assistant
 """
 
-    classifier_template = """<|im_start|>system
+    classifier_template_backup = """<|im_start|>system
 Given a sentence, assistant will determine if the sentence belongs in 1 of 3 categories, which are:
 - policy
 - drink fee
 - hrm
 - other
 
-Do not answer the question,     `only output the appropriate category.
+Do not answer the question, only output the appropriate category.
 **QUESTION REGARDS TO HRM: question related to submitting a leave application, get leave application, 
 get user id in hrm and all the same as the one mentioned above.
 
@@ -201,6 +202,47 @@ Output: hrm
 Input: {question}
 <|im_start|>assistant
 Output:"""
+
+    classifier_template = """Given a sentence, assistant will determine if the sentence belongs in 1 of 4 categories, which are:
+- policy
+- drink fee
+- hrm
+- other
+
+Do not answer the question, only output the appropriate category.
+**QUESTION REGARDS TO HRM: question related to submitting a leave application, get leave application, 
+get user id in hrm and all the same as the one mentioned above.
+
+EXAMPLE
+Input: Ai chưa đóng tiền nước tháng 5?
+Output: drink fee
+Input: Who has paid April 2023 Drink Fee?
+Output: drink fee
+Input: Quy định công ty về nơi làm việc là gì?
+Output: policy
+Input: What is Chapter 1, article 2 of the company policy about?
+Output: policy
+Input: Dịch vụ của NOIS là gì?
+Output: other
+Input: What is FASF?
+Output: other
+Input: tôi muốn nộp đơn nghỉ phép?
+Output: hrm
+Input: tôi muốn xem đơn nhỉ phép của tôi
+Output: hrm
+Input: tôi còn bao nhiêu ngày nghỉ
+Output: hrm
+Input: tôi muốn submit ngày nghỉ
+Output: hrm
+Input: tôi muốn hủy đơn tôi đã submit
+Output: hrm
+Input: tôi cần thông tin của tôi
+Output: hrm
+
+Chat history:{context}
+
+Input: {question}
+Output: """
 
     drink_fee_template = """<|im_start|>system
 Sources:
@@ -435,7 +477,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         self.add_to_history(query, response['output_text'], None)
         return response, doc
 
-    def chat_hrm(self, query, email):
+    def chat_hrm(self, query, email, name):
         print (self.conversation_type)
         if not self.conversation_type:
             label_hrm = self.classifier_hrm_chain(query)['text']
@@ -457,19 +499,23 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             if leave_application_type == 'get':
                 # email ="bui.khanh@nois.vn"
                 response = run_get_leave_application(email, query)
+
             elif leave_application_type == 'post':
                 self.conversation_type = ['LeaveApplication', 'post']
-                post_leave_application_response = post_leave_application_func(self.user, query, token)
+                post_leave_application_response = post_leave_application_func({'username': name, "mail": email},
+                                                                              query, token)
                 response = post_leave_application_response[0]
                 if post_leave_application_response[1].status_code == 200:
                     self.conversation_type = []
+
             elif leave_application_type == 'delete':
-                self.conversation_type = ['LeaveApplication','delete']
+                self.conversation_type = ['LeaveApplication', 'delete']
                 # email ="bui.khanh@nois.vn"
                 print("delete - pass")
                 response = run_leave_application_delete(email, query, self.get_history_as_txt(email))
-                if (response != "Đã xóa thành công"):
+                if response != "Đã xóa thành công":
                     print()
+
                 else:
                     self.conversation_type = []
                     return response
@@ -478,7 +524,8 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
     def chat_private(self, query, email, name):
         if not self.conversation_type:
-            label = self.classifier_chain(query)['text']
+            label = self.classifier_chain({'question': query, 'context': self.get_history_as_txt(email)})['text']
+
         else:
             label = "hrm"
 
@@ -514,7 +561,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             doc = self.get_document(keywords, self.retriever_policy)
 
         elif label == "hrm":
-            response = self.chat_hrm(query, email)
+            response = self.chat_hrm(query, email, name)
             self.add_to_history(query, response, email)
             return response, ""
 
@@ -563,8 +610,10 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         header = self.header_drink_chain({'input_documents': doc, 'question': 'What is Header of this file?', 'context': ''}, return_only_outputs=False)
         old_header = list(df.columns)
         header_list = ast.literal_eval(header['output_text'])
-        target_rows = df[(df[old_header[0]] == header_list[0]) & (df[old_header[1]] == header_list[1]) & (df[old_header[3]] == header_list[3])]
-        df = pd.read_excel(sas_url, skiprows = target_rows.index[0] + 1)
+        # target_rows = df[(df[old_header[0]] == header_list[0]) & (df[old_header[1]] == header_list[1]) & (df[old_header[3]] == header_list[3])]
+
+        target_rows = df[df[old_header[0]] == header_list[0]]
+        df = pd.read_excel(sas_url, skiprows=target_rows.index[0] + 1)
         print(df)
 
         last_row_index = df.index[df.isnull().all(axis=1)][0]
