@@ -481,8 +481,9 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             hist = hist[len(hist) - n:]
 
         res = "<sep>".join(hist)
+        print(f"History to be updated to SQL: {res}\n")
         cursor.execute(f"""UPDATE history
-    SET chat = '{res}' WHERE email = '{email}';""")
+    SET chat = N'{res}' WHERE email = '{email}';""")
         conn.commit()
 
     def get_history_as_txt_sql(self, email):
@@ -493,9 +494,13 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         for row in hist:
             i = row.split('||')
 
-            txt += f"\n<|im_start|>user\n{i[0]}\n<|im_end|>\n"
-            txt += f"<|im_start|>assistant\n{i[1]}\n<|im_end|>"
+            try:
+                txt += f"\n<|im_start|>user\n{i[0]}\n<|im_end|>\n"
+                txt += f"<|im_start|>assistant\n{i[1]}\n<|im_end|>"
+            except IndexError:
+                break
 
+        print(f"History from SQL: {txt}\n")
         return txt
 
     def chat_public(self, query):

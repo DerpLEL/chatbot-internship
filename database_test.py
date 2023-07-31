@@ -27,12 +27,6 @@ cursor = conn.cursor()
 #
 # conn.commit()
 
-# cursor.execute("""SELECT chat FROM history;""")
-# rows = cursor.fetchall()
-#
-# for i in rows:
-#     print(i[0])
-
 
 def add_to_history_sql(query, response, email):
     n = 3
@@ -57,8 +51,11 @@ def get_history_as_txt_sql(email):
     for row in hist:
         i = row.split('||')
 
-        txt += f"\n<|im_start|>user\n{i[0]}\n<|im_end|>\n"
-        txt += f"<|im_start|>assistant\n{i[1]}\n<|im_end|>"
+        try:
+            txt += f"\n<|im_start|>user\n{i[0]}\n<|im_end|>\n"
+            txt += f"<|im_start|>assistant\n{i[1]}\n<|im_end|>"
+        except IndexError:
+            return ""
 
     return txt
 
@@ -69,3 +66,20 @@ def get_history_as_txt_sql(email):
 # WHERE email = 'bao.ho@nois.vn';""")
 #
 # conn.commit()
+
+# cursor.execute("""ALTER TABLE history
+# charset=utf8;""")
+#
+# conn.commit()
+
+cursor.execute("""UPDATE history
+SET chat = N'test thử cái gì đó'
+WHERE email = 'bao.ho@nois.vn';""")
+
+conn.commit()
+
+cursor.execute("""SELECT chat FROM history;""")
+rows = cursor.fetchall()
+
+for i in rows:
+    print(i[0])
