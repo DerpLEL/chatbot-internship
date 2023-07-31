@@ -478,7 +478,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         return response, doc
 
     def chat_hrm(self, query, email, name):
-        print (self.conversation_type)
+        print(self.conversation_type)
         if not self.conversation_type:
             label_hrm = self.classifier_hrm_chain(query)['text']
         else:
@@ -562,7 +562,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
         elif label == "hrm":
             response = self.chat_hrm(query, email, name)
-            self.add_to_history(query, response, email)
+            # self.add_to_history(query, response, email)
             return response, ""
 
         else:
