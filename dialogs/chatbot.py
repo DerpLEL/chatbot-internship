@@ -474,9 +474,9 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
     def add_to_history_sql(self, query, response, email):
         n = 3
         cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
-        hist = cursor.fetchone()[0].split("<sep>")
+        hist = cursor.fetchone()
 
-        if not hist:
+        if not hist[0]:
             res = f"{query}||{response}"
 
             print(f"History to be updated to SQL: {res}\n")
@@ -484,6 +484,8 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 SET chat = N'{res}' WHERE email = '{email}';""")
             conn.commit()
             return
+
+        hist = hist[0].split("<sep>")
 
         hist.append(f"{query}||{response}")
         if len(hist) > n:
@@ -498,7 +500,19 @@ SET chat = N'{res}' WHERE email = '{email}';""")
 
     def get_history_as_txt_sql(self, email):
         cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
-        hist = cursor.fetchone()[0].split('<sep>')
+        hist = cursor.fetchone()
+
+        if not hist:
+            cursor.execute(f"""INSERT INTO history
+VALUES ('{email}', NULL, NULL, NULL);""")
+            conn.commit()
+
+            return ""
+
+        if not hist[0]:
+            return ""
+
+        hist = hist[0].split("<sep>")
 
         txt = ""
         for row in hist:
@@ -510,7 +524,7 @@ SET chat = N'{res}' WHERE email = '{email}';""")
             except IndexError:
                 break
 
-        print(f"History from SQL: {txt}\n")
+        # print(f"History from SQL: {txt}\n")
         return txt
 
     def chat_public(self, query):

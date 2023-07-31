@@ -84,3 +84,5 @@ def get_history_as_txt_sql(email):
 # for i in rows:
 #     print(i[0])
 
+cursor.execute("SELECT chat from history where email = 'thien.tran@nois.vn';")
+print(cursor.fetchone())
