@@ -9,7 +9,7 @@ conn = pyodbc.connect(f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={
 
 cursor = conn.cursor()
 
-# Current database sql-chatbot contains 4 columns
+# Current database sql-chatbot has 1 table history which contains 4 columns
 # email: user's email, as the primary key
 # chat: chat history between the user and the bot
 # post_leave: placeholder
@@ -64,4 +64,8 @@ def get_history_as_txt_sql(email):
 
 
 # print(get_history_as_txt_sql('bao.ho@nois.vn'))
-cursor.execute("""SELECT * FROM history;""")
+# cursor.execute("""UPDATE history
+# SET chat = ''
+# WHERE email = 'bao.ho@nois.vn';""")
+#
+# conn.commit()

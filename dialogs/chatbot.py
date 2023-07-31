@@ -9,6 +9,17 @@ from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPerm
 from langchain.retrievers import AzureCognitiveSearchRetriever
 from azure.core.exceptions import ResourceExistsError
 from datetime import datetime, timedelta
+import pyodbc
+
+server = 'sql-chatbot-server.database.windows.net'
+database = 'sql-chatbot'
+username = 'test-chatbot'
+password = 'bMp{]nzt1'
+driver= '{ODBC Driver 17 for SQL Server}'
+
+conn = pyodbc.connect(f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
+
+cursor = conn.cursor()
 
 import pandas as pd
 import ast
@@ -459,6 +470,33 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             return self.chat_private(query, email, name)
 
         return self.chat_public(query)
+
+    def add_to_history_sql(self, query, response, email):
+        n = 3
+        cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
+        hist = cursor.fetchone()[0].split('<sep>')
+
+        hist.append(f"{query}||{response}")
+        if len(hist) > n:
+            hist = hist[len(hist) - n:]
+
+        res = "<sep>".join(hist)
+        cursor.execute(f"""UPDATE history
+    SET chat = '{res}' WHERE email = '{email}';""")
+        conn.commit()
+
+    def get_history_as_txt_sql(self, email):
+        cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
+        hist = cursor.fetchone()[0].split('<sep>')
+
+        txt = ""
+        for row in hist:
+            i = row.split('||')
+
+            txt += f"\n<|im_start|>user\n{i[0]}\n<|im_end|>\n"
+            txt += f"<|im_start|>assistant\n{i[1]}\n<|im_end|>"
+
+        return txt
 
     def chat_public(self, query):
         keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt(None)})['text']
