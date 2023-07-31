@@ -285,7 +285,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         self.private = False
         self.container_drink_fee_name = 'nois-drink-fee'
         self.container_client = blob_service_client.get_container_client(self.container_drink_fee_name)
-        self.user = {"username":'', "mail":''}
+        # self.user = {"username":'', "mail":''}
 
         self.llm = AzureChatOpenAI(
             openai_api_type="azure",
