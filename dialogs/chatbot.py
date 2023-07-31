@@ -517,6 +517,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             response = self.chat_hrm(query, email)
             self.add_to_history(query, response, email)
             return response, ""
+
         else:
             doc = self.get_document(keywords, self.retriever_private)
 
