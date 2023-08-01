@@ -50,7 +50,7 @@ account_key = 'ohteFF8/tuPx3K0xtA/oIqXSKpx/MTnM4Ia0CbvLXJT1l0KJajB3zvX8A/DsNE9wm
 storage_connection_string = 'DefaultEndpointsProtocol=https;AccountName=acschatbotnoisintern;AccountKey=ohteFF8/tuPx3K0xtA/oIqXSKpx/MTnM4Ia0CbvLXJT1l0KJajB3zvX8A/DsNE9wm3gUq1TDlwve+AStS3nB0A==;EndpointSuffix=core.windows.net'
 blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
 
-token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiI1OWI2N2I2YS1lNWYwLTQ1MzYtOTVmMy1hMzY3ZmY2OWVkODUiLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vNWUyYTNjYmQtMWE1Mi00NWFkLWI1MTQtYWI0Mjk1NmIzNzJjL3YyLjAiLCJpYXQiOjE2OTA3OTU2NTEsIm5iZiI6MTY5MDc5NTY1MSwiZXhwIjoxNjkwODAwNDE4LCJhaW8iOiJBV1FBbS84VUFBQUFFVTRLRmdwY0JLWmdPblpGQ0Z1MnBtUm1mMWl6UERlSTNqT2VTbnI4VlovVHJsaUlvWityR3VUMkF5SU16ekxqY2Z5ZDZEdE8xZmVsZHQrRlVZUVJUZWhYcHBJL3ZKTHViUUMvVTR4K2E5R2JVdHVmU3VzbHdNRXNBM1dJTFdBRSIsImF6cCI6Ijc2ZWE5MmQ2LTMzMDgtNDBkNS04NjRhLWIyN2ZiOGY1YjI3MyIsImF6cGFjciI6IjAiLCJuYW1lIjoiVGhpZW4gVHJhbiIsIm9pZCI6ImY1MjdhZGI1LWM5OGMtNDg4NS1iYjY3LThkMTc4NTI2ZDI1NCIsInByZWZlcnJlZF91c2VybmFtZSI6InRoaWVuLnRyYW5Abm9pcy52biIsInJoIjoiMC5BVWtBdlR3cVhsSWFyVVcxRkt0Q2xXczNMR3A3dGxudzVUWkZsZk9qWl85cDdZVkpBSE0uIiwicm9sZXMiOlsiVXNlciJdLCJzY3AiOiJhY2Nlc3NfYXNfdXNlciIsInN1YiI6Ik1oTGgzVnBVU2V1VE1FN2xlcjZ6Vk9VSno0Qkx6c3J0S2I4NTh3R1owMUkiLCJ0aWQiOiI1ZTJhM2NiZC0xYTUyLTQ1YWQtYjUxNC1hYjQyOTU2YjM3MmMiLCJ1dGkiOiJYbzZGRThjMVRVMnRmRG0wQTc0MkFBIiwidmVyIjoiMi4wIn0.ev805xGbk3_Ktsx0P7UYesN7MjZNoiAoh_7Gej8YWVavSz7wqVSnxVwdCocp6fI6GuqZvQG8k38z8o5oD7Mn4unDm3mvuiIa_UfWTMzqScjvknXN8bmW1wYFY7_PEHzD72P--eIzULIt3SJdZif57P2cHlX_kMvjjreG3qCgwi7BdFrO7YWkXNEfpKqksVUwCmXcr6h51gCqIXxbw0sKQMT_XH0vnH3oIJxGxH4kULGxn0oKv1q_ac4UXdui5GyVVQlWfk8y7tpkaONNrnPSk96pSNIPYWAE246AJ2N3SbCB47aBl0I_cDoLC3m8iVXGPTk8syRRhzwYALayOvXeHg"
+token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiI1OWI2N2I2YS1lNWYwLTQ1MzYtOTVmMy1hMzY3ZmY2OWVkODUiLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vNWUyYTNjYmQtMWE1Mi00NWFkLWI1MTQtYWI0Mjk1NmIzNzJjL3YyLjAiLCJpYXQiOjE2OTA4NjMxNjgsIm5iZiI6MTY5MDg2MzE2OCwiZXhwIjoxNjkwODY4NDA5LCJhaW8iOiJBV1FBbS84VUFBQUExRTEvSmZCV2RneFhGNTViNURTUGRjTU85THN6Sk54QnU4aGpGR1I5RnFiaGxPcmhIa1UyeFJCYUliM1gwcDlCYU8xSWtiSmVUcHZTNlVXTE8rZHdaekx1QUhQQ1ZGY25kaUxaMVY2S1JBNXhGck9OaS9NdWVrOWIyclpPRG45SCIsImF6cCI6Ijc2ZWE5MmQ2LTMzMDgtNDBkNS04NjRhLWIyN2ZiOGY1YjI3MyIsImF6cGFjciI6IjAiLCJuYW1lIjoiVGhpZW4gVHJhbiIsIm9pZCI6ImY1MjdhZGI1LWM5OGMtNDg4NS1iYjY3LThkMTc4NTI2ZDI1NCIsInByZWZlcnJlZF91c2VybmFtZSI6InRoaWVuLnRyYW5Abm9pcy52biIsInJoIjoiMC5BVWtBdlR3cVhsSWFyVVcxRkt0Q2xXczNMR3A3dGxudzVUWkZsZk9qWl85cDdZVkpBSE0uIiwicm9sZXMiOlsiVXNlciJdLCJzY3AiOiJhY2Nlc3NfYXNfdXNlciIsInN1YiI6Ik1oTGgzVnBVU2V1VE1FN2xlcjZ6Vk9VSno0Qkx6c3J0S2I4NTh3R1owMUkiLCJ0aWQiOiI1ZTJhM2NiZC0xYTUyLTQ1YWQtYjUxNC1hYjQyOTU2YjM3MmMiLCJ1dGkiOiIwVzJfVk1QMHYwMm5jWkVabFMwcEFBIiwidmVyIjoiMi4wIn0.U2_xKL1VK3A9NK08qT70TsYlL3dMoKSSy3gCyz4C_D1hoHT-dPKxC0oBhDMxSwtvenwcJig3oSsvuwVsIUQBJjDIdjcVp-QU30AogWG4RHL5fuAYE-yToKViALInhMz28zH75zztUN2iYlXEy4MA0gEHtgQ1xRoI_TuiuS04VI_potBsBpNPZJEf-_W1p_klYKGGXAjxxbzuhj8azvffRFdYYyWITRZrAYqH1nHOoIbWNNq3f1YdHZAXILdjL2n5tMTyIRlXUweB0BM8atKkkMh86qiInVD2VFtWXuvoAXkFwq6XrX0wVB_0FQzPz_J52spC5jLFhixp5099Q8osXQ"
 
 class chatAI:
     classifier_hrm = """<|im_start|>system
@@ -292,7 +292,6 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 """
 
     def __init__(self):
-        self.conversation_type = [' ',' ']
         self.history_public = []
         self.history_private = {}
         self.private = False
@@ -424,8 +423,8 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
     def chat(self, query, email, name):
         if self.private:
-            if email not in self.history_private:
-                self.history_private[email] = []
+            # if email not in self.history_private:
+            #     self.history_private[email] = []
 
             return self.chat_private(query, email, name)
 
@@ -449,65 +448,59 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         return response, doc
 
     def chat_hrm(self, query, email):
-        print (self.conversation_type)
-        if self.conversation_type == [' ',' ']:
+        print (self.get_conversation_type(email))
+        if self.get_conversation_type(email) == ['','']:
             label_hrm = self.classifier_hrm_chain(query)['text']
         else:
-            label_hrm = self.conversation_type[0]
+            label_hrm = self.get_conversation_type(email)[0]
 
         response = """"""
-
+        print(label_hrm)
         if label_hrm == "User":
-            # email ="bui.khanh@nois.vn"
-            response = run_return_user_response(email, query)
+            response = run_return_user_response(email, query, token)
         elif label_hrm == "LeaveApplication":
-            if self.conversation_type == [' ',' ']:
+            if self.get_conversation_type(email) == ['','']:
                 leave_application_type = self.leave_application_chain(query)['text']
             else:
-                leave_application_type = self.conversation_type[1]
+                leave_application_type = self.get_conversation_type(email)[1]
 
             print(leave_application_type)
             if leave_application_type == 'get':
-                email ="bui.khanh@nois.vn"
                 response = run_get_leave_application(email, query, token)
             elif leave_application_type == 'post':
-                self.conversation_type = ['LeaveApplication', 'post']
                 self.update_conversation_type(['LeaveApplication', 'post'], email)
                 post_leave_application_response = post_leave_application_func(self.user, query, token)
                 response = post_leave_application_response[0]
                 print(post_leave_application_response)
                 try:
                     if post_leave_application_response[1].status_code == 200:
-                        self.conversation_type = [' ',' ']
-                        print(self.conversation_type)
+                        self.update_conversation_type(['', ''], email)
                     elif post_leave_application_response[1].status_code == 401:
-                        self.conversation_type = [' ',' ']
+                        self.update_conversation_type(['', ''], email)
                     elif post_leave_application_response[1].status_code == 100:
-                        self.conversation_type = [' ',' ']
+                        self.update_conversation_type(['', ''], email)
                 except:
                     pass
 
             elif leave_application_type == 'delete':
-                self.conversation_type = ['LeaveApplication','delete']
-                email ="bui.khanh@nois.vn"
+                self.update_conversation_type(['LeaveApplication','delete'], email)
                 print("delete - pass")
                 response = run_leave_application_delete(email, query, "", token)
                 if (response =="unrelated response to previous question, cancelled previous action"):
-                    self.conversation_type = [' ',' ']
+                    self.update_conversation_type(['', ''], email)
                     self.clear_history()
                     return response
-                elif (response == "Đã xóa thành công" or "empty list"):
+                elif (response == "Đã xóa thành công" or response == "empty list"):
                     self.clear_history()
-                    self.conversation_type = [' ',' ']
+                    self.update_conversation_type(['', ''], email)
         
         return response
     
-    # //toi day
     def update_conversation_type(self, conversation_type, email):
         cursor.execute(f"""SELECT conversation_type FROM history WHERE email = '{email}';""")
         conv_type = cursor.fetchone()
         print(conv_type)
-        res = str(conversation_type)
+        res = str(conversation_type).replace("'", "")
         print(res)
         if not conv_type[0]:
             print(f"Conversation type to be updated to SQL: {res}\n")
@@ -521,6 +514,24 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             SET conversation_type = N'{res}' WHERE email = '{email}';""")
         conn.commit()
         return
+    
+    def get_conversation_type(self, email):
+        cursor.execute(f"""SELECT conversation_type FROM history WHERE email = '{email}';""")
+        hist = cursor.fetchone()
+
+        if not hist:
+            cursor.execute(f"""INSERT INTO history
+VALUES ('{email}', NULL, NULL, NULL, NULL);""")
+            conn.commit()
+
+            return ['','']
+
+        if not hist[0]:
+            return ['','']
+        
+        hist[0] = hist[0].replace("[", "").replace("]", "")
+        lst = hist[0].split(",")
+        return [s.strip() for s in lst]
     
     def add_to_history_sql(self, query, response, email):
         n = 3
@@ -555,7 +566,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
         if not hist:
             cursor.execute(f"""INSERT INTO history
-VALUES ('{email}', NULL, NULL, NULL);""")
+VALUES ('{email}', NULL, NULL, NULL, NULL);""")
             conn.commit()
 
             return ""
@@ -579,12 +590,12 @@ VALUES ('{email}', NULL, NULL, NULL);""")
         return txt
 
     def chat_private(self, query, email, name):
-        if self.conversation_type == [' ',' ']:
+        if self.get_conversation_type(email) == ['','']:
             label = self.classifier_chain({'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
         else:
             label = "hrm"
 
-        print("label" + label)
+        print("label " + label)
         keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
         print(keywords)
 
@@ -617,8 +628,8 @@ VALUES ('{email}', NULL, NULL, NULL);""")
 
         elif label == "hrm":
             response = self.chat_hrm(query, email)
-            self.add_to_history_sql(query, response, email)
-            return response, ""
+            # self.add_to_history_sql(query, response, email)
+            return response, " "
         else:
             doc = self.get_document(keywords, self.retriever_private)
             try:

@@ -551,6 +551,7 @@ def post_leave_application_func(user, query, token):
             }
                 response = f"""Đã cung cấp đủ thông tin. Đơn sẽ sớm được duyệt. Cảm ơn bạn đã gửi form.
                 Bạn có cần tôi giúp đỡ gì thêm không ạ?"""
+
             elif 'es' in confirm and confirm_delete:
                 leave_application_form = {
                 'start_date': '',
@@ -562,6 +563,7 @@ def post_leave_application_func(user, query, token):
                 response_data.status_code = 100
                 response = f"""Đơn nghỉ phép của bạn đã xóa. Bạn có thể gửi một Đơn nghỉ phép khác"""
                 confirm_delete = False
+                
             elif 'no'in confirm:
                 response = f"""Bạn không muốn giữ Đơn nghỉ phép này nữa hả?"""
                 confirm_delete = True

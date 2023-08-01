@@ -8,8 +8,19 @@ from langchain.schema import Document
 from langchain.tools import BaseTool
 from langchain.agents import ZeroShotAgent, AgentExecutor, AgentType, initialize_agent, Tool, load_tools
 from langchain.agents.agent_toolkits.openapi import planner
+import pyodbc
 
 import requests
+
+server = 'sql-chatbot-server.database.windows.net'
+database = 'sql-chatbot'
+username = 'test-chatbot'
+password = 'bMp{]nzt1'
+driver= '{ODBC Driver 17 for SQL Server}'
+
+conn = pyodbc.connect(f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
+
+cursor = conn.cursor()
 
 url = "https://api-hrm.nois.vn/api"
 
@@ -586,6 +597,7 @@ extract_keyword_general = LLMChain(llm=llm2, prompt=PromptTemplate.from_template
 # history correlation check 
 check_history_correlation = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(history_correlation_check))
 
+header ={}
 
 # function define
 def get_users(query: str = None):
@@ -613,6 +625,7 @@ def get_mananger_information():
   return response
 
 def get_leave_application():
+  global header
   response = requests.get(url + "/leaveapplication/paging?pageIndex=0&pageSize=50&type=0", headers=header)
   temp_list = []
   if response.status_code == 200:
@@ -624,9 +637,10 @@ def get_leave_application():
       return "not successful return get_leave_application"
 
 def delete_leave_application(application_id):
-  response = requests.delete(url + '/leaveapplication/' + str(application_id), headers=header)
-  if response.status_code == 200:
-      print("You have successfully deleted leave application " + str(application_id))
+    global header
+    response = requests.delete(url + '/leaveapplication/' + str(application_id), headers=header)
+    if response.status_code == 200:
+        print("You have successfully deleted leave application " + str(application_id))
 
 def new_line_formatter(response):
     # check empty
@@ -666,18 +680,51 @@ def display_leave_application(response): # input list of dictionaries response
       return 
   # seperate into 3 cases: delete with form id, delete asked in general -> then tell the number, delete latest,
 # after the general
-email = "bui.khanh@nois.vn"
 # start
 
-history_delete = ''
-header ={}
+
 # history is a list
+
+def update_history_delete(history_delete, email):
+        cursor.execute(f"""SELECT del_leave FROM history WHERE email = '{email}';""")
+        conv_type = cursor.fetchone()
+        print(conv_type)
+        if not conv_type[0]:
+            print(f"Conversation type to be updated to SQL: {history_delete}\n")
+            cursor.execute(f"""UPDATE history
+                SET del_leave = N'{history_delete}' WHERE email = '{email}';""")
+            conn.commit()
+            return
+        
+        print(f"Conversation type to be updated to SQL: {history_delete}\n")
+        cursor.execute(f"""UPDATE history
+            SET del_leave = N'{history_delete}' WHERE email = '{email}';""")
+        conn.commit()
+        return
+    
+def get_history_delete(email):
+    cursor.execute(f"""SELECT del_leave FROM history WHERE email = '{email}';""")
+    hist = cursor.fetchone()
+
+    if not hist:
+        cursor.execute(f"""INSERT INTO history
+VALUES ('{email}', NULL, NULL, NULL, NULL);""")
+        conn.commit()
+
+        return ''
+
+    if not hist[0]:
+        return ''
+    
+    return hist[0]
+
+
 def run_leave_application_delete(email, query, history, token):
     # delete
     # direct form id deletion case
     global header
     header = {"Authorization": f"Bearer {token}"}
-    global history_delete
+
     label = classifier_delete_leaveapp_case(query)['text']
     print(label)
     response = get_leave_application()
@@ -693,7 +740,7 @@ def run_leave_application_delete(email, query, history, token):
                 id = response[int(int(temp_order) - 1 )]["id"]
                 print("item id: " + str(id))
                 delete_leave_application(id)
-                history_delete =""
+                update_history_delete("", email)
                 return "Đã xóa thành công"
             # this part above is dumb:)))
 
@@ -702,7 +749,7 @@ def run_leave_application_delete(email, query, history, token):
         delete_leave_application(key_value)
 
         # create a check from list here, else return couldnt find 
-        history_delete =""
+        update_history_delete("", email)
         return "Đã xóa thành công"
 
     # implemented
@@ -711,21 +758,21 @@ def run_leave_application_delete(email, query, history, token):
         print("general-pass")
         response = get_leave_application()
         # display the option
-        if history_delete == "":
+        if get_history_delete(email) == "":
             if response == []:
                 return "empty list"
             else:
                 result = display_leave_application(response) # displaying all of it,
                 response = str(result) + "\n Bạn muốn tôi xóa đơn nào?</div>"
-                history_delete += str(result)
+                update_history_delete(get_history_delete(email) + str(result), email)
                 print('passed none empty application')
                 return str(response)
         else:
             print('passed none empty deletenhistory')
-            temp_order  = extract_keyword_general(history_delete + query)["text"]
+            temp_order  = extract_keyword_general(get_history_delete(email) + query)["text"]
             if int(temp_order) > len(response):
                 return "số thứ tự không có trong danh sách, xin vui lòng nhập số thứ tự \n"
-            corr_check = check_history_correlation(str(history_delete) + " || " + str(query))
+            corr_check = check_history_correlation(get_history_delete(email) + " || " + str(query))
             print("corr" + str(corr_check['text'])) 
             if corr_check['text'] == "yes" or corr_check['text'] == "Yes":
                 if response != []:
@@ -736,16 +783,16 @@ def run_leave_application_delete(email, query, history, token):
                     print("item id: " + str(id))
                     delete_leave_application(id)
                     print("pass-general-result-empty")
-                    history_delete == ""
+                    update_history_delete("", email)
                     return "Đã xóa thành công"
                 else:
                     return "empty list"
             elif corr_check['text'] == "no" or corr_check['text'] == "No":
-                history_delete =""
+                update_history_delete("", email)
                 return "unrelated response to previous question, cancelled previous action"
             elif corr_check['text'] == "out of index":
                 response = "số thứ tự không có trong danh sách, xin vui lòng nhập số thứ tự \n"
-                history_delete += response                    
+                update_history_delete(get_history_delete(email) + response, email)                  
                 return response
 
     # implemented
@@ -765,19 +812,19 @@ def run_leave_application_delete(email, query, history, token):
                 return "Đã xóa thành công"
         # none check
         else:
-            if history_delete == "":
+            if get_history_delete(email) == "":
                 if response == []:
                     return "empty list"
                 else:
                     result = display_leave_application(response) # displaying all of it,
-                    history_delete += str(response)
+                    update_history_delete(get_history_delete(email) + str(response), email) 
                     response = str(result) + "\n Bạn muốn tôi xóa đơn nào?</div>"
                     return str(response)
             else:
-                temp_order  = extract_keyword_general(history_delete + query)["text"]
+                temp_order  = extract_keyword_general(get_history_delete(email) + query)["text"]
                 
-                corr_check = check_history_correlation(str(history_delete) + " || " + str(query))
-                print(str(history_delete) + " || " + str(query))
+                corr_check = check_history_correlation(get_history_delete(email) + " || " + str(query))
+                print(get_history_delete(email) + " || " + str(query))
                 if corr_check['text'] == "yes" or corr_check["text"] == "Yes":            
                     if temp_order == 0:
                         temp_order = 1
@@ -785,14 +832,14 @@ def run_leave_application_delete(email, query, history, token):
                     print("item id: " + str(id))
                     delete_leave_application(id)
                     print("pass-general-result-empty")
-                    history_delete == ""
+                    update_history_delete("", email)
                     return "delete item"
                 elif corr_check["text"] == "no" or corr_check["text"] == "No":
-                    history_delete =""
+                    update_history_delete("", email)
                     return "unrelated response to previous question, cancelled previous action"
                 elif corr_check["text"] == "out of index":
-                    history_delete =""
+                    update_history_delete("", email)
                     response = "số thứ tự không có trong danh sách, xin vui lòng nhập số thứ tự \n"
                     reponse += display_leave_application(response)
-                    history_delete += response                    
+                    update_history_delete(get_history_delete(email) + response, email)                 
                     return response
