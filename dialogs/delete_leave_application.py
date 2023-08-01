@@ -11,6 +11,8 @@ from langchain.agents.agent_toolkits.openapi import planner
 
 import requests
 
+url = "https://api-hrm.nois.vn/api"
+
 
 history_delete_general_cassify = """<|im_start|>system
 given a chat history, classify whether it is in this format and answer only yes or no
@@ -92,10 +94,150 @@ EXAMPLE:
 SENTENCE: {output}
 OUTPUT:"""
 
+# check history whether related or answer to the previous one 
+history_correlation_check = """
+Given a sentence formmated like this (history || next query), assistant will determine if the query is the answer to history, "next query" have to include a number of word that means ordered number the
+output should be yes or no or out of index.
 
+EXAMPLE:
+INPUT:  
+Leave application 1:
+ID: 5ab661b6-ab29-4957-a94d-44db56ba2b63
+Start date: 2023-07-20T00:00:00
+End date: 2023-07-21T00:00:00
+Number of day(s) off: 2
+Bạn muốn tôi xóa đơn nào?  || xóa đơn nghỉ phép
+** this case (after the ||) dont have number of word means ordered number (ex: first, second, 1st, 2nd) 
+OUTPUT: no
+
+INPUT:
+Leave application 1:
+ID: 5ab661b6-ab29-4957-a94d-44db56ba2b63
+Start date: 2023-07-20T00:00:00
+End date: 2023-07-21T00:00:00
+Number of day(s) off: 2
+
+Leave application 2:
+ID: 9f2d21df-1a87-47dd-8e6c-5282e47ace5e
+Start date: 2023-07-20T00:00:00
+End date: 2023-07-21T00:00:00
+Number of day(s) off: 2
+
+Bạn muốn tôi xóa đơn nào?  || tôi muốn xóa đơn thứ 2
+OUTPUT: yes
+
+INPUT:
+Leave application 1:
+ID: 5ab661b6-ab29-4957-a94d-44db56ba2b63
+Start date: 2023-07-20T00:00:00
+End date: 2023-07-21T00:00:00
+Number of day(s) off: 2
+
+Bạn muốn tôi xóa đơn nào?  || đơn 1
+OUTPUT: yes
+
+INPUT:
+Leave application 1:
+ID: 5ab661b6-ab29-4957-a94d-44db56ba2b63
+Start date: 2023-07-20T00:00:00
+End date: 2023-07-21T00:00:00
+Number of day(s) off: 2
+
+Leave application 2:
+ID: 9f2d21df-1a87-47dd-8e6c-5282e47ace5e
+Start date: 2023-07-20T00:00:00
+End date: 2023-07-21T00:00:00
+Number of day(s) off: 2
+
+Bạn muốn tôi xóa đơn nào?  || cho tôi xóa đơn nghỉ phép
+OUTPUT: no
+
+INPUT:
+Leave application 1:
+ID: 5ab661b6-ab29-4957-a94d-44db56ba2b63
+Start date: 2023-07-20T00:00:00
+End date: 2023-07-21T00:00:00
+Number of day(s) off: 2
+
+Bạn muốn tôi xóa đơn nào?  || cho tôi biết thông tin cá nhân của tôi
+OUTPUT: no
+
+INPUT:
+Leave application 1:
+ID: 5ab661b6-ab29-4957-a94d-44db56ba2b63
+Start date: 2023-07-20T00:00:00
+End date: 2023-07-21T00:00:00
+Number of day(s) off: 2
+
+Bạn muốn tôi xóa đơn nào?  || đơn 2
+OUTPUT: yes
+
+INPUT:
+Leave application 1:
+ID: 5ab661b6-ab29-4957-a94d-44db56ba2b63
+Start date: 2023-07-20T00:00:00
+End date: 2023-07-21T00:00:00
+Number of day(s) off: 2
+
+Bạn muốn tôi xóa đơn nào?  || đơn 3
+OUTPUT: yes
+
+
+INPUT:
+Leave application 1:
+ID: 5ab661b6-ab29-4957-a94d-44db56ba2b63
+Start date: 2023-07-20T00:00:00
+End date: 2023-07-21T00:00:00
+Number of day(s) off: 2
+
+Bạn muốn tôi xóa đơn nào?  || cho tôi biết tôi đã nghỉ nhiêu ngày
+OUTPUT: no
+
+
+INPUT:
+Leave application 1:
+ID: 5ab661b6-ab29-4957-a94d-44db56ba2b63
+Start date: 2023-07-20T00:00:00
+End date: 2023-07-21T00:00:00
+Number of day(s) off: 2
+
+Bạn muốn tôi xóa đơn nào?  || 2
+OUTPUT: out of index
+
+INPUT:
+Leave application 1:
+ID: 5ab661b6-ab29-4957-a94d-44db56ba2b63
+Start date: 2023-07-20T00:00:00
+End date: 2023-07-21T00:00:00
+Number of day(s) off: 2
+
+Bạn muốn tôi xóa đơn nào?  || cho tôi xóa đơn 696969
+OUTPUT: out of index
+
+INPUT:
+Leave application 1:
+ID: 5ab661b6-ab29-4957-a94d-44db56ba2b63
+Start date: 2023-07-20T00:00:00
+End date: 2023-07-21T00:00:00
+Number of day(s) off: 2
+
+Bạn muốn tôi xóa đơn nào?  || cho tôi xóa đơn 696969
+OUTPUT: out of index
+
+INPUT:
+Leave application 1:
+ID: 5ab661b6-ab29-4957-a94d-44db56ba2b63
+Start date: 2023-07-20T00:00:00
+End date: 2023-07-21T00:00:00
+Number of day(s) off: 2
+
+Bạn muốn tôi xóa đơn nào?  ||  xóa đơn 4th
+OUTPUT: out of index
+SENTENCE: {output}
+OUTPUT:"""
 classifier_usecase2 = """<|im_start|>system
 
-Given a sentence, assistant will determine if the sentence belongs in 1 of 2 categories, which are:
+Given a sentence, assistant will determine if the sentence belongs in 1 of 4 categories, which are:
 
 - LeaveApplication
 - User
@@ -441,6 +583,10 @@ include_latest_check = LLMChain(llm=llm3, prompt=PromptTemplate.from_template(in
 
 extract_keyword_general = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(keyword_extract_continuous))
 
+# history correlation check 
+check_history_correlation = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(history_correlation_check))
+
+
 # function define
 def get_users(query: str = None):
     return requests.get(url + '/api/User').json()['data']
@@ -466,16 +612,21 @@ def get_mananger_information():
   response = requests.get(url + '/api/User/manager-users').json()['data']
   return response
 
-def get_leave_application_through_id(user_id):
-  response = requests.get(url + f'/api/leaveApplication/{user_id}')
+def get_leave_application():
+  response = requests.get(url + "/leaveapplication/paging?pageIndex=0&pageSize=50&type=0", headers=header)
+  temp_list = []
   if response.status_code == 200:
-      print("pass")
-      return response.json()['data']
+      for i in response.json()['data']['items']:
+          if i["reviewStatusName"] != "Đồng ý":
+              temp_list.append(i) 
+      return temp_list
+  else:
+      return "not successful return get_leave_application"
 
 def delete_leave_application(application_id):
-  response = requests.delete(url + f'/api/leaveApplication/{application_id}')
+  response = requests.delete(url + '/leaveapplication/' + str(application_id), headers=header)
   if response.status_code == 200:
-      print("You have successfully deleted leave application " + application_id)
+      print("You have successfully deleted leave application " + str(application_id))
 
 def new_line_formatter(response):
     # check empty
@@ -496,9 +647,10 @@ def new_line_formatter(response):
         return final_response
 def display_leave_application(response): # input list of dictionaries response
   # displaying the application
+  print("response - general - pass: " + str(response)) # error here means token expired
   if response != []:
     count = 1
-    text =""
+    text = ""
     for i in response:
         text += ("Leave application number " + str(count) +" :\n")
         text += ("Application id: " +str(i["id"])  +"\n")
@@ -515,77 +667,97 @@ def display_leave_application(response): # input list of dictionaries response
   # seperate into 3 cases: delete with form id, delete asked in general -> then tell the number, delete latest,
 # after the general
 email = "bui.khanh@nois.vn"
-url = "https://hrm-nois-fake.azurewebsites.net/"
-
-history_delete = ''
 # start
 
-def run_leave_application_delete(email, query, history):
+history_delete = ''
+header ={}
+# history is a list
+def run_leave_application_delete(email, query, history, token):
     # delete
     # direct form id deletion case
-# Thien: check null của số ngày nghỉ
+    global header
+    header = {"Authorization": f"Bearer {token}"}
     global history_delete
     label = classifier_delete_leaveapp_case(query)['text']
     print(label)
+    response = get_leave_application()
     if ( label == "id"):
         list100=range(1,101) #100list
-        user_info = (get_user_through_email(email))
-        user_id = user_info['id']
         temp_order  = extract_keyword_general(query)["text"]
-        response = get_leave_application_through_id(user_id)
         print(temp_order)
+        size_of_response = len(response)
+        if (int(temp_order) > size_of_response):
+            return "số thứ tự không có trong danh sách, xin vui lòng nhập số thứ tự \n"
         for i in list100:
             if int(temp_order) == i:
                 id = response[int(int(temp_order) - 1 )]["id"]
-                print("item id: " + id)
+                print("item id: " + str(id))
                 delete_leave_application(id)
+                history_delete =""
                 return "Đã xóa thành công"
-            
+            # this part above is dumb:)))
 
         key_value = delete_value_keyword_get(query)['text']
         print("id-pass")
         delete_leave_application(key_value)
 
         # create a check from list here, else return couldnt find 
+        history_delete =""
         return "Đã xóa thành công"
 
     # implemented
     # numberic order id deletetion
     elif ( label == "general"):
-        user_info = (get_user_through_email(email))
-        user_id = user_info['id']
         print("general-pass")
-        response = get_leave_application_through_id(user_id)
+        response = get_leave_application()
         # display the option
-
-
         if history_delete == "":
             if response == []:
                 return "empty list"
             else:
                 result = display_leave_application(response) # displaying all of it,
-                history_delete += str(response)
                 response = str(result) + "\n Bạn muốn tôi xóa đơn nào?</div>"
+                history_delete += str(result)
+                print('passed none empty application')
                 return str(response)
         else:
-
+            print('passed none empty deletenhistory')
             temp_order  = extract_keyword_general(history_delete + query)["text"]
-            id = response[int(temp_order) - 1]["id"]
-            print("item id: " + id)
-            delete_leave_application(id)
-            print("pass-general-result-empty")
-            return "delete item " + str(id)
+            if int(temp_order) > len(response):
+                return "số thứ tự không có trong danh sách, xin vui lòng nhập số thứ tự \n"
+            corr_check = check_history_correlation(str(history_delete) + " || " + str(query))
+            print("corr" + str(corr_check['text'])) 
+            if corr_check['text'] == "yes" or corr_check['text'] == "Yes":
+                if response != []:
+                    print("item order: " + temp_order)
+                    if temp_order == 0:
+                        temp_order = 1
+                    id = response[int(temp_order ) -1 ]["id"]
+                    print("item id: " + str(id))
+                    delete_leave_application(id)
+                    print("pass-general-result-empty")
+                    history_delete == ""
+                    return "Đã xóa thành công"
+                else:
+                    return "empty list"
+            elif corr_check['text'] == "no" or corr_check['text'] == "No":
+                history_delete =""
+                return "unrelated response to previous question, cancelled previous action"
+            elif corr_check['text'] == "out of index":
+                response = "số thứ tự không có trong danh sách, xin vui lòng nhập số thứ tự \n"
+                history_delete += response                    
+                return response
 
     # implemented
     # delete latest
     elif ( label == "recent"):
-
-        user_info = (get_user_through_email(email))
-        user_id = user_info['id']
-        response = get_leave_application_through_id(user_id)
+        print("recent-pass")
+        response = get_leave_application()
         label  = include_latest_check(query)['text']
         print("recent-pass")
         if label == "yes":
+            if response == []:
+                return "empty list"
             if response == []:
                 return "danh sách đơn xin nghỉ phép trống"
             else:
@@ -594,7 +766,6 @@ def run_leave_application_delete(email, query, history):
         # none check
         else:
             if history_delete == "":
-                
                 if response == []:
                     return "empty list"
                 else:
@@ -604,8 +775,24 @@ def run_leave_application_delete(email, query, history):
                     return str(response)
             else:
                 temp_order  = extract_keyword_general(history_delete + query)["text"]
-                id = response[int(temp_order)]["id"]
-                print("item id: " + id)
-                delete_leave_application(id)
-                print("pass-general-result-empty")
-                return "delete item" + str(id)
+                
+                corr_check = check_history_correlation(str(history_delete) + " || " + str(query))
+                print(str(history_delete) + " || " + str(query))
+                if corr_check['text'] == "yes" or corr_check["text"] == "Yes":            
+                    if temp_order == 0:
+                        temp_order = 1
+                    id = response[int(temp_order ) -1 ]["id"]
+                    print("item id: " + str(id))
+                    delete_leave_application(id)
+                    print("pass-general-result-empty")
+                    history_delete == ""
+                    return "delete item"
+                elif corr_check["text"] == "no" or corr_check["text"] == "No":
+                    history_delete =""
+                    return "unrelated response to previous question, cancelled previous action"
+                elif corr_check["text"] == "out of index":
+                    history_delete =""
+                    response = "số thứ tự không có trong danh sách, xin vui lòng nhập số thứ tự \n"
+                    reponse += display_leave_application(response)
+                    history_delete += response                    
+                    return response

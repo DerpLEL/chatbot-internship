@@ -2,7 +2,7 @@
 # Licensed under the MIT License.
 
 from botbuilder.core import MessageFactory, CardFactory
-from botbuilder.dialogs import WaterfallDialog, WaterfallStepContext, DialogTurnResult
+from botbuilder.dialogs import WaterfallDialog, WaterfallStepContext, DialogTurnResult, ComponentDialog, DialogContext
 from botbuilder.dialogs.prompts import (
     OAuthPrompt,
     OAuthPromptSettings,
@@ -11,15 +11,51 @@ from botbuilder.dialogs.prompts import (
     TextPrompt,
 )
 from botbuilder.schema import HeroCard, CardImage
+from botbuilder.core import BotFrameworkAdapter
+from botbuilder.schema import ActivityTypes
 
-from dialogs import LogoutDialog
 from simple_graph_client import SimpleGraphClient
 from .chatbot import *
 
-class MainDialog(LogoutDialog):
-    login = False
+login = False
 
+class LogoutDialog(ComponentDialog):
+    def __init__(self, dialog_id: str, connection_name: str):
+        super(LogoutDialog, self).__init__(dialog_id)
+
+        self.connection_name = connection_name
+        print(connection_name)
+
+    async def on_begin_dialog(
+        self, inner_dc: DialogContext, options: object
+    ) -> DialogTurnResult:
+        result = await self._interrupt(inner_dc)
+        if result:
+            return result
+        return await super().on_begin_dialog(inner_dc, options)
+
+    async def on_continue_dialog(self, inner_dc: DialogContext) -> DialogTurnResult:
+        result = await self._interrupt(inner_dc)
+        if result:
+            return result
+        return await super().on_continue_dialog(inner_dc)
+
+    async def _interrupt(self, inner_dc: DialogContext):
+        global login
+        if inner_dc.context.activity.type == ActivityTypes.message:
+            text = inner_dc.context.activity.text.lower()
+            if text == "logout":
+                login = False
+                bot_adapter: BotFrameworkAdapter = inner_dc.context.adapter
+                await bot_adapter.sign_out_user(inner_dc.context, self.connection_name)
+                await inner_dc.context.send_activity("Bạn đã đăng xuất thành công.")
+                return await inner_dc.cancel_all_dialogs()
+
+
+class MainDialog(LogoutDialog):
     def __init__(self, connection_name: str):
+        self.show_welcome = False
+
         super(MainDialog, self).__init__(MainDialog.__name__, connection_name)
 
         self.add_dialog(
@@ -57,14 +93,12 @@ class MainDialog(LogoutDialog):
         return await step_context.begin_dialog(OAuthPrompt.__name__)
 
     async def login_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        # Get the token from the previous step. Note that we could also have gotten the
-        # token directly from the prompt itself. There is an example of this in the next method.
-        # print(self.login)
-        # if self.login == False:
+            global login
+
             if step_context.result:
-                self.login = True
-                if self.login == False:
+                if login == False:
                     await step_context.context.send_activity("Bạn đã đăng nhập thành công.")
+                
                 token_response = step_context.result
 
                 client = SimpleGraphClient(token_response.token)
@@ -72,7 +106,8 @@ class MainDialog(LogoutDialog):
                 self.bot.user['username'] = me_info['displayName']
                 self.bot.user['mail'] = me_info['mail']
                 
-                if self.login == False:
+                if login == False:
+                    login = True
                     return await step_context.prompt(
                         TextPrompt.__name__,
                         PromptOptions(
@@ -80,23 +115,21 @@ class MainDialog(LogoutDialog):
                                 "Bạn có cần tôi giúp gì không?"
                             )
                         ),
-                    )
+                    )     
                 else:
                     return await step_context.prompt(
                         TextPrompt.__name__,
                         PromptOptions(
                             prompt=MessageFactory.text(
-                                "Bạn đợi 1 xíu ..."
+                                """:))"""
                             )
                         ),
                     )
             
-
             await step_context.context.send_activity(
                 "Bạn đã đăng nhập thất bại. Vui lòng đăng nhập lại."
             )
             return await step_context.end_dialog()
-        # return await step_context.next(None)
 
     async def command_step(
         self, step_context: WaterfallStepContext
@@ -122,25 +155,23 @@ class MainDialog(LogoutDialog):
                 # print(f'{step_context.values["command"] = }')
                 parts = step_context.values["command"].split(" ")
                 command = parts[0]
+                client = SimpleGraphClient(token_response.token)
+                me_info = await client.get_me()
 
                 # display logged in users name
-                if command == "me":
-                    client = SimpleGraphClient(token_response.token)
-                    me_info = await client.get_me()
+                if command == "me":      
                     await step_context.context.send_activity(
                         f"You are {me_info['displayName']}"
                     )
 
                 # display logged in users email
                 elif command == "email":
-                    client = SimpleGraphClient(token_response.token)
-                    me_info = await client.get_me()
                     await step_context.context.send_activity(
                         f"Your email: {me_info['mail']}"
                     )
 
                 else:
-                    reply, doc = self.bot.chat(step_context.values["command"])
+                    reply, doc = self.bot.chat(step_context.values["command"], me_info['mail'], me_info['displayName'])
                     print("doc: " + str(doc))
                     print("reply:"+ str(reply)) 
                     if type(reply) == str:
@@ -154,3 +185,6 @@ class MainDialog(LogoutDialog):
 
         # await step_context.context.send_activity("Type anything to try again.")
         return await step_context.replace_dialog("WFDialog")
+    
+
+

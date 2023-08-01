@@ -9,6 +9,19 @@ from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPerm
 from langchain.retrievers import AzureCognitiveSearchRetriever
 from azure.core.exceptions import ResourceExistsError
 from datetime import datetime, timedelta
+from googlesearch import search
+from bs4 import BeautifulSoup
+import pyodbc
+
+server = 'sql-chatbot-server.database.windows.net'
+database = 'sql-chatbot'
+username = 'test-chatbot'
+password = 'bMp{]nzt1'
+driver= '{ODBC Driver 17 for SQL Server}'
+
+conn = pyodbc.connect(f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
+
+cursor = conn.cursor()
 
 import pandas as pd
 import ast
@@ -37,7 +50,7 @@ account_key = 'ohteFF8/tuPx3K0xtA/oIqXSKpx/MTnM4Ia0CbvLXJT1l0KJajB3zvX8A/DsNE9wm
 storage_connection_string = 'DefaultEndpointsProtocol=https;AccountName=acschatbotnoisintern;AccountKey=ohteFF8/tuPx3K0xtA/oIqXSKpx/MTnM4Ia0CbvLXJT1l0KJajB3zvX8A/DsNE9wm3gUq1TDlwve+AStS3nB0A==;EndpointSuffix=core.windows.net'
 blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
 
-token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiI1OWI2N2I2YS1lNWYwLTQ1MzYtOTVmMy1hMzY3ZmY2OWVkODUiLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vNWUyYTNjYmQtMWE1Mi00NWFkLWI1MTQtYWI0Mjk1NmIzNzJjL3YyLjAiLCJpYXQiOjE2OTA1MjkwNzIsIm5iZiI6MTY5MDUyOTA3MiwiZXhwIjoxNjkwNTMzNzY0LCJhaW8iOiJBV1FBbS84VUFBQUFsek5GOXAyMmR0TGZJNkhiVlpBbFdmT2l5THJ1RmhuU1FhMlBYd3ZMd2JtMGVZSFczYnV5ZTVYNm91YmtrSVhjSTg4ZndOa2VhSWkwQWo1OEFvVGcvSmFVVzZtaEl5VVZqdXlsUVhrb0JzclRkSktqWk1YNHR4dUFyTnRTbVl4OSIsImF6cCI6Ijc2ZWE5MmQ2LTMzMDgtNDBkNS04NjRhLWIyN2ZiOGY1YjI3MyIsImF6cGFjciI6IjAiLCJuYW1lIjoiVGhpZW4gVHJhbiIsIm9pZCI6ImY1MjdhZGI1LWM5OGMtNDg4NS1iYjY3LThkMTc4NTI2ZDI1NCIsInByZWZlcnJlZF91c2VybmFtZSI6InRoaWVuLnRyYW5Abm9pcy52biIsInJoIjoiMC5BVWtBdlR3cVhsSWFyVVcxRkt0Q2xXczNMR3A3dGxudzVUWkZsZk9qWl85cDdZVkpBSE0uIiwicm9sZXMiOlsiVXNlciJdLCJzY3AiOiJhY2Nlc3NfYXNfdXNlciIsInN1YiI6Ik1oTGgzVnBVU2V1VE1FN2xlcjZ6Vk9VSno0Qkx6c3J0S2I4NTh3R1owMUkiLCJ0aWQiOiI1ZTJhM2NiZC0xYTUyLTQ1YWQtYjUxNC1hYjQyOTU2YjM3MmMiLCJ1dGkiOiJ5bTh2d0d6NEJFeWFHaUdrajc4RUFBIiwidmVyIjoiMi4wIn0.ccsYv_N8T7cNf-YrICo5pqF1QpEp62tQeKsVyC0hFGIf-ULzIIflC2VllvdubwvPmlMCpVpoVqg7EZtAS12RI7k_DcwAZN8ieVX5cvAkWs6uaGjW_vRHsuDsGhdqVa_g6LOyTUr024Shp8tYGqP3HdCqMBQP3kfT_3t3wQ_34pI_agUmqwsbq2RF28jZgyLkZMmvmGZ1fpYFA5BCZlU3BOjg3SumQz8hZZTcq0mTV1OYDXLBrnUxS94dpOTL2aev2ezph86oDGW83z3TPc0bZYmLAjeA7QnC-NFKRcgHSChCob68VbOwxZVKc1qRFHYsJetRaFQu6oGKAaYi_NAjzA"
+token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiI1OWI2N2I2YS1lNWYwLTQ1MzYtOTVmMy1hMzY3ZmY2OWVkODUiLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vNWUyYTNjYmQtMWE1Mi00NWFkLWI1MTQtYWI0Mjk1NmIzNzJjL3YyLjAiLCJpYXQiOjE2OTA3OTU2NTEsIm5iZiI6MTY5MDc5NTY1MSwiZXhwIjoxNjkwODAwNDE4LCJhaW8iOiJBV1FBbS84VUFBQUFFVTRLRmdwY0JLWmdPblpGQ0Z1MnBtUm1mMWl6UERlSTNqT2VTbnI4VlovVHJsaUlvWityR3VUMkF5SU16ekxqY2Z5ZDZEdE8xZmVsZHQrRlVZUVJUZWhYcHBJL3ZKTHViUUMvVTR4K2E5R2JVdHVmU3VzbHdNRXNBM1dJTFdBRSIsImF6cCI6Ijc2ZWE5MmQ2LTMzMDgtNDBkNS04NjRhLWIyN2ZiOGY1YjI3MyIsImF6cGFjciI6IjAiLCJuYW1lIjoiVGhpZW4gVHJhbiIsIm9pZCI6ImY1MjdhZGI1LWM5OGMtNDg4NS1iYjY3LThkMTc4NTI2ZDI1NCIsInByZWZlcnJlZF91c2VybmFtZSI6InRoaWVuLnRyYW5Abm9pcy52biIsInJoIjoiMC5BVWtBdlR3cVhsSWFyVVcxRkt0Q2xXczNMR3A3dGxudzVUWkZsZk9qWl85cDdZVkpBSE0uIiwicm9sZXMiOlsiVXNlciJdLCJzY3AiOiJhY2Nlc3NfYXNfdXNlciIsInN1YiI6Ik1oTGgzVnBVU2V1VE1FN2xlcjZ6Vk9VSno0Qkx6c3J0S2I4NTh3R1owMUkiLCJ0aWQiOiI1ZTJhM2NiZC0xYTUyLTQ1YWQtYjUxNC1hYjQyOTU2YjM3MmMiLCJ1dGkiOiJYbzZGRThjMVRVMnRmRG0wQTc0MkFBIiwidmVyIjoiMi4wIn0.ev805xGbk3_Ktsx0P7UYesN7MjZNoiAoh_7Gej8YWVavSz7wqVSnxVwdCocp6fI6GuqZvQG8k38z8o5oD7Mn4unDm3mvuiIa_UfWTMzqScjvknXN8bmW1wYFY7_PEHzD72P--eIzULIt3SJdZif57P2cHlX_kMvjjreG3qCgwi7BdFrO7YWkXNEfpKqksVUwCmXcr6h51gCqIXxbw0sKQMT_XH0vnH3oIJxGxH4kULGxn0oKv1q_ac4UXdui5GyVVQlWfk8y7tpkaONNrnPSk96pSNIPYWAE246AJ2N3SbCB47aBl0I_cDoLC3m8iVXGPTk8syRRhzwYALayOvXeHg"
 
 class chatAI:
     classifier_hrm = """<|im_start|>system
@@ -141,8 +154,8 @@ Search query:
 
     chat_template = """<|im_start|>system
 Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. Your answer must adhere to the following criteria:
-You must follow this rule:
-- If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese 
+You MUST follow this rule:
+- If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese. 
 - Be brief but friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
 - If the user greets you, respond accordingly.
 
@@ -279,9 +292,9 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 """
 
     def __init__(self):
-        self.conversation_type = []
+        self.conversation_type = [' ',' ']
         self.history_public = []
-        self.history_private = []
+        self.history_private = {}
         self.private = False
         self.container_drink_fee_name = 'nois-drink-fee'
         self.container_client = blob_service_client.get_container_client(self.container_drink_fee_name)
@@ -401,17 +414,20 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
         return txt
 
-    def add_to_history(self, user_msg, ai_msg):
+    def add_to_history(self, user_msg, ai_msg, email):
         hist = self.history_public
         if self.private:
-            hist = self.history_private
+            hist = self.history_private[email]
 
         hist.append({'user': user_msg, 'AI': ai_msg})
         print(hist)
 
-    def chat(self, query):
+    def chat(self, query, email, name):
         if self.private:
-            return self.chat_private(query)
+            if email not in self.history_private:
+                self.history_private[email] = []
+
+            return self.chat_private(query, email, name)
 
         return self.chat_public(query)
 
@@ -432,10 +448,9 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         self.add_to_history(query, response['output_text'])
         return response, doc
 
-    def chat_hrm(self, query):
-
+    def chat_hrm(self, query, email):
         print (self.conversation_type)
-        if not self.conversation_type:
+        if self.conversation_type == [' ',' ']:
             label_hrm = self.classifier_hrm_chain(query)['text']
         else:
             label_hrm = self.conversation_type[0]
@@ -443,10 +458,10 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         response = """"""
 
         if label_hrm == "User":
-            email ="bui.khanh@nois.vn"
+            # email ="bui.khanh@nois.vn"
             response = run_return_user_response(email, query)
         elif label_hrm == "LeaveApplication":
-            if not self.conversation_type:
+            if self.conversation_type == [' ',' ']:
                 leave_application_type = self.leave_application_chain(query)['text']
             else:
                 leave_application_type = self.conversation_type[1]
@@ -454,34 +469,123 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             print(leave_application_type)
             if leave_application_type == 'get':
                 email ="bui.khanh@nois.vn"
-                response = run_get_leave_application(email, query)
+                response = run_get_leave_application(email, query, token)
             elif leave_application_type == 'post':
                 self.conversation_type = ['LeaveApplication', 'post']
+                self.update_conversation_type(['LeaveApplication', 'post'], email)
                 post_leave_application_response = post_leave_application_func(self.user, query, token)
                 response = post_leave_application_response[0]
-                if post_leave_application_response[1].status_code == 200:
-                    self.conversation_type = []
+                print(post_leave_application_response)
+                try:
+                    if post_leave_application_response[1].status_code == 200:
+                        self.conversation_type = [' ',' ']
+                        print(self.conversation_type)
+                    elif post_leave_application_response[1].status_code == 401:
+                        self.conversation_type = [' ',' ']
+                    elif post_leave_application_response[1].status_code == 100:
+                        self.conversation_type = [' ',' ']
+                except:
+                    pass
+
             elif leave_application_type == 'delete':
                 self.conversation_type = ['LeaveApplication','delete']
                 email ="bui.khanh@nois.vn"
                 print("delete - pass")
-                response = run_leave_application_delete(email, query, self.get_history_as_txt())
-                if (response != "Đã xóa thành công"):
-                    print()
-                else:
-                    self.conversation_type = []
+                response = run_leave_application_delete(email, query, "", token)
+                if (response =="unrelated response to previous question, cancelled previous action"):
+                    self.conversation_type = [' ',' ']
+                    self.clear_history()
                     return response
+                elif (response == "Đã xóa thành công" or "empty list"):
+                    self.clear_history()
+                    self.conversation_type = [' ',' ']
         
         return response
+    
+    # //toi day
+    def update_conversation_type(self, conversation_type, email):
+        cursor.execute(f"""SELECT conversation_type FROM history WHERE email = '{email}';""")
+        conv_type = cursor.fetchone()
+        print(conv_type)
+        res = str(conversation_type)
+        print(res)
+        if not conv_type[0]:
+            print(f"Conversation type to be updated to SQL: {res}\n")
+            cursor.execute(f"""UPDATE history
+                SET conversation_type = N'{res}' WHERE email = '{email}';""")
+            conn.commit()
+            return
+        
+        print(f"Conversation type to be updated to SQL: {res}\n")
+        cursor.execute(f"""UPDATE history
+            SET conversation_type = N'{res}' WHERE email = '{email}';""")
+        conn.commit()
+        return
+    
+    def add_to_history_sql(self, query, response, email):
+        n = 3
+        cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
+        hist = cursor.fetchone()
 
-    def chat_private(self, query):
-        if not self.conversation_type:
-            label = self.classifier_chain(query)['text']
+        if not hist[0]:
+            res = f"{query}||{response}"
+
+            print(f"History to be updated to SQL: {res}\n")
+            cursor.execute(f"""UPDATE history
+                SET chat = N'{res}' WHERE email = '{email}';""")
+            conn.commit()
+            return
+
+        hist = hist[0].split("<sep>")
+
+        hist.append(f"{query}||{response}")
+        if len(hist) > n:
+            hist = hist[len(hist) - n:]
+
+        res = "<sep>".join(hist)
+        print(f"History to be updated to SQL: {res}\n")
+        cursor.execute(f"""UPDATE history
+            SET chat = N'{res}' WHERE email = '{email}';""")
+        conn.commit()
+        return
+    
+    def get_history_as_txt_sql(self, email):
+        cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
+        hist = cursor.fetchone()
+
+        if not hist:
+            cursor.execute(f"""INSERT INTO history
+VALUES ('{email}', NULL, NULL, NULL);""")
+            conn.commit()
+
+            return ""
+
+        if not hist[0]:
+            return ""
+
+        hist = hist[0].split("<sep>")
+
+        txt = ""
+        for row in hist:
+            i = row.split('||')
+
+            try:
+                txt += f"\n<|im_start|>user\n{i[0]}\n<|im_end|>\n"
+                txt += f"<|im_start|>assistant\n{i[1]}\n<|im_end|>"
+            except IndexError:
+                break
+
+        # print(f"History from SQL: {txt}\n")
+        return txt
+
+    def chat_private(self, query, email, name):
+        if self.conversation_type == [' ',' ']:
+            label = self.classifier_chain({'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
         else:
             label = "hrm"
 
         print("label" + label)
-        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
+        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
         print(keywords)
 
         chain = self.qa_chain
@@ -494,7 +598,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
             doc = self.get_document(keywords, self.retriever_drink)[:1]
 
-            input_pandas = self.drink_chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt()}, return_only_outputs=False)
+            input_pandas = self.drink_chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt_sql(email)}, return_only_outputs=False)
             blob_name = doc[0].metadata['metadata_storage_name']
         
             print(input_pandas['output_text']) 
@@ -504,7 +608,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             print(result_doc)
 
             if """count""" not in input_pandas['output_text']:
-                self.add_to_history(query, "")
+                self.add_to_history_sql(query, 'Satisfied Anwser', email)
                 return {'output_text': str(temp_result)}, doc
             doc[0].page_content = result_doc
 
@@ -512,14 +616,29 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             doc = self.get_document(keywords, self.retriever_policy)
 
         elif label == "hrm":
-            response = self.chat_hrm(query)
-            self.add_to_history(query, response)
+            response = self.chat_hrm(query, email)
+            self.add_to_history_sql(query, response, email)
             return response, ""
         else:
             doc = self.get_document(keywords, self.retriever_private)
+            try:
+                num_results = 3
+                
+                for result in search(query + "hiện tại", num_results=num_results):
+                    response = requests.get(result)
+                    html_content = response.text
+                    soup = BeautifulSoup(html_content, 'html.parser')
 
+                    for tag in soup.find_all():
+                        tag.replace_with(tag.text)
+
+                    text = soup.get_text()
+                    doc[0].page_content = text[:4100]
+            except:
+                pass
+            
         try:
-            response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(),
+            response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt_sql(email),
                                 'user_info': f'''The user chatting with you is named {self.user['username']}, with email: {self.user['mail']}. 
                                 '''},
                              return_only_outputs=False)
@@ -527,7 +646,8 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         except Exception as e:
             return {'output_text': f'Cannot generate response, error: {e}'}, doc
 
-        self.add_to_history(query, response['output_text'])
+        # self.add_to_history(query, response['output_text'])
+        self.add_to_history_sql(query, response['output_text'], email)
         return response, doc
 
     # def get_docs_using_keyword_string_for_drink_fee(self, keyword, retriever):

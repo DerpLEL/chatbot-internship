@@ -181,7 +181,7 @@ def get_users(query: str = None):
 def get_user_through_email(email):
     response = requests.get(url + f'/api/User/me?email={email}')
     if response.status_code == 200:
-        return response.json()['data']
+        return response.json()['data']  
 
     return f'Error: {response.status_code}'
 

@@ -5,8 +5,9 @@ from langchain.chains.api.prompt import API_RESPONSE_PROMPT
 
 import requests
 
-url = "https://hrm-nois-fake.azurewebsites.net/"
 
+url = "https://api-hrm.nois.vn/api"
+header = {}
 
 classifier_usecase2 = """<|im_start|>system
 
@@ -20,6 +21,7 @@ Given a sentence, assistant will determine if the sentence belongs in 1 of 2 cat
 You answer the question "Is the user's question related to ?"
 
 EXAMPLE:
+
 Input: tôi muốn submit ngày nghỉ
 Output: LeaveApplication
 Input: tôi cần thông tin của tôi
@@ -38,6 +40,9 @@ Input: tôi muốn hủy lịch họp phòng meeting số 1.
 Output: Meeting
 
 <|im_end|>
+
+
+
 
 Input: {question}
 
@@ -71,13 +76,26 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
+# - latest application specific
 
+# EXAMPLE 
+# Input: cho tôi biết đơn nghỉ phép gần nhất bắt đầu từ ngày bao nhiêu
+# Output: latest application specific
+
+# Input: cho tôi biết note của đơn nghỉ phép gần nhất
+# Output: latest application specific
+
+# Input: cho tôi biết ngày kết thúc của đơn nghỉ phép gần nhất
+# Output: latest application specific
+
+# Input: cho tôi biết loại nghỉ phép của đơn nghỉ phép gần nhất
+# Output: latest application specific
 classifier_question_leave_application =""" <|im_start|>system
 Given a sentence, you will putting the sentence in one of these category
 - quantity general
 - quanitity specific
 - latest application
-- latest application specific
+
 - general
 
 
@@ -102,8 +120,6 @@ Output: quantity specific
 Input:cho tôi thông tin của đơn xin nghỉ phép gần nhất
 Ouput: latest application
 
-Input: cho tôi biết đơn nghỉ phép gần nhất bắt đầu từ ngày bao nhiêu
-Output: latest application specific
 
 <|im_end|>
 
@@ -122,6 +138,7 @@ if the input include "đơn" + "chấp thuận", do not return totalRecord, outp
 if the input include "đơn nghỉ " + "chấp thuận" or "đồng ý", do not return totalRecord, output should return "reviewStatusName"
 
 The keyword MUST follow one of these:
+
       "id": ,
       "registerDate": ,
       "fromDate": ,
@@ -184,7 +201,6 @@ Output: reviewStatusName
 Input: tổng đơn nghỉ được đồng ý
 Output: reviewStatusName
 
-
 SENTENCE: {output}
 OUTPUT:"""
 
@@ -217,11 +233,8 @@ SENTENCE: {output}
 OUTPUT:"""
 chat_template = """<|im_start|>system
 You are an intellegent bot assistant that helps users answer their questions. Your answer must adhere to the following criteria:
-- Be brief in your answers. You must use the information inside the given documentation regards to the user
+- the answer will be inside the output of the summaries, answer according to the given summaries. 
 - If the user greets you, respond accordingly.
-- If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese
-- You can only reponse to your own information question, you couldnt ask another's information.
-- if value of the output is 0, The answer have to be your ____ is 0.
 - if value of the output is none, null or N/A, the answer is "thông tin đó chưa cập nhật"
 - if given a dictionary format, answer all of the information within that dictionary, and still if value of the output is none, null or N/A, the answer is "thông tin đó chưa cập nhật",
 you have to go down to new line each information given
@@ -229,35 +242,11 @@ you have to go down to new line each information given
 DISPLAY as the following example format
 
 EXAMPLE:
-Leave application 1:
-ID: 5ab661b6-ab29-4957-a94d-44db56ba2b63
-Start date: 2023-07-20T00:00:00
-End date: 2023-07-21T00:00:00
-Number of day(s) off: 2
+INPUT: 'summaries': 'input: cho tôi xem số lượng đơn nghỉ phép, output: 1', 'context': '', 'question': 'cho tôi xem số lượng đơn nghỉ phép'
+OUTPUT: số lượng đơn nghỉ phép bạn đang hiện đã nộp là 1
 
-Leave application 2:
-ID: 9f2d21df-1a87-47dd-8e6c-5282e47ace5e
-Start date: 2023-07-20T00:00:00
-End date: 2023-07-21T00:00:00
-Number of day(s) off: 2
-
-Leave application 3:
-ID: a066515f-2c8d-4091-8940-5f4f98eaa43b
-Start date: 2023-07-20T00:00:00
-End date: 2023-07-21T00:00:00
-Number of day(s) off: 2
-
-Leave application 4:
-ID: a5533fb7-15ca-4a72-b25c-9dd8b8dec152
-Start date: 2023-07-17T00:00:00
-End date: 2023-07-18T00:00:00
-Number of day(s) off: 2
-
-Leave application 5:
-ID: b09c77dd-5eed-427e-882f-b7b70c849f49
-Start date: 2023-07-17T00:00:00
-End date: 2023-07-18T00:00:00
-Number of day(s) off: 2
+INPUT: 'summaries': 'input: cho tôi xem số lượng đơn nghỉ phép, output: 3', 'context': '', 'question': 'cho tôi xem số lượng đơn nghỉ phép'
+OUTPUT: số lượng đơn nghỉ phép bạn đang hiện đã nộp là 3
 
 - SPECIAL CASE: output of gender 0, the answer is male, if the output of gender is 1, the ouput is female
 
@@ -332,105 +321,139 @@ qaChain = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(chat_template))
 
 
 # function define
-def get_users(query: str = None):
-    return requests.get(url + '/api/User').json()['data']
-
-def get_user_through_email(email):
-    response = requests.get(url + f'/api/User/me?email={email}')
-    if response.status_code == 200:
-        return response.json()['data']
-
-    return f'Error: {response.status_code}'
-
-
-
-def check_manager_name(name):
-    response = requests.get(url + '/api/User/manager-users').json()['data']
-
-    for data in response:
-        if data['fullName'].lower() == name.lower():
-            return data['id']
-
-    return -1
-# must have url
-def get_mananger_information():
-  response = requests.get(url + '/api/User/manager-users').json()['data']
-  return response
-
-def get_leave_application_through_id(user_id):
-  response = requests.get(url + f'/api/leaveApplication/{user_id}')
+def get_leave_application():
+  response = requests.get(url + "/leaveapplication/paging?pageIndex=0&pageSize=50&type=0", headers=header)
+  temp_list = []
   if response.status_code == 200:
-      return response.json()['data']
+      for i in response.json()['data']['items']:
+          if i["reviewStatusName"] != "Đồng ý":
+              temp_list.append(i) 
+      return temp_list
+  else:
+      return
+  
+
+def new_line_formatter(response):
+    # check empty
+    if response == "":
+        return
+    # not
+    else:
+        final_response = ''
+        paragraphs = response.split('\n\n')  # Split the response into paragraphs using '\n\n'
+
+        for i, paragraph in enumerate(paragraphs):
+            lines = paragraph.split('\n')
+            paragraph_html = '<div>' + '</div><div>'.join(lines) + '</div>'
+            final_response += paragraph_html
+            if i < len(paragraphs) - 1:
+                final_response += '<br>'  # Add an extra <div></div> between paragraphs
+
+        return final_response
+    
+def display_leave_application(response): # input list of dictionaries response
+  # displaying the application
+  print("response - general - pass: " + str(response))
+  if response != []:
+    count = 1
+    text =""
+    for i in response:
+        text += ("Leave application number " + str(count) +" :\n")
+        text += ("Application id: " +str(i["id"])  +"\n")
+        text += ("From date: " + str(i["fromDate"])  + "\n")
+        text +=("To date: " + str(i["toDate"]) + "\n")
+        text +=("Number day off: " + str(i["numberDayOff"]) + "\n\n")
+        count+=1
+    
+    text = new_line_formatter(text)
+    print(text)
+    return text
+  else:
+      return 
+# single dict
+def display_single_leave_application(response): # input list of dictionaries response
+  # displaying the application
+  print("response - general - pass: " + str(response))
+  if response != []:
+    count = 1
+    text =""
+    text += ("Leave application number " + str(count) +" :\n")
+    text += ("Application id: " +str(response["id"])  +"\n")
+    text += ("From date: " + str(response["fromDate"])  + "\n")
+    text +=("To date: " + str(response["toDate"]) + "\n")
+    text +=("Number day off: " + str(response["numberDayOff"]) + "\n\n")
+    count+=1
+    text = new_line_formatter(text)
+    print(text)
+    return text
+  else:
+      return 
 
 
-def run_get_leave_application(email, query):
+# history_delete = ""
+def run_get_leave_application(email, query, token):
+    global header
+    global history_delete
+    header = {"Authorization": f"Bearer {token}"}
     label_get_application = classifier_leave_application_get(query)['text']
     # THIS IS FOR general --> ask again if user want to perform any action with it, save these into history
-    print(label_get_application)
-    if (label_get_application =="general"):
-        user_info = (get_user_through_email(email))
-        user_id = user_info['id']
-        response = get_leave_application_through_id(user_id)
-        print(response)
-        temp_result = "input: " + query + " output: " + str(response)
-        result = qaChain({'summaries': temp_result,'context':"", 'question': query}, return_only_outputs=True)
-        return result["text"]
-    # THIS IS FOR quantity general
-    elif (label_get_application =="quantity general"):
-        user_info = (get_user_through_email(email))
-        user_id = user_info['id']
-        print(user_info)
-        response = get_leave_application_through_id(user_id)
-        size_of_leave_application = len(response)
-        temp_result = "input: " + query + " output: " + str(size_of_leave_application)
-        print(temp_result)
-        result = qaChain({'summaries': temp_result,'context':"", 'question': query}, return_only_outputs=False)
-        print(result)
-        return result["text"]
-
-
-    # THIS IS FOR quantity specific
-    # done tổng số đơn ngày nghỉ đã được chấp thuận
-    # done tổng số đơn ngày nghỉ được trả lương
-    # done tổng số đơn ngày nghỉ được có note là 2nd
-    # need to add more value since dont know the exact discrete val
-    elif (label_get_application =="quantity specific"):
-        counter = 0
-        keyword = keyword_chain(query)['text']
-        value_to_compare = value_extract(query)['text']
-        user_info = (get_user_through_email(email))
-        print(keyword)
     
-        print(value_to_compare)
-        user_id = user_info['id']
-        # list of dict for leav3 application
-        response = get_leave_application_through_id(user_id)
-        size_of_leave_application = len(response)
-        num = 0
-        for i in response:
-            if (response[num][keyword] == value_to_compare):
-                counter+= 1
-                num += 1
-        temp_result = "input: " + query + " output: " + str(counter)
-        result = qaChain({'summaries': temp_result,'context':"", 'question': query}, return_only_outputs=False)
-        return result["text"]
+    print(label_get_application)
+    response = get_leave_application()
+    if response != []:
+        if (label_get_application =="general"):
+            result = display_leave_application(response) + "\n Bạn muốn tôi giúp gì thêm "
+            # history_delete += result
+            return result
+
+        # THIS IS FOR quantity general
+        elif (label_get_application =="quantity general"):
+            size_of_leave_application = len(response)
+            temp_result = "input: " + query + ", output: " + str(size_of_leave_application)
+            print(temp_result)
+            result = qaChain({'summaries': temp_result,'context':"", 'question': query}, return_only_outputs=False)
+            print(result)
+            return result["text"]
 
 
-    # THIS IS FOR latest application
-    elif (label_get_application == "latest application"):
-        user_info = (get_user_through_email(email))
-        user_id = user_info['id']
-        response = get_leave_application_through_id(user_id)
-        temp_result = "input: " + query + " output: " + str(response[0])
-        result = qaChain({'summaries': temp_result,'context':"", 'question': query}, return_only_outputs=False)
-        return result["text"]
+        # THIS IS FOR quantity specific
+        # done tổng số đơn ngày nghỉ đã được chấp thuận
+        # done tổng số đơn ngày nghỉ được trả lương
+        # done tổng số đơn ngày nghỉ được có note là 2nd
+        # need to add more value since dont know the exact discrete val
+        elif (label_get_application =="quantity specific"):
+            counter = 0
+            keyword = keyword_chain(query)['text']
+            value_to_compare = value_extract(query)['text']
+            print(keyword)
+            print(value_to_compare)
+            # list of dict for leav3 application
+            size_of_leave_application = len(response)
+            num = 0
+            for i in response:
+                if (i[keyword] == value_to_compare):
+                    counter+= 1
+                    num += 1
+            temp_result = " output: " + str(counter) # "input: " + query + 
+            result = qaChain({'summaries': temp_result,'context':"", 'question': query}, return_only_outputs=False)
+            return result["text"]
+        # THIS IS FOR latest application
+        elif (label_get_application == "latest application"):
+            response = display_single_leave_application(response[0])
+            return response + "bạn muốn tôi làm gì tiếp"
 
 
-    # THIS IS FOR latest application specific
-    elif (label_get_application == "latest application specific"):
-        user_info = (get_user_through_email(email))
-        user_id = user_info['id']
-        response = get_leave_application_through_id(user_id)
-        temp_result = "input: " + query + " output: " + str(response[0][keyword])
-        result = qaChain({'summaries': temp_result,'context':"", 'question': query}, return_only_outputs=False)
-        return result["text"]
+        # THIS IS FOR latest application specific
+        # elif (label_get_application == "latest application specific"):     
+        #     keyword = keyword_chain(query)['text']
+        #     print("first response: " + str(response[0]))
+        #     display_response = display_single_leave_application(response[0])
+        #     try:
+        #         temp_result = "input: " + query + " output: " + str(response[0][keyword])
+        #     except:
+        #         return display_response
+        #     result = qaChain({'summaries': temp_result,'context':"", 'question': query}, return_only_outputs=False)
+        #     return result["text"]
+
+    else:
+        return "currently you have no leave application waiting"

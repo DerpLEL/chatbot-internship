@@ -413,7 +413,7 @@ confirm_delete = False
 
 
 def post_leave_application_func(user, query, token):
-    # try:
+    try:
         global leave_application_form
         global confirm_delete
         response_data = requests.models.Response()
@@ -494,7 +494,7 @@ def post_leave_application_func(user, query, token):
                 periodType = "Buổi chiều"
             reviewUser = "LÝ MINH QUÂN"
 
-            response = f"""Form submit ngày nghỉ của bạn:
+            response = f"""Form submit ngày nghỉ của bạn:\n
             ______________________________________________________________________
             Ngày gửi đơn: {today_var}
             Người duyệt: {reviewUser}
@@ -503,7 +503,7 @@ def post_leave_application_func(user, query, token):
             Nghỉ buổi: {periodType}
             Tổng thời gian nghỉ: {leave_application_form['duration']}
             Lí do: {leave_application_form['note']}
-            ______________________________________________________________________
+            ______________________________________________________________________\n
             Bạn có muốn submit đơn nghỉ phép này không?"""
             print(confirm_chain(query)['text'])
             confirm = confirm_chain(query)['text']
@@ -525,10 +525,9 @@ def post_leave_application_func(user, query, token):
                 }
 
                 # Make the request
-                response = requests.post(url, json=data, headers=headers)
+                response_data = requests.post(url, json=data, headers=headers)
 
-                # Print the response status code and content
-                print(response.status_code)
+                print(response_data.status_code)
 
         #         response_data = requests.post('https://hrm-nois-fake.azurewebsites.net/api/LeaveApplication/Submit', json = {
         #     "userId": 'c4edb6f7-56c8-444a-803d-5a6c77707e60',
@@ -560,7 +559,7 @@ def post_leave_application_func(user, query, token):
                 'note': '',
                 'periodType': -1,
             }
-                response_data.status_code = 0
+                response_data.status_code = 100
                 response = f"""Đơn nghỉ phép của bạn đã xóa. Bạn có thể gửi một Đơn nghỉ phép khác"""
                 confirm_delete = False
             elif 'no'in confirm:
@@ -579,8 +578,8 @@ def post_leave_application_func(user, query, token):
                                     '''},
                                 return_only_outputs=False)['output_text']
         return [response,response_data]
-    # except Exception as e:
-    #     return str(e) + 'Có phải bạn đang muốn submit ngày nghỉ đúng không? Hiện tại tôi thấy hình như bạn thiếu thời gian nghỉ.'
+    except Exception as e:
+        return str(e) + 'Có phải bạn đang muốn submit ngày nghỉ đúng không? Hiện tại tôi thấy hình như bạn thiếu thời gian nghỉ.'
     
 
 def date_processing(date_off):
