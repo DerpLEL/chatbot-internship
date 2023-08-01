@@ -211,6 +211,6 @@ def get_bot_response(obj: MainDialog, email):
         pass
 
     msg = obj.bot.agent[email].msg.output
-    obj.bot.agent.msg.reset()
+    obj.bot.agent[email].msg.reset()
 
     return msg
