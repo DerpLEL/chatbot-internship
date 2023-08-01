@@ -1,5 +1,5 @@
 from langchain.prompts import PromptTemplate
-from langchain.document_transformers import Document
+from langchain.schema import Document
 from langchain.chains import LLMChain
 from langchain.chat_models import AzureChatOpenAI
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
