@@ -689,6 +689,7 @@ def update_history_delete(history_delete, email):
         cursor.execute(f"""SELECT del_leave FROM history WHERE email = '{email}';""")
         conv_type = cursor.fetchone()
         print(conv_type)
+        history_delete = history_delete.replace("'", "")
         if not conv_type[0]:
             print(f"Conversation type to be updated to SQL: {history_delete}\n")
             cursor.execute(f"""UPDATE history
@@ -708,7 +709,7 @@ def get_history_delete(email):
 
     if not hist:
         cursor.execute(f"""INSERT INTO history
-VALUES ('{email}', NULL, NULL, NULL, NULL);""")
+VALUES ('{email}', NULL, NULL, NULL, NULL, NULL);""")
         conn.commit()
 
         return ''

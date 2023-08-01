@@ -421,7 +421,59 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         hist.append({'user': user_msg, 'AI': ai_msg})
         print(hist)
 
+    def update_token(self, token, email):
+        cursor.execute(f"""SELECT token FROM history WHERE email = '{email}';""")
+        conv_type = cursor.fetchone()
+        print(conv_type)
+        token = token.replace("'", "")
+        if not conv_type[0]:
+            print(f"Conversation type to be updated to SQL: {token}\n")
+            cursor.execute(f"""UPDATE history
+                SET token = N'{token}' WHERE email = '{email}';""")
+            conn.commit()
+            return
+        
+        print(f"Conversation type to be updated to SQL: {token}\n")
+        cursor.execute(f"""UPDATE history
+            SET token = N'{token}' WHERE email = '{email}';""")
+        conn.commit()
+        return
+    
+    def get_token(self, email):
+        cursor.execute(f"""SELECT token FROM history WHERE email = '{email}';""")
+        hist = cursor.fetchone()
+
+        if not hist:
+            cursor.execute(f"""INSERT INTO history
+    VALUES ('{email}', NULL, NULL, NULL, NULL, NULL);""")
+            conn.commit()
+
+            return ''
+
+        if not hist[0]:
+            return ''
+        
+        return hist[0]
+
     def chat(self, query, email, name):
+        global token
+        token = self.get_token(email)
+        url = "https://api-hrm.nois.vn/api/user/me"
+        header = {"Authorization": f"Bearer {token}"}
+        response = requests.get(url, headers=header)
+        if response.status_code == 200:
+            pass
+        else:
+            self.update_token(query, email)
+            token = self.get_token(email)
+            header = {"Authorization": f"Bearer {token}"}
+            response = requests.get(url, headers=header)
+            print(response)
+            if response.status_code == 200:
+                return "Bạn đã đăng nhập thành công vào HRM.", ''
+            else:
+                return "Vui lòng nhập lại HRM token", ''
+
         if self.private:
             # if email not in self.history_private:
             #     self.history_private[email] = []
@@ -521,7 +573,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
         if not hist:
             cursor.execute(f"""INSERT INTO history
-VALUES ('{email}', NULL, NULL, NULL, NULL);""")
+VALUES ('{email}', NULL, NULL, NULL, NULL, NULL);""")
             conn.commit()
 
             return ['','']
@@ -566,7 +618,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL);""")
 
         if not hist:
             cursor.execute(f"""INSERT INTO history
-VALUES ('{email}', NULL, NULL, NULL, NULL);""")
+VALUES ('{email}', NULL, NULL, NULL, NULL, NULL);""")
             conn.commit()
 
             return ""
