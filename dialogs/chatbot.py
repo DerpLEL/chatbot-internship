@@ -361,7 +361,7 @@ Output: '''
         self.conversation_type = []
         self.history_public = []
         self.history_private = {}
-        self.agent = Agent()
+        self.agent = {}
         self.agent_session = {}
         self.private = False
         self.container_drink_fee_name = 'nois-drink-fee'
@@ -560,6 +560,7 @@ VALUES ('{email}', NULL, NULL, NULL);""")
 
     def toggle_agent(self, email):
         if email not in self.agent_session:
+            self.agent[email] = Agent()
             self.agent_session[email] = [True, False]
             return f"Agent has been enabled for user {email}"
 
