@@ -10,6 +10,7 @@ from langchain.retrievers import AzureCognitiveSearchRetriever
 from azure.core.exceptions import ResourceExistsError
 from datetime import datetime, timedelta
 import pyodbc
+import threading
 
 server = 'sql-chatbot-server.database.windows.net'
 database = 'sql-chatbot'
@@ -28,6 +29,7 @@ from .user import *
 from .post_leave_application import *
 from .get_leave_application import * 
 from .delete_leave_application import *
+from .agent import *
 
 public_index_name = "nois-public-v3-index"
 private_index_name = "nois-private-v3-index"
@@ -331,10 +333,36 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 <|im_start|>assistant
 """
 
+    choose_agent_prompt = '''<|im_start|>system
+Given a request/question, classify whether or not the given request/question belongs to one of these 2 classes:
+- info
+- subdel
+DO NOT answer the question/fulfill the request. Only classification is required.
+
+EXAMPLE
+Input: I want to submit a leave application.
+Output: subdel
+Input: I want to delete a leave application.
+Output: subdel
+Input: How many day-offs do I have left?
+Output: info
+Input: What is my job title?
+Output: info
+
+<|im_end|>
+
+<|im_start|>user
+Input: {question}
+<|im_end|>
+<|im_start|>assistant
+Output: '''
+
     def __init__(self):
         self.conversation_type = []
         self.history_public = []
         self.history_private = {}
+        self.agent = Agent()
+        self.agent_session = {}
         self.private = False
         self.container_drink_fee_name = 'nois-drink-fee'
         self.container_client = blob_service_client.get_container_client(self.container_drink_fee_name)
@@ -411,6 +439,8 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
         self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
         self.header_drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.header_templ_drink_fee))
+        self.classifier_agent_type = LLMChain(llm=self.llm3,
+                                              prompt=PromptTemplate.from_template(self.choose_agent_prompt))
 
         # usecase 2
         self.classifier_hrm_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_hrm))
@@ -433,6 +463,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             doc_num += 1
 
         return doc
+
 
 # history
     def get_history_as_txt(self, email, n=3):
@@ -526,6 +557,18 @@ VALUES ('{email}', NULL, NULL, NULL);""")
 
         # print(f"History from SQL: {txt}\n")
         return txt
+
+    def toggle_agent(self, email):
+        if email not in self.agent_session:
+            self.agent_session[email] = [True, False]
+            return f"Agent has been enabled for user {email}"
+
+        if not self.agent_session[email][0]:
+            self.agent_session[email][0] = True
+            return f"Agent has been enabled for user {email}"
+
+        self.agent_session[email][0] = False
+        return f"Agent has been disabled for user {email}"
 
     def chat_public(self, query):
         keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt(None)})['text']
@@ -698,3 +741,6 @@ VALUES ('{email}', NULL, NULL, NULL);""")
     def clear_history(self):
         self.history_public = []
         self.history_private = []
+
+    def choose_agent(self, query):
+        return self.classifier_agent_type(query)['text']
