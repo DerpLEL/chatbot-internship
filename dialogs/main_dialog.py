@@ -124,31 +124,28 @@ class MainDialog(LogoutDialog):
                 parts = step_context.values["command"].split(" ")
                 command = parts[0]
 
+                client = SimpleGraphClient(token_response.token)
+                me_info = await client.get_me()
+
                 # display logged in users name
                 if command == "me":
-                    client = SimpleGraphClient(token_response.token)
-                    me_info = await client.get_me()
                     await step_context.context.send_activity(
                         f"You are {me_info['displayName']}"
                     )
 
                 # display logged in users email
                 elif command == "email":
-                    client = SimpleGraphClient(token_response.token)
-                    me_info = await client.get_me()
                     await step_context.context.send_activity(
                         f"Your email: {me_info['mail']}"
                     )
 
                 elif command == "agent":
-                    client = SimpleGraphClient(token_response.token)
-                    me_info = await client.get_me()
                     await step_context.context.send_activity(
                         self.bot.toggle_agent(me_info['mail'])
                     )
 
-                elif email in self.bot.agent_session and self.bot.agent_session[email][0] and \
-                not self.bot.agent_session[email][1]:
+                elif me_info['mail'] in self.bot.agent_session and self.bot.agent_session[me_info['mail']][0] and \
+                not self.bot.agent_session[me_info['mail']][1]:
                     msg = step_context.values["command"]
                     agent_arg = 1
                     agent_type = self.bot.choose_agent(msg).strip()
@@ -156,26 +153,27 @@ class MainDialog(LogoutDialog):
                     if agent_type == "subdel":
                         agent_arg = 2
 
-                    t1 = threading.Thread(target=run_agent, args=(msg, agent_arg,), daemon=True)
+                    t1 = threading.Thread(target=run_agent, args=(self, msg, me_info['mail'], agent_arg,), daemon=True)
                     t1.start()
 
                     new_msg = get_bot_response(self)
 
-                    return new_msg
+                    await step_context.context.send_activity(
+                        new_msg
+                    )
 
-                elif email in self.bot.agent_session and self.bot.agent_session[email][1]:
+                elif me_info['mail'] in self.bot.agent_session and self.bot.agent_session[me_info['mail']][1]:
                     msg = step_context.values['command']
                     print(f"Still in agent session, current user message: {msg}")
                     self.bot.agent.msg.input = msg
 
                     new_msg = get_bot_response(self)
 
-                    return new_msg
+                    await step_context.context.send_activity(
+                        new_msg
+                    )
 
                 else:
-                    client = SimpleGraphClient(token_response.token)
-                    me_info = await client.get_me()
-
                     reply, doc = self.bot.chat(step_context.values["command"], me_info['mail'], me_info['displayName'])
 
                     print("doc: " + str(doc))
