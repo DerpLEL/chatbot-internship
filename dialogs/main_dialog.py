@@ -115,16 +115,18 @@ class MainDialog(LogoutDialog):
                                 "Vui lòng nhập HRM token."
                             )
                         ),
-                    )     
+                    )
+
                 else:
                     return await step_context.prompt(
                         TextPrompt.__name__,
-                        PromptOptions(
-                            prompt=MessageFactory.text(
-                                """..."""
-                            )
-                        ),
+                        PromptOptions()
                     )
+                    # res = await step_context.prompt(
+                    #     TextPrompt.__name__,
+                    #     PromptOptions()
+                    # )
+                    # print("############ Continuing lmao... ############")
             
             await step_context.context.send_activity(
                 "Bạn đã đăng nhập thất bại. Vui lòng đăng nhập lại."
