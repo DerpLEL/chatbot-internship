@@ -82,6 +82,7 @@ class MainDialog(LogoutDialog):
                             )
                         ),
                     )
+
                 else:
                     return await step_context.prompt(
                         TextPrompt.__name__,
