@@ -85,13 +85,8 @@ class MainDialog(LogoutDialog):
                 else:
                     return await step_context.prompt(
                         TextPrompt.__name__,
-                        PromptOptions(
-                            prompt=MessageFactory.text(
-                                "Bạn đợi 1 xíu ..."
-                            )
-                        ),
+                        PromptOptions()
                     )
-            
 
             await step_context.context.send_activity(
                 "Bạn đã đăng nhập thất bại. Vui lòng đăng nhập lại."
