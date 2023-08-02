@@ -1,4 +1,4 @@
-from langchain.prompts   import PromptTemplate
+from langchain.prompts import PromptTemplate
 from langchain.document_transformers import Document
 from azure.core.credentials import AzureKeyCredential
 from langchain.chains import LLMChain
@@ -560,7 +560,7 @@ VALUES ('{email}', NULL, NULL, NULL);""")
 
     def toggle_agent(self, email):
         if email not in self.agent_session:
-            self.agent[email] = Agent()
+            self.agent[email] = Agent(email)
             self.agent_session[email] = [True, False]
             return f"Agent has been enabled for user {email}"
 

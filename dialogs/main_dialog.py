@@ -139,7 +139,7 @@ class MainDialog(LogoutDialog):
                         f"Your email: {me_info['mail']}"
                     )
 
-                elif command == "agent":
+                elif command.lower() == "agent":
                     await step_context.context.send_activity(
                         self.bot.toggle_agent(me_info['mail'])
                     )
