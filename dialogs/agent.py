@@ -1097,6 +1097,8 @@ Question: {input}
             input_variables=["input", "context", "agent_scratchpad"],
         )
 
+        self.prompt_test = ""
+
         self.prefix2 = f"""You are an intelligent assistant who helps user submit or delete leave applications through the HRM system using tools. 
 The user chatting with you has the email: {self.email}. 
 Suppose the current date is {date2} (Weekday Year-Month-Day).
@@ -1165,9 +1167,73 @@ Final Answer: Leave application is submitted.
 
 '''
 
-        self.suffix2 = """Submission steps in the example can be skipped if the user provides enough information.
+        self.temp_vnese = f'''
+
+======
+Example 1:
+Question: Submit a leave application to trần đăng ninh for me, I'll start on 21.07, my leave ends on the 24th. I'm applying for sick leave, and no notes.
+Thought: User wants to submit a leave application to their manager trần đăng ninh. Their leave starts on 2023-07-21 and ends on
+2023-07-24. The user is applying for sick leave, no notes necessary. Since I have all the required information, I can try submitting the application.
+Action: HRM submit leave
+Action Input: trần đăng ninh, 2023-07-21, 2023-07-24, sick, None
+Observation: OK
+Thought: I now know the final answer
+Final Answer: Leave application is submitted.
+
+Example 2:
+Question: Tôi muốn nộp đơn nghỉ phép. Kì nghỉ phép của tôi kết thúc vào 2023-08-18, tôi muốn nghỉ có lương, không cần cung cấp lý do.
+Thought: User wants to submit a leave application that ends on 2023-08-18. They are applying for paid leave, with no notes. Manager's name and start date are not provided.
+First I will ask the user for the manager's name. Then I will ask the user for the start date.
+Action: human
+Action Input: Quản lý của bạn là ai?
+Observation: đào minh sáng
+Thought: The manager is đào minh sáng. I need to ask the user for the start date.
+Action: human
+Action Input: Bạn muốn bắt đầu nghỉ phép khi nào? (Cung cấp dưới dạng Năm-Tháng-Ngày nếu được)
+Observation: 17-08
+Thought: The user wants to start their leave on 2023-08-17. Since I have all the required information, I can try submitting the application.
+Action: HRM submit leave
+Action Input: đào minh sáng, 2023-08-17, 2023-08-18, paid, None
+Observation: OK
+Thought: I now know the final answer
+Final Answer: Đã nộp đơn nghỉ phép thành công
+
+Example 3:  
+Question: I'd like to submit a leave application.
+Thought: I need to ask the user for the manager's name.
+Action: human
+Action Input: Who is your manager?
+Observation: lý minh quân
+Thought: I need to ask the user when they want to start their leave.
+Action: human
+Action Input: When do you want to start your leave? (YYYY-MM-DD format is preferred)
+Observation: 17.07
+Thought: User wants to start their leave on 2023-07-17. Now I need to ask the user when they want to end their leave.
+Action: human
+Action Input: When will your leave end? (YYYY-MM-DD format is preferred)
+Observation: 18/7
+Thought: User wants to end their leave on 2023-07-18. Now I need to ask the user what type of leave they want to apply for.
+Action: human
+Action Input: What type of leave do you want to apply for? There are 3 types: paid, unpaid and sick.
+Observation: unpaid
+Thought: I need to ask the user for their notes to the manager.
+Action: human
+Action Input: Do you want to leave any notes for the manager?
+Observation: I have to visit my grandmother
+Thought: Got all details for submitting.
+Action: HRM submit leave
+Action Input: lý minh quân, 2023-07-17, 2023-07-18, unpaid, "I have to visit my grandmother"
+Observation: OK
+Thought: I now know the final answer
+Final Answer: Leave application is submitted.
+======
+
+'''
+
+        self.suffix2 = """Some steps in the example can be skipped if the user provides enough information.
 Ask the user for any missing information.
-Remember to use Vietnamese if the original question is in Vietnamese, and use English if the original question is in English.
+Remember to use Vietnamese for your questions to the human if the original question is in Vietnamese,
+and use English for your questions to the human if the original question is in English!
 Begin!
 
 {context}
@@ -1175,7 +1241,7 @@ Question: {input}
 Thought: {agent_scratchpad} 
 """
 
-        self.suffix2 = self.temp3 + self.suffix2
+        self.suffix2 = self.temp_vnese + self.suffix2
 
         self.prompt2 = ZSAgentMod.create_prompt(
             tool2,
