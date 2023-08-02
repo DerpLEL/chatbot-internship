@@ -167,6 +167,8 @@ Sources:
 
 Chat history:{context}
 
+Mode: {mode}
+
 <|im_start|>user
 {question}
 <|im_end|>

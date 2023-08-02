@@ -58,6 +58,7 @@ class MainDialog(LogoutDialog):
 
         super(MainDialog, self).__init__(MainDialog.__name__, connection_name)
 
+
         self.add_dialog(
             OAuthPrompt(
                 OAuthPrompt.__name__,
@@ -75,6 +76,17 @@ class MainDialog(LogoutDialog):
 
         self.add_dialog(
             WaterfallDialog(
+                "CONFIRMDialog",
+                [
+                    self.confirm_step,
+                    # self.summary_step,
+                ],
+            )
+        )
+
+
+        self.add_dialog(
+            WaterfallDialog(
                 "WFDialog",
                 [
                     self.prompt_step,
@@ -88,6 +100,21 @@ class MainDialog(LogoutDialog):
         self.initial_dialog_id = "WFDialog"
         self.bot = chatAI()
         self.bot.private = True
+
+    async def confirm_step(
+        self, step_context: WaterfallStepContext
+    ) -> DialogTurnResult:
+        step_context.values["picture"] = (
+            None if not step_context.result else step_context.result[0]
+        )
+
+        
+        # WaterfallStep always finishes with the end of the Waterfall or
+        # with another dialog; here it is a Prompt Dialog.
+        return await step_context.prompt(
+            ConfirmPrompt.__name__,
+            PromptOptions(prompt=MessageFactory.text("Bạn có xác nhận hành động này")),
+        )
 
     async def prompt_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
         return await step_context.begin_dialog(OAuthPrompt.__name__)
@@ -120,9 +147,7 @@ class MainDialog(LogoutDialog):
                     return await step_context.prompt(
                         TextPrompt.__name__,
                         PromptOptions(
-                            prompt=MessageFactory.text(
-                                """..."""
-                            )
+
                         ),
                     )
             
@@ -180,9 +205,10 @@ class MainDialog(LogoutDialog):
                         await step_context.context.send_activity(
                             reply['output_text']
                         )
+                    print("output main_dialog: " + str(reply))
         else:
             await step_context.context.send_activity("We couldn't log you in.")
-
+        
         # await step_context.context.send_activity("Type anything to try again.")
         return await step_context.replace_dialog("WFDialog")
     
