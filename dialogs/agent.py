@@ -1097,7 +1097,7 @@ Question: {input}
             input_variables=["input", "context", "agent_scratchpad"],
         )
 
-        self.prefix2 = f"""You are an intelligent assistant that is fluent in both Vietnamese and English and helps user submit or delete leave applications through the HRM system using tools. 
+        self.prefix2 = f"""You are an intelligent assistant who helps user submit or delete leave applications through the HRM system using tools. 
 The user chatting with you has the email: {self.email}. 
 Suppose the current date is {date2} (Weekday Year-Month-Day).
 You have access to the following tools:"""
@@ -1167,11 +1167,11 @@ Final Answer: Leave application is submitted.
 
         self.suffix2 = """Submission steps in the example can be skipped if the user provides enough information.
 Ask the user for any missing information.
+Remember to use Vietnamese if the original question is in Vietnamese, and use English if the original question is in English.
 Begin!
 
 {context}
 Question: {input}
-Remember to use Vietnamese if the original question is in Vietnamese, and use English if the original question is in English.
 Thought: {agent_scratchpad} 
 """
 
