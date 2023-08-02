@@ -413,6 +413,8 @@ confirm_delete = False
 
 
 def post_leave_application_func(user, query, token):
+    token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiI1OWI2N2I2YS1lNWYwLTQ1MzYtOTVmMy1hMzY3ZmY2OWVkODUiLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vNWUyYTNjYmQtMWE1Mi00NWFkLWI1MTQtYWI0Mjk1NmIzNzJjL3YyLjAiLCJpYXQiOjE2OTA5NjM0NzQsIm5iZiI6MTY5MDk2MzQ3NCwiZXhwIjoxNjkwOTY3NjQ4LCJhaW8iOiJBV1FBbS84VUFBQUFndTJwRnhNb1poZjBNblBSSHRpM2JUY3NFck1nYXl1Ym9tMFlBQWpFK09yZEhEVDB4WmtuZGlBL3piQ082QXFPTmF2TkNSc281cTgyOUlTNmFON3NFa0hEeGtFOC9iRWNzbjg2enpqdGVCTlRJL0FjNjBKMkwxbUQweWdhSFlYWiIsImF6cCI6Ijc2ZWE5MmQ2LTMzMDgtNDBkNS04NjRhLWIyN2ZiOGY1YjI3MyIsImF6cGFjciI6IjAiLCJuYW1lIjoiQmFvIEhvIiwib2lkIjoiYWVhOTVkNTktMWQ2Zi00NjA5LWEyYTgtMjEzMjI1ZGI2ZTI1IiwicHJlZmVycmVkX3VzZXJuYW1lIjoiYmFvLmhvQG5vaXMudm4iLCJyaCI6IjAuQVVrQXZUd3FYbElhclVXMUZLdENsV3MzTEdwN3Rsbnc1VFpGbGZPalpfOXA3WVZKQUFvLiIsInJvbGVzIjpbIlVzZXIiXSwic2NwIjoiYWNjZXNzX2FzX3VzZXIiLCJzdWIiOiJkN0Mza1JTdlpjWlBIRnJweHJlcjE0N1dENzctTWNNdDFBdEd3UW0wUGs0IiwidGlkIjoiNWUyYTNjYmQtMWE1Mi00NWFkLWI1MTQtYWI0Mjk1NmIzNzJjIiwidXRpIjoicW9Xc2FXNUJzMENyZnlUaGhBUlVBQSIsInZlciI6IjIuMCJ9.AChJGc2i7g9DHwZelnzS4-3FS5kPT_D-xuKqRsuV5eTjUdPjJ_m-atNFPfJPbiTZ64r3rb7RJ67CNkfbPHU0PH_mBPyll8FZFAHoMPKbKYScun5dtMWwDebaQAtGgJjSoEMpmFRK0--2GCAPldazNkSGuQoCgo8xKxmuarYh6bAXqr2JiNmw6U4yD27_c9rkoQEmW-yX9IhnaVdvdpmKlRlKB2AoCpad2jLYXXAe4tC_whBePUFmbNBno_s0aaS8tq9KF769LY0K1Z8rstYa-c4XGW8LVsMjHuoEGv00DpYOU6iVu8_p2P8YbuVh3xsgZ3V_r6Ht_sU6FB4uLaLR0Q"
+
     try:
         global leave_application_form
         global confirm_delete
@@ -517,7 +519,8 @@ def post_leave_application_func(user, query, token):
                     "toDate": datetime.strptime(leave_application_form['end_date'], '%Y-%m-%d').strftime('%m/%d/%Y'),
                     "leaveApplicationTypeId": 2,
                     "leaveApplicationNote": leave_application_form['note'],
-                    "numberOffDay": leave_application_form['duration']
+                    # "numberOffDay": leave_application_form['duration']
+                    "periodType": leave_application_form['periodType']
                 }
 
                 headers = {
