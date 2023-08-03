@@ -13,6 +13,14 @@ from googlesearch import search
 from bs4 import BeautifulSoup
 import pyodbc
 
+import pandas as pd
+import ast
+
+from .user import *
+from .post_leave_application import *
+from .get_leave_application import * 
+from .delete_leave_application import *
+
 server = 'sql-chatbot-server.database.windows.net'
 database = 'sql-chatbot'
 username = 'test-chatbot'
@@ -22,14 +30,6 @@ driver= '{ODBC Driver 17 for SQL Server}'
 conn = pyodbc.connect(f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
 
 cursor = conn.cursor()
-
-import pandas as pd
-import ast
-
-from .user import *
-from .post_leave_application import *
-from .get_leave_application import * 
-from .delete_leave_application import *
 
 public_index_name = "nois-public-v3-index"
 private_index_name = "nois-private-v3-index"
@@ -421,6 +421,10 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         hist.append({'user': user_msg, 'AI': ai_msg})
         print(hist)
 
+    def check_valid_sql_string(self, string: str):
+        string = string.replace("'", "''")
+        return string
+
     def update_token(self, token, email):
         cursor.execute(f"""SELECT token FROM history WHERE email = '{email}';""")
         conv_type = cursor.fetchone()
@@ -644,7 +648,11 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL);""")
     def chat_private(self, query, email, name):
         if self.get_conversation_type(email) == ['','']:
             label = self.classifier_chain({'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
-        else:
+        elif self.get_conversation_type(email) == ['hrm','post']:
+            response = 'Hiện tại bạn có một đơn nghỉ phép bạn chưa submit. Bạn có muốn giữ đơn này không?'
+            doc = ''
+            return response, doc
+        elif self.get_conversation_type(email) == ['hrm','delete']:
             label = "hrm"
 
         print("label " + label)

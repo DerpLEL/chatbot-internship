@@ -95,6 +95,10 @@ class MainDialog(LogoutDialog):
     async def login_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
             global login
 
+            token_response = step_context.result
+            client = SimpleGraphClient(token_response.token)
+            me_info = await client.get_me()
+
             if step_context.result:
                 if login == False:
                     await step_context.context.send_activity("Bạn đã đăng nhập thành công.")
@@ -104,6 +108,7 @@ class MainDialog(LogoutDialog):
                 client = SimpleGraphClient(token_response.token)
                 me_info = await client.get_me()
                 self.bot.user['username'] = me_info['displayName']
+                print(me_info['displayName'])
                 self.bot.user['mail'] = me_info['mail']
                 
                 if login == False:
@@ -119,11 +124,7 @@ class MainDialog(LogoutDialog):
                 else:
                     return await step_context.prompt(
                         TextPrompt.__name__,
-                        PromptOptions(
-                            prompt=MessageFactory.text(
-                                """..."""
-                            )
-                        ),
+                        PromptOptions(),
                     )
             
             await step_context.context.send_activity(

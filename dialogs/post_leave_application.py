@@ -4,6 +4,7 @@ from langchain.chains import LLMChain
 from langchain.chat_models import AzureChatOpenAI
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from datetime import datetime, timedelta
+from unidecode import unidecode
 
 import requests
 import numpy as np
@@ -43,43 +44,43 @@ keyword_leave_application = """<|im_start|>system
 Given a sentence and a conversation, assistant will extract keywords based on the conversation and the sentence.
 Your output will be on one line, separated by commas. Do not duplicate keywords.
 Assume the context is about the companies unless specified otherwise. Only return the keywords, do not output anything else.
-Output MUST JUST have 2 data fields: 'time', 'cause'. If any field is missing, the value of that data field is ''
+Output MUST JUST have 2 data fields: 'time', 'cause', 'user manager', 'type of leave'. If any field is missing, the value of that data field is ''
 
 EXAMPLE
 Input: buổi sáng
-Output: 'sáng',''
-Input: buổi chiều
-Output: 'chiều',''
-Input: nguyên ngày
-Output: 'cả nyày',''
-Input: với lí do đi công tác
-Output: '','đi công tác'
-Input: nhà có việc gấp
-Output: '','nhà có việc gấp'
+Output: 'sáng','','',''
+Input: buổi chiều với người duyệt là Nguyễn Thị Mỹ Dung
+Output: 'chiều','','Nguyễn Thị Mỹ Dung',''
+Input: nguyên ngày với hình thứ nghỉ là nghỉ không lương
+Output: 'cả ngày','','','nghỉ không lương'
+Input: với lí do đi công tác, hình thứ nghỉ phép
+Output: '','đi công tác','','nghỉ phép'
+Input: nhà có việc gấp, người quản lý của tôi là chị TRẦN THỊ THÚY AN, hình thức nghỉ là nghỉ khác hưởng nguyên lương (hiếu, hỉ)
+Output: '','nhà có việc gấp','TRẦN THỊ THÚY AN','nghỉ khác hưởng nguyên lương (hiếu, hỉ)'
 Input: vì phải đi đám cưới
-Output: '','phải đi đám cưới'
-Input: tôi muốn nghỉ ngày mai cả ngày vì đi khám bệnh
-Output: 'ngày mai cả ngày','đi khám bệnh'
-Input: nguyên ngày mốt tôi nghỉ để đi học
-Output: 'nguyên ngày mốt','đi học'
-Input: thứ 5 tuần sau tôi muốn nghỉ về quê
-Output: 'thứ 5 tuần sau','về quê'
-Input: cả ngày 3 tháng sau tôi muốn nghỉ để đi công tác
-Output: 'cả ngày 3 tháng sau','đi công tác'
-Input: tôi muốn nghỉ 2 ngày, ngày mai và ngày mốt
-Output: 'ngày mai và ngày mốt',''
+Output: '','phải đi đám cưới','',''
+Input: tôi muốn nghỉ ngày mai cả ngày vì đi khám bệnh người duyệt đơn tôi là anh Ninh
+Output: 'ngày mai cả ngày','đi khám bệnh','Ninh',''
+Input: nguyên ngày mốt tôi nghỉ để đi học, hình thức nghỉ là Nghỉ hội nghị, đào tạo chị ĐỔNG HỒNG NHUNG sẽ duyệt đơn tôi 
+Output: 'nguyên ngày mốt','đi học','ĐỔNG HỒNG NHUNG','Nghỉ hội nghị, đào tạo'
+Input: thứ 5 tuần sau tôi muốn nghỉ về quê, với hình thức nghỉ hưởng BHXH
+Output: 'thứ 5 tuần sau','về quê','','nghỉ hưởng BHXH'
+Input: cả ngày 3 tháng sau tôi muốn nghỉ để đi công tác, hình thức nghỉ Nghỉ hội nghị, đào tạo sẽ được duyệt bởi TRẦN VĂN KHANG
+Output: 'cả ngày 3 tháng sau','đi công tác','TRẦN VĂN KHANG','Nghỉ hội nghị'
+Input: tôi muốn nghỉ 2 ngày, ngày mai và ngày mốt hình thức nghỉ là nghỉ ốm anh quân sẽ là người duyệt đơn tôi
+Output: 'ngày mai và ngày mốt','','quân','Nghỉ ốm'
 Input: tôi muốn nghỉ 3 ngày, ngày 17,18,19 vì lí do nhà có việc gấp
-Output: 'ngày 17,18,19','nhà có việc gấp'
-Input: tôi muốn nghỉ từ ngày 24 đến ngày 26
-Output: 'từ ngày 24 đến ngày 26',''
+Output: 'ngày 17,18,19','nhà có việc gấp','',''
+Input: tôi muốn nghỉ từ ngày 24 đến ngày 26, tài sẽ duyệt đơn tôi
+Output: 'từ ngày 24 đến ngày 26','','tài',''
 Input: tôi muốn nghỉ từ ngày 31 tháng này đến ngày 2 tháng sau do phải đám cưới
-Output: 'từ 31 tháng này đến ngày 2 tháng sau','phải đám cưới'
+Output: 'từ 31 tháng này đến ngày 2 tháng sau','phải đám cưới','',''
 Input: tôi muốn nghỉ từ ngày 8 đến ngày 10 tháng sau vì gặp khách hàng
-Output: 'từ ngày 8 đến ngày 10 tháng sau','gặp khách hàng'
-Input: tôi muốn nghỉ từ 19/7 đến 21/7
-Output: 'từ 19/7 đến 21/7',''
-Input: tôi muốn nghỉ từ 4/10 đến 6/10 với lí do về quê
-Output: 'từ 4/10 đến 6/10','về quê'
+Output: 'từ ngày 8 đến ngày 10 tháng sau','gặp khách hàng','',''
+Input: tôi muốn nghỉ từ 19/7 đến 21/7 PHẠM THỊ DIỄM PHÚC sẽ duyệt đơn
+Output: 'từ 19/7 đến 21/7','','PHẠM THỊ DIỄM PHÚC',''
+Input: tôi muốn nghỉ từ 4/10 đến 6/10 với lí do về quê Tai vo sẽ duyệt đơn tôi, hình thức nghỉ là nghỉ không lương
+Output: 'từ 4/10 đến 6/10','về quê','Tai vo','nghỉ không lương'
 <|im_end|>
 {context}
 <|im_start|>user
@@ -87,6 +88,45 @@ Input: {question}
 <|im_end|>
 <|im_start|>assistant
 Output:"""
+
+
+keyword_name_manager = """<|im_start|>system
+Given a sentence and a conversation, assistant will extract keywords based on the conversation and the sentence.
+Your output will be on one line, separated by commas. Do not duplicate keywords.
+Assume the context is about the companies unless specified otherwise. Only return the keywords, do not output anything else.
+Output MUST JUST have 1 data fields: 'name of manager'. If any field is missing, the value of that data field is ''.
+
+EXAMPLE
+Input: Nguyễn Thị Mỹ Dung
+Output: 'Nguyễn Thị Mỹ Dung'
+Input: người quản lý của tôi là chị TRẦN THỊ THÚY AN
+Output: 'TRẦN THỊ THÚY AN'
+Input: tôi muốn nghỉ ngày mai với lí do đi học, người duyệt đơn tôi là anh Ninh
+Output: 'Ninh'
+Input: chị ĐỔNG HỒNG NHUNG sẽ duyệt đơn tôi
+Output: 'ĐỔNG HỒNG NHUNG'
+Input: sẽ được duyệt bởi TRẦN VĂN KHANG
+Output: 'TRẦN VĂN KHANG'
+Input: anh quân sẽ là người duyệt đơn tôi
+Output: 'quân'
+Input: tài sẽ duyệt đơn tôi
+Output: 'tài'
+Input: PHẠM THỊ DIỄM PHÚC
+Output: 'PHẠM THỊ DIỄM PHÚC'
+Input: ngày mai tôi sẽ đi họp
+Output: ''
+Input: Tai Vo sẽ duyệt đơn tôi
+Output: 'Tai Vo'
+
+<|im_end|>
+{context}
+<|im_start|>user
+Input: {question}
+<|im_end|>
+<|im_start|>assistant
+Output:"""
+
+
 
 date_determine = """<|im_start|>system
 Given a sentence, assistant will determine if the sentence just belongs in 1 of 2 categories, which are:
@@ -392,6 +432,7 @@ Output:"""
 
 
 chain_leave_application = LLMChain(llm=llm3, prompt=PromptTemplate.from_template(keyword_leave_application))
+chain_name_manager = LLMChain(llm=llm3, prompt=PromptTemplate.from_template(keyword_name_manager))
 date_determine_chain = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(date_determine))
 chain_bANDe= LLMChain(llm=llm3, prompt=PromptTemplate.from_template(keyword_bANDe))
 specific_date_chain = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(check_specific_date))
@@ -408,6 +449,8 @@ leave_application_form = {
             'duration': 0,
             'note': '',
             'periodType': -1,
+            'reviewUser': 0,
+            'leaveType': -1,
         }
 confirm_delete = False
 
@@ -421,13 +464,59 @@ def post_leave_application_func(user, query, token):
 
         keywords = chain_leave_application({'question': query, 'context':''})['text']
         print(keywords)
+        reviewUser = chain_name_manager({'question': query, 'context':''})['text']
+        print(reviewUser)
         values_keywords = keywords.split(",")
         time = values_keywords[0].strip("'")
         note = values_keywords[1].strip("'")
+        reviewUser = values_keywords[2].strip("'")
+        leaveType = values_keywords[3].strip("'")
+
+        print(time, note, reviewUser, leaveType)
+
+        if leave_application_form['leaveType'] == -1 and leaveType != '':
+            leaveType_text = unidecode(leaveType).lower()
+            if "phep" in leaveType_text:
+                leave_application_form['leaveType'] = 1
+            elif "khong" in leaveType_text:
+                leave_application_form['leaveType'] = 2
+            elif "khac" in leaveType_text:
+                leave_application_form['leaveType'] = 3
+            elif "hoi" or "dao" in leaveType_text:
+                leave_application_form['leaveType'] = 5
+            elif "om" in leaveType_text:
+                leave_application_form['leaveType'] = 8
+            elif "bhxh" or "bao hiem" in leaveType_text:
+                leave_application_form['leaveType'] = 9
+
+        if leave_application_form['reviewUser'] == 0 and reviewUser != '':
+            reviewUser_text = unidecode(reviewUser).lower()
+            if "dung" in reviewUser_text:
+                leave_application_form['reviewUser'] = 56
+            elif "sang" in reviewUser_text:
+                leave_application_form['reviewUser'] = 108
+            elif "khang" in reviewUser_text:
+                leave_application_form['reviewUser'] = 137
+            elif "ninh" in reviewUser_text:
+                leave_application_form['reviewUser'] = 119
+            elif "phuc" in reviewUser_text:
+                leave_application_form['reviewUser'] = 281
+            elif "quan" in reviewUser_text:
+                leave_application_form['reviewUser'] = 139
+            elif "nhung" in reviewUser_text:
+                leave_application_form['reviewUser'] = 124
+            elif "tan" in reviewUser_text:
+                leave_application_form['reviewUser'] = 141
+            elif "tai" in reviewUser_text:
+                leave_application_form['reviewUser'] = 298
+            elif "an" in reviewUser_text:
+                leave_application_form['reviewUser'] = 95
+
+
         if not leave_application_form['note']:
             leave_application_form['note'] = note
-        print(time)
-        print(date_determine_chain(time)['text'])
+        # print(time)
+        # print(date_determine_chain(time)['text'])
 
         if "es" in date_determine_chain(time)['text']:
             keywords_bANDe = chain_bANDe({'question': query, 'context':''})['text']
@@ -467,7 +556,7 @@ def post_leave_application_func(user, query, token):
 
             # response = str(leave_application_form)
 
-        print(leave_application_form['start_date'], '%Y-%m-%d')
+        # print(leave_application_form['start_date'], '%Y-%m-%d')
         leave_application_form_string = ''
         if datetime.strptime(leave_application_form['start_date'], '%Y-%m-%d').weekday() == 5 or datetime.strptime(leave_application_form['start_date'], '%Y-%m-%d').weekday() == 6:
             leave_application_form['start_date'] = ''
@@ -484,6 +573,10 @@ def post_leave_application_func(user, query, token):
                 leave_application_form_string += 'Chưa cung cấp nguyên nhân nghỉ.'
             if leave_application_form['periodType'] == -1:
                 leave_application_form_string += 'Chưa cung cấp buổi nghỉ(sáng, chiều hay cả ngày).'
+            if leave_application_form['reviewUser'] == 0:
+                leave_application_form_string += 'Chưa cung cấp người duyệt đơn nghỉ phép.'
+            if leave_application_form['leaveType'] == -1:
+                leave_application_form_string += 'Chưa cung cấp hình thức nghỉ.'
         
         if leave_application_form_string == '':
             if leave_application_form['periodType'] == 0:
@@ -492,17 +585,20 @@ def post_leave_application_func(user, query, token):
                 periodType = "Buổi sáng"
             elif leave_application_form['periodType'] == 2:
                 periodType = "Buổi chiều"
-            reviewUser = "LÝ MINH QUÂN"
+
+        
+            
 
             response = f"""Form submit ngày nghỉ của bạn:\n
             ______________________________________________________________________
             Ngày gửi đơn: {today_var}
-            Người duyệt: {reviewUser}
+            Người duyệt: {leave_application_form['reviewUser']}
             Ngày bắt đầu nghỉ: {leave_application_form['start_date']}
             Ngày kết thúc nghỉ: {leave_application_form['end_date']}
             Nghỉ buổi: {periodType}
             Tổng thời gian nghỉ: {leave_application_form['duration']}
             Lí do: {leave_application_form['note']}
+            Hình thức nghỉ: {leave_application_form['leaveType']}
             ______________________________________________________________________\n
             Bạn có muốn submit đơn nghỉ phép này không?"""
             print(confirm_chain(query)['text'])
@@ -511,13 +607,14 @@ def post_leave_application_func(user, query, token):
             if 'es' in confirm and not confirm_delete:
                 url = "https://api-hrm.nois.vn/api/leaveapplication"
                 data = {
-                    "reviewUserId": 139,
+                    "reviewUserId": leave_application_form['reviewUser'],
                     "relatedUserId": "",
                     "fromDate": datetime.strptime(leave_application_form['start_date'], '%Y-%m-%d').strftime('%m/%d/%Y'),
                     "toDate": datetime.strptime(leave_application_form['end_date'], '%Y-%m-%d').strftime('%m/%d/%Y'),
-                    "leaveApplicationTypeId": 2,
+                    "leaveApplicationTypeId": leave_application_form['leaveType'] ,
                     "leaveApplicationNote": leave_application_form['note'],
-                    "numberOffDay": leave_application_form['duration']
+                    "periodType": leave_application_form['periodType'],
+                    # "numberOffDay": leave_application_form['duration']
                 }
 
                 headers = {
