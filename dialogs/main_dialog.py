@@ -108,6 +108,18 @@ class MainDialog(LogoutDialog):
                 
                 if login == False:
                     login = True
+
+                    token_state = self.bot.test_token(me_info['mail'])
+                    if token_state:
+                        return await step_context.prompt(
+                            TextPrompt.__name__,
+                            PromptOptions(
+                                prompt=MessageFactory.text(
+                                    "Đã lấy được HRM token."
+                                )
+                            )
+                        )
+
                     return await step_context.prompt(
                         TextPrompt.__name__,
                         PromptOptions(

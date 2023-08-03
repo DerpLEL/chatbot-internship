@@ -456,6 +456,18 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         
         return hist[0]
 
+    def test_token(self, email):
+        tok = self.get_token(email)
+
+        url = "https://api-hrm.nois.vn/api/user/me"
+        header = {"Authorization": f"Bearer {tok}"}
+
+        response = requests.get(url, headers=header)
+        if response.status_code == 200:
+            return True
+
+        return False
+
     def chat(self, query, email, name):
         global token
         token = self.get_token(email)
@@ -464,6 +476,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         response = requests.get(url, headers=header)
         if response.status_code == 200:
             pass
+
         else:
             self.update_token(query, email)
             token = self.get_token(email)
