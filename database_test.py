@@ -28,41 +28,45 @@ cursor = conn.cursor()
 # conn.commit()
 
 
-def add_to_history_sql(query, response, email):
-    n = 3
-    cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
-    hist = cursor.fetchone()[0].split('<sep>')
+# def add_to_history_sql(query, response, email):
+#     n = 3
+#     cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
+#     hist = cursor.fetchone()[0].split('<sep>')
+#
+#     hist.append(f"{query}||{response}")
+#     if len(hist) > n:
+#         hist = hist[len(hist) - n:]
+#
+#     res = "<sep>".join(hist)
+#     cursor.execute(f"""UPDATE history
+# SET chat = '{res}' WHERE email = '{email}';""")
+#     conn.commit()
+#
+#
+# def get_history_as_txt_sql(email):
+#     cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
+#     hist = cursor.fetchone()[0].split('<sep>')
+#
+#     txt = ""
+#     for row in hist:
+#         i = row.split('||')
+#
+#         try:
+#             txt += f"\n<|im_start|>user\n{i[0]}\n<|im_end|>\n"
+#             txt += f"<|im_start|>assistant\n{i[1]}\n<|im_end|>"
+#         except IndexError:
+#             return ""
+#
+#     return txt
 
-    hist.append(f"{query}||{response}")
-    if len(hist) > n:
-        hist = hist[len(hist) - n:]
-
-    res = "<sep>".join(hist)
-    cursor.execute(f"""UPDATE history
-SET chat = '{res}' WHERE email = '{email}';""")
-    conn.commit()
-
-
-def get_history_as_txt_sql(email):
-    cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
-    hist = cursor.fetchone()[0].split('<sep>')
-
-    txt = ""
-    for row in hist:
-        i = row.split('||')
-
-        try:
-            txt += f"\n<|im_start|>user\n{i[0]}\n<|im_end|>\n"
-            txt += f"<|im_start|>assistant\n{i[1]}\n<|im_end|>"
-        except IndexError:
-            return ""
-
-    return txt
+def check_valid_sql_string(string: str):
+    string = string.replace("'", "''")
+    return string
 
 
 # print(get_history_as_txt_sql('bao.ho@nois.vn'))
 # cursor.execute("""UPDATE history
-# SET chat = ''
+# SET chat = 'Applebee''s'
 # WHERE email = 'bao.ho@nois.vn';""")
 #
 # conn.commit()
@@ -78,11 +82,13 @@ def get_history_as_txt_sql(email):
 #
 # conn.commit()
 #
-# cursor.execute("""SELECT chat FROM history;""")
+# cursor.execute("""SELECT chat FROM history WHERE email = 'bao.ho@nois.vn';""")
 # rows = cursor.fetchall()
 #
 # for i in rows:
 #     print(i[0])
 
-cursor.execute("SELECT chat from history where email = 'thien.tran@nois.vn';")
-print(cursor.fetchone())
+print(f'Case 1: {check_valid_sql_string(sample)}')
+
+# cursor.execute("SELECT chat from history where email = 'thien.tran@nois.vn';")
+# print(cursor.fetchone())

@@ -508,7 +508,7 @@ Output: '''
         hist = cursor.fetchone()
 
         if not hist[0]:
-            res = f"{query}||{response}"
+            res = self.check_valid_sql_string(f"{query}||{response}")
 
             print(f"History to be updated to SQL: {res}\n")
             cursor.execute(f"""UPDATE history
@@ -522,7 +522,7 @@ SET chat = N'{res}' WHERE email = '{email}';""")
         if len(hist) > n:
             hist = hist[len(hist) - n:]
 
-        res = "<sep>".join(hist)
+        res = self.check_valid_sql_string("<sep>".join(hist))
         print(f"History to be updated to SQL: {res}\n")
         cursor.execute(f"""UPDATE history
 SET chat = N'{res}' WHERE email = '{email}';""")
@@ -587,6 +587,10 @@ VALUES ('{email}', NULL, NULL, NULL);""")
 
         self.add_to_history(query, response['output_text'], None)
         return response, doc
+
+    def check_valid_sql_string(self, string: str):
+        string = string.replace("'", "''")
+        return string
 
     def chat_hrm(self, query, email, name):
         print(self.conversation_type)
