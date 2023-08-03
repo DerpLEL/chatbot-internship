@@ -449,7 +449,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
         if not hist:
             cursor.execute(f"""INSERT INTO history
-    VALUES ('{email}', NULL, NULL, NULL, NULL, NULL);""")
+    VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
             conn.commit()
 
             return ''
@@ -577,7 +577,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
         if not hist:
             cursor.execute(f"""INSERT INTO history
-VALUES ('{email}', NULL, NULL, NULL, NULL, NULL);""")
+VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
             conn.commit()
 
             return ['','']
@@ -622,7 +622,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL);""")
 
         if not hist:
             cursor.execute(f"""INSERT INTO history
-VALUES ('{email}', NULL, NULL, NULL, NULL, NULL);""")
+VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
             conn.commit()
 
             return ""
