@@ -588,6 +588,10 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
         hist[0] = hist[0].replace("[", "").replace("]", "")
         lst = hist[0].split(",")
         return [s.strip() for s in lst]
+
+    def check_valid_sql_string(self, string: str):
+        string = string.replace("'", "''")
+        return string
     
     def add_to_history_sql(self, query, response, email):
         n = 3
@@ -595,7 +599,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
         hist = cursor.fetchone()
 
         if not hist[0]:
-            res = f"{query}||{response}"
+            res = self.check_valid_sql_string(f"{query}||{response}")
 
             print(f"History to be updated to SQL: {res}\n")
             cursor.execute(f"""UPDATE history
@@ -609,7 +613,8 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
         if len(hist) > n:
             hist = hist[len(hist) - n:]
 
-        res = "<sep>".join(hist)
+        res = self.check_valid_sql_string("<sep>".join(hist))
+
         print(f"History to be updated to SQL: {res}\n")
         cursor.execute(f"""UPDATE history
             SET chat = N'{res}' WHERE email = '{email}';""")

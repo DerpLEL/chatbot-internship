@@ -35,6 +35,8 @@ ADAPTER = BotFrameworkAdapter(SETTINGS)
 #app.py 
 ADAPTER.use(ShowTypingMiddleware(delay=0.5, period=2.0))
 
+ADAPTER.use(ShowTypingMiddleware(delay=0.5, period=2.0))
+
 # Catch-all for errors.
 async def on_error(context: TurnContext, error: Exception):
     # This check writes out errors to console log .vs. app insights.
