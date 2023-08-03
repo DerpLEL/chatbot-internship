@@ -949,10 +949,11 @@ class Toolset:
         applis = requests.get('https://api-hrm.nois.vn/api/leaveapplication/paging?pageIndex=0&pageSize=50&type=0',
                               headers=self.header).json()['data']['items']
 
+        appli = []
+
         if ', ' in target:
             target = target.split(', ')
             # appli = [i for i in applis if i['id'] in target]
-            appli = []
             for i in applis:
                 if i['id'] in target:
                     appli.append(i)
@@ -961,10 +962,10 @@ class Toolset:
 
         else:
             # appli = [i for i in applis if i['id'] == target]
-            appli = []
             for i in applis:
                 if i['id'] == target:
                     appli.append(i)
+
             notify = "Bạn có chắc chắn muốn xóa đơn nghỉ này? "
 
         string = ""
