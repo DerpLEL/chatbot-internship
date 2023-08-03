@@ -425,7 +425,8 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         cursor.execute(f"""SELECT token FROM history WHERE email = '{email}';""")
         conv_type = cursor.fetchone()
         print(conv_type)
-        token = token.replace("'", "")
+        token = token.replace("'", "''")
+
         if not conv_type[0]:
             print(f"Conversation type to be updated to SQL: {token}\n")
             cursor.execute(f"""UPDATE history
@@ -553,6 +554,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         conv_type = cursor.fetchone()
         print(conv_type)
         res = str(conversation_type).replace("'", "")
+
         print(res)
         if not conv_type[0]:
             print(f"Conversation type to be updated to SQL: {res}\n")
@@ -591,7 +593,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL);""")
         hist = cursor.fetchone()
 
         if not hist[0]:
-            res = f"{query}||{response}"
+            res = f"{query}||{response}".replace("'", "''")
 
             print(f"History to be updated to SQL: {res}\n")
             cursor.execute(f"""UPDATE history
@@ -605,7 +607,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL);""")
         if len(hist) > n:
             hist = hist[len(hist) - n:]
 
-        res = "<sep>".join(hist)
+        res = "<sep>".join(hist).replace("'", "''")
         print(f"History to be updated to SQL: {res}\n")
         cursor.execute(f"""UPDATE history
             SET chat = N'{res}' WHERE email = '{email}';""")
