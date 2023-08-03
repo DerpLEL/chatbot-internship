@@ -3,6 +3,7 @@
 
 import sys
 import traceback
+import asyncio
 from datetime import datetime
 from http import HTTPStatus
 
@@ -15,6 +16,7 @@ from botbuilder.core import (
     MemoryStorage,
     TurnContext,
     UserState,
+    ShowTypingMiddleware,
 )
 from botbuilder.core.integration import aiohttp_error_middleware
 from botbuilder.schema import Activity, ActivityTypes
@@ -30,6 +32,8 @@ CONFIG = DefaultConfig()
 # See https://aka.ms/about-bot-adapter to learn more about how bots work.
 SETTINGS = BotFrameworkAdapterSettings(CONFIG.APP_ID, CONFIG.APP_PASSWORD)
 ADAPTER = BotFrameworkAdapter(SETTINGS)
+#app.py 
+ADAPTER.use(ShowTypingMiddleware(delay=0.5, period=2.0))
 
 # Catch-all for errors.
 async def on_error(context: TurnContext, error: Exception):
@@ -86,6 +90,7 @@ async def messages(req: Request) -> Response:
     activity = Activity().deserialize(body)
 
     auth_header = req.headers["Authorization"] if "Authorization" in req.headers else ""
+    await asyncio.sleep(1)
     response = await ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
 
     if response:
