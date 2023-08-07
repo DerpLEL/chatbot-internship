@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 from googlesearch import search
 from bs4 import BeautifulSoup
 import pyodbc
+import tiktoken
 
 server = 'sql-chatbot-server.database.windows.net'
 database = 'sql-chatbot'
