@@ -1,3 +1,4 @@
+import requests
 from langchain.prompts   import PromptTemplate
 from langchain.schema import Document
 from azure.core.credentials import AzureKeyCredential
@@ -14,6 +15,8 @@ from bs4 import BeautifulSoup
 import pyodbc
 import tiktoken
 from functools import reduce
+
+requests.Response.encoding = 'utf-8'
 
 server = 'sql-chatbot-server.database.windows.net'
 database = 'sql-chatbot'
