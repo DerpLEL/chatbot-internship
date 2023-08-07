@@ -4,9 +4,23 @@ from langchain.chains import LLMChain
 from langchain.chat_models import AzureChatOpenAI
 from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from datetime import datetime, timedelta
+from unidecode import unidecode
 
 import requests
 import numpy as np
+import ast
+import pyodbc
+
+
+
+server = 'sql-chatbot-server.database.windows.net'
+database = 'sql-chatbot'
+username = 'test-chatbot'
+password = 'bMp{]nzt1'
+driver= '{ODBC Driver 17 for SQL Server}'
+
+conn = pyodbc.connect(f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
+cursor = conn.cursor()
 
 llm = AzureChatOpenAI(
             openai_api_type="azure",
@@ -44,6 +58,8 @@ Given a sentence and a conversation, assistant will extract keywords based on th
 Your output will be on one line, separated by commas. Do not duplicate keywords.
 Assume the context is about the companies unless specified otherwise. Only return the keywords, do not output anything else.
 Output MUST JUST have 2 data fields: 'time', 'cause'. If any field is missing, the value of that data field is ''
+Field 'time': time for leave application
+Field 'cause': reason for leave application, not related to changing requirement.
 
 EXAMPLE
 Input: buổi sáng
@@ -54,8 +70,20 @@ Input: nguyên ngày
 Output: 'cả nyày',''
 Input: với lí do đi công tác
 Output: '','đi công tác'
+Input: lí do là "test"
+Output: '','test'
 Input: nhà có việc gấp
 Output: '','nhà có việc gấp'
+Input: tôi muốn đổi lí do thành đi học
+Output: '','đi học'
+Input: hình thức nghỉ là nghỉ không lương
+Output: '',''
+Input: tôi muốn sửa ngày phép thành thứ 5 đến thứ 6 tuần này
+Output: 'thứ 5 đến thứ 6 tuần này',''
+Input: tôi muốn đổi thày chiều mai
+Output: 'chiều mai','''
+Input: tôi muốn đổi buổi nghỉ thành buổi chiều
+Output: 'buổi chiều','đi học'
 Input: vì phải đi đám cưới
 Output: '','phải đi đám cưới'
 Input: tôi muốn nghỉ ngày mai cả ngày vì đi khám bệnh
@@ -87,6 +115,84 @@ Input: {question}
 <|im_end|>
 <|im_start|>assistant
 Output:"""
+
+
+keyword_name_manager = """<|im_start|>system
+Given a sentence and a conversation, assistant will extract keywords based on the conversation and the sentence.
+Your output will be on one line, separated by commas. Do not duplicate keywords.
+Assume the context is about the companies unless specified otherwise. Only return the keywords, do not output anything else.
+Output MUST JUST have 1 data fields: 'name of manager'. If any field is missing, the value of that data field is ''.
+Output will return name of manager. If in the input not have name of manager. The output just is ''.
+
+EXAMPLE
+Input: Nguyễn Thị Mỹ Dung
+Output: 'Nguyễn Thị Mỹ Dung'
+Input: người quản lý của tôi là chị TRẦN THỊ THÚY AN
+Output: 'TRẦN THỊ THÚY AN'
+Input: tôi muốn nghỉ ngày mai với lí do đi học, người duyệt đơn tôi là anh Ninh
+Output: 'Ninh'
+Input: chị ĐỔNG HỒNG NHUNG sẽ duyệt đơn tôi
+Output: 'ĐỔNG HỒNG NHUNG'
+Input: sẽ được duyệt bởi TRẦN VĂN KHANG
+Output: 'TRẦN VĂN KHANG'
+Input: anh quân sẽ là người duyệt đơn tôi
+Output: 'quân'
+Input: tài sẽ duyệt đơn tôi
+Output: 'tài'
+Input: PHẠM THỊ DIỄM PHÚC
+Output: 'PHẠM THỊ DIỄM PHÚC'
+Input: ngày mai tôi sẽ đi họp
+Output: ''
+Input: Tai Vo sẽ duyệt đơn tôi
+Output: 'Tai Vo'
+
+<|im_end|>
+{context}
+<|im_start|>user
+Input: {question}
+<|im_end|>
+<|im_start|>assistant
+Output:"""
+
+
+keyword_leave_type = """<|im_start|>system
+Given a sentence and a conversation, assistant will extract keywords based on the conversation and the sentence.
+Your output will be on one line, separated by commas. Do not duplicate keywords.
+Assume the context is about the companies unless specified otherwise. Only return the keywords, do not output anything else.
+Output MUST JUST have 1 data fields: 'leave type'. If any field is missing, the value of that data field is ''.
+Output will return name of manager. If in the input not have name of manager. The output just is ''.
+
+EXAMPLE
+Input: tôi nghỉ ngày mai để đi học
+Output: ''
+Input: tôi nghỉ ngày mai để đi học hình thức nghỉ là nghỉ không lương
+Output: 'nghỉ không lương'
+Input: hình thức nghỉ là nghỉ có lương
+Output: 'nghỉ có lương'
+Input: nghỉ ốm
+Output: 'nghỉ ốm'
+Input: hình thức nghỉ bảo hiểm xã hội
+Output: 'nghỉ bảo hiểm xã hội'
+Input: hình thức nghỉ hưởng BHXH
+Output: 'nghỉ hưởng BHXH'
+Input: hình thức nghỉ là Nghỉ hội nghị
+Output: 'Nghỉ hội nghị'
+Input: hình thức nghỉ Nghỉ hội nghị, đào tạo
+Output: 'Nghỉ hội nghị, đào tạo'
+Input: hình thức nghỉ Nghỉ khác
+Output: 'Nghỉ khác'
+
+
+<|im_end|>
+{context}
+<|im_start|>user
+Input: {question}
+<|im_end|>
+<|im_start|>assistant
+Output:"""
+
+
+
 
 date_determine = """<|im_start|>system
 Given a sentence, assistant will determine if the sentence just belongs in 1 of 2 categories, which are:
@@ -124,6 +230,8 @@ Input: từ 4/10 đến 6/10
 Output: yes
 Input: từ ngày mai đến ngày mốt
 Output: yes
+Input: từ thứ 5 đến thứ 6
+Output: yes
 
 <|im_end|>
 
@@ -156,6 +264,8 @@ Input: từ 19/7 đến 21/7
 Output: '19/7','21/7'
 Input: từ thứ hai đến thứ hai
 Output: 'thứ hai','thứ hai'
+Input: từ thứ 5 đến thứ 6
+Output: 'thứ 5','thứ 6'
 
 <|im_end|>
 {context}
@@ -322,6 +432,8 @@ Input: thứ 5 tuần sau
 Output: '','thứ 5 tuần sau'
 Input: sáng mai
 Output: 'sáng','mai'
+Input: chiều nay
+Output: 'sáng','nay'
 Input: chiều thứ 6 tuần sau
 Output: 'chiều','thứ 6 tuần sau'
 Input: cả ngày thứ 3 2 tuần nữa tuần sau
@@ -348,8 +460,10 @@ Given a sentence, assistant will determine if the sentence belongs in 1 of 2 cat
 - "no"
 - "neutral"
 You answer the question "Does user input mean consent?"
-"yes": user agree (for example: yes, ok, ờ, có, ừ, um, uhm, okie, ô kê, đồng ý...)
-"no": user not agree (for example: không, không đồng ý,...)
+"yes": user agree 
+example for case "yes": yes, ok, ờ, có, ừ, um, uhm, okie, ô kê, đồng ý...
+"no": user not agree 
+example for case "no": không, không đồng ý,...
 "neutral: neutral user input (sáng mai, đi học, ...)
 EXAMPLE
 Input: yes
@@ -392,6 +506,9 @@ Output:"""
 
 
 chain_leave_application = LLMChain(llm=llm3, prompt=PromptTemplate.from_template(keyword_leave_application))
+chain_name_manager = LLMChain(llm=llm3, prompt=PromptTemplate.from_template(keyword_name_manager))
+chain_leave_type = LLMChain(llm=llm3, prompt=PromptTemplate.from_template(keyword_leave_type))
+
 date_determine_chain = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(date_determine))
 chain_bANDe= LLMChain(llm=llm3, prompt=PromptTemplate.from_template(keyword_bANDe))
 specific_date_chain = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(check_specific_date))
@@ -403,88 +520,336 @@ confirm_chain = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(confirm_t
 
 today_var = datetime.now().date()
 leave_application_form = {
-            'start_date': '',
-            'end_date': '',
+            'start_date': ' ',
+            'end_date': ' ',
             'duration': 0,
-            'note': '',
+            'note': ' ',
             'periodType': -1,
+            'reviewUser': 0,
+            'leaveType': -1,
         }
+
 confirm_delete = False
 
 
-def post_leave_application_func(user, query, token):
+def update_post_leave(leave_application_form, email):
+    cursor.execute(f"""SELECT post_leave FROM history WHERE email = '{email}';""")
+    conv_type = cursor.fetchone()
+    leave_application_form_str = str(leave_application_form)
+    post_leave = leave_application_form_str.replace("'", "''")
+
+    if not conv_type[0]:
+        print(f"Post leave application form to be updated to SQL: {post_leave}\n")
+        cursor.execute(f"""UPDATE history
+            SET post_leave = N'{post_leave}' WHERE email = '{email}';""")
+        conn.commit()
+        return
+    
+    print(f"Post leave application form to be updated to SQL: {post_leave}\n")
+    cursor.execute(f"""UPDATE history
+        SET post_leave = N'{post_leave}' WHERE email = '{email}';""")
+    conn.commit()
+    return
+    
+def get_post_leave(email):
+    cursor.execute(f"""SELECT post_leave FROM history WHERE email = '{email}';""")
+    hist = cursor.fetchone()
+
+    if not hist:
+        cursor.execute(f"""INSERT INTO history
+VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
+        conn.commit()
+
+        return {
+            'start_date': ' ',
+            'end_date': ' ',
+            'duration': 0,
+            'note': ' ',
+            'periodType': -1,
+            'reviewUser': 0,
+            'leaveType': -1,
+        }
+
+    if not hist[0]:
+        return {
+            'start_date': ' ',
+            'end_date': ' ',
+            'duration': 0,
+            'note': ' ',
+            'periodType': -1,
+            'reviewUser': 0,
+            'leaveType': -1,
+        }
+    
+    leave_application_form_str = hist[0].replace("''", "'")
+
+    return ast.literal_eval(leave_application_form_str)
+
+
+
+def post_leave_application_func(user, query, token, email):
     try:
         global leave_application_form
         global confirm_delete
+
+        leave_application_form = get_post_leave(email)
+        print(leave_application_form)
+
         response_data = requests.models.Response()
         response_data.status_code = 0
+        reviewUser_string = ''
+        leaveType_string = ''
 
+        confirm = confirm_chain(query)['text']
+        print(confirm)
+
+        if 'es' in confirm and not confirm_delete:
+            reviewUser_string = ''
+            leaveType_string = ''
+
+            url = "https://api-hrm.nois.vn/api/leaveapplication"
+            data = {
+                "reviewUserId": leave_application_form['reviewUser'],
+                "relatedUserId": "",
+                "fromDate": datetime.strptime(leave_application_form['start_date'], '%Y-%m-%d').strftime('%m/%d/%Y'),
+                "toDate": datetime.strptime(leave_application_form['end_date'], '%Y-%m-%d').strftime('%m/%d/%Y'),
+                "leaveApplicationTypeId": leave_application_form['leaveType'],
+                "leaveApplicationNote": leave_application_form['note'],
+                # "numberOffDay": leave_application_form['duration']
+                "periodType": leave_application_form['periodType']
+            }
+
+            headers = {
+                "Authorization": f"Bearer {token}"
+            }
+
+            # Make the request
+            response_data = requests.post(url, json=data, headers=headers)
+
+            print(response_data.status_code)
+
+            leave_application_form = {
+                'start_date': ' ',
+                'end_date': ' ',
+                'duration': 0,
+                'note': ' ',
+                'periodType': -1,
+                'reviewUser': 0,
+                'leaveType': -1,
+            }
+
+            update_post_leave(leave_application_form, email)
+
+            response = f"""Đã cung cấp đủ thông tin. Đơn sẽ sớm được duyệt. Cảm ơn bạn đã gửi form.
+            Bạn có cần tôi giúp đỡ gì thêm không ạ?"""
+            return [response,response_data]
+
+        elif 'es' in confirm and confirm_delete:
+            leave_application_form = {
+                'start_date': ' ',
+                'end_date': ' ',
+                'duration': 0,
+                'note': ' ',
+                'periodType': -1,
+                'reviewUser': 0,
+                'leaveType': -1,
+            }
+
+            update_post_leave(leave_application_form, email)
+
+            response_data.status_code = 100
+            response = f"""Đơn nghỉ phép của bạn đã xóa. Bạn có thể gửi một Đơn nghỉ phép khác"""
+            confirm_delete = False
+            return [response,response_data]
+            
+        elif 'no'in confirm:
+            response = f"""Bạn không muốn giữ Đơn nghỉ phép này nữa hả?"""
+            confirm_delete = True
+            return [response,response_data]
+        else:
+            pass
+
+        
+        reviewUser = chain_name_manager({'question': query, 'context':''})['text']
+
+        if reviewUser:
+            reviewUser_text = unidecode(reviewUser).lower()
+            query = query.replace(reviewUser_text, "")
+            if "dung" in reviewUser_text:
+                reviewUser_string = 'Nguyễn Thị Mỹ Dung'
+                leave_application_form['reviewUser'] = 56
+            elif "sang" in reviewUser_text:
+                reviewUser_string = 'ĐÀO MINH SÁNG'
+                leave_application_form['reviewUser'] = 108
+            elif "khang" in reviewUser_text:
+                reviewUser_string = 'TRẦN VĂN KHANG'
+                leave_application_form['reviewUser'] = 137
+            elif "ninh" in reviewUser_text:
+                reviewUser_string = 'Trần Đăng Ninh'
+                leave_application_form['reviewUser'] = 119
+            elif "phuc" in reviewUser_text:
+                reviewUser_string = 'PHẠM THỊ DIỄM PHÚC'
+                leave_application_form['reviewUser'] = 281
+            elif "quan" in reviewUser_text:
+                reviewUser_string = 'LÝ MINH QUÂN'
+                leave_application_form['reviewUser'] = 139
+            elif "nhung" in reviewUser_text:
+                reviewUser_string = 'ĐỔNG HỒNG NHUNG'
+                leave_application_form['reviewUser'] = 124
+            elif "tan" in reviewUser_text:
+                reviewUser_string = 'VÕ TẤN TÀI'
+                leave_application_form['reviewUser'] = 141
+            elif "tai" in reviewUser_text:
+                reviewUser_string = 'Tai Vo'
+                leave_application_form['reviewUser'] = 298
+            elif "an" in reviewUser_text:
+                reviewUser_string = 'TRẦN THỊ THÚY AN'
+                leave_application_form['reviewUser'] = 95
+            else:
+                reviewUser_string = 'unknown'
+
+
+        leaveType = chain_leave_type({'question': query, 'context':''})['text']
+
+        if leaveType:
+            leaveType_text = unidecode(leaveType).lower()
+            print(leaveType_text)
+            query = query.replace(leaveType, "")
+            if "phep" in leaveType_text or "co" in leaveType_text:
+                leave_application_form['leaveType'] = 1
+            elif "khong" in leaveType_text:
+                leave_application_form['leaveType'] = 2
+            elif "khac" in leaveType_text:
+                leave_application_form['leaveType'] = 3
+            elif "hoi" in leaveType_text or "dao" in leaveType_text:
+                leave_application_form['leaveType'] = 5
+            elif "om" in leaveType_text:
+                leave_application_form['leaveType'] = 8
+            elif "bhxh" or "bao hiem" in leaveType_text:
+                leave_application_form['leaveType'] = 9
+            else:
+                pass
+
+        print("leave_application_form['leaveType']:", leave_application_form['leaveType'])
+
+        
         keywords = chain_leave_application({'question': query, 'context':''})['text']
-        print(keywords)
         values_keywords = keywords.split(",")
         time = values_keywords[0].strip("'")
         note = values_keywords[1].strip("'")
-        if not leave_application_form['note']:
+        if note:
             leave_application_form['note'] = note
-        print(time)
-        print(date_determine_chain(time)['text'])
-
-        if "es" in date_determine_chain(time)['text']:
-            keywords_bANDe = chain_bANDe({'question': query, 'context':''})['text']
-            # response = keywords_bANDe
-            values_keywords_bANDe = keywords_bANDe.split(",")
-            begin_date = values_keywords_bANDe[0].strip("'")
-            end_date = values_keywords_bANDe[1].strip("'")
-            if not leave_application_form['start_date']:
-                leave_application_form['start_date'] = date_processing(begin_date)
-            if not leave_application_form['end_date']:
-                leave_application_form['end_date'] = date_processing(end_date)
-
-            leave_application_form['duration'] = int(np.busday_count(leave_application_form['start_date'], leave_application_form['end_date'])) + 1
-            leave_application_form['periodType'] = 0
-
-            # response = str(leave_application_form)
-        else:
-            session_keywords = chain_session({'question': time, 'context':''})['text']
-            # Split the string into a list using the comma as a delimiter
-            split_string_session_keywords = session_keywords.split(",")
-            session_off = split_string_session_keywords[0].strip("'")
-            date_off = split_string_session_keywords[1].strip("'")
-            print(split_string_session_keywords)
-            print(date_off)
-            if not leave_application_form['start_date']:
-                leave_application_form['start_date'] = date_processing(date_off)
-                leave_application_form['end_date'] = leave_application_form['start_date']
-            if session_off == 'sáng':
-                leave_application_form['periodType'] = 1
-                leave_application_form['duration'] = 0.5
-            elif session_off == 'chiều':
-                leave_application_form['periodType'] = 2
-                leave_application_form['duration'] = 0.5
-            elif session_off == 'cả ngày':
-                leave_application_form['periodType'] = 0
-                leave_application_form['duration'] = 1
-
-            # response = str(leave_application_form)
-
-        print(leave_application_form['start_date'], '%Y-%m-%d')
-        leave_application_form_string = ''
-        if datetime.strptime(leave_application_form['start_date'], '%Y-%m-%d').weekday() == 5 or datetime.strptime(leave_application_form['start_date'], '%Y-%m-%d').weekday() == 6:
-            leave_application_form['start_date'] = ''
-            leave_application_form_string += 'Hiện tại ngày bạn muốn submit nghỉ' + leave_application_form['start_date'] + 'là ngày cuối tuần. Bạn có thể kiểm tra lại ngày bạn muốn submit được không? Vì ngày bạn muốn nghỉ là ngày cuối tuần.'
-        if datetime.strptime(leave_application_form['end_date'], '%Y-%m-%d').weekday() == 5 or datetime.strptime(leave_application_form['end_date'], '%Y-%m-%d').weekday() == 6:
-            leave_application_form['end_date'] = ''
-            leave_application_form_string += 'Hiện tại ngày bạn muốn submit nghỉ' + leave_application_form['end_date'] + 'là ngày cuối tuần. Bạn có thể kiểm tra lại ngày bạn muốn submit được không? Vì ngày bạn muốn nghỉ là ngày cuối tuần.'
-        if leave_application_form['start_date'] and leave_application_form['end_date']:
-            if leave_application_form['start_date'] == '':
-                leave_application_form_string += 'Chưa cung cấp ngày bắt đầu nghỉ.'
-            if leave_application_form['end_date'] == '':
-                leave_application_form_string += 'Chưa cung cấp ngày kết thúc nghỉ.'
-            if leave_application_form['note'] == '':
-                leave_application_form_string += 'Chưa cung cấp nguyên nhân nghỉ.'
-            if leave_application_form['periodType'] == -1:
-                leave_application_form_string += 'Chưa cung cấp buổi nghỉ(sáng, chiều hay cả ngày).'
         
+        print("time", time)
+        print("note", note)
+
+        try:
+            if time:
+                print(date_determine_chain(time)['text'])
+                if "es" in date_determine_chain(time)['text']:
+                    keywords_bANDe = chain_bANDe({'question': query, 'context':''})['text']
+                    # response = keywords_bANDe
+                    values_keywords_bANDe = keywords_bANDe.split(",")
+                    begin_date = values_keywords_bANDe[0].strip("'")
+                    end_date = values_keywords_bANDe[1].strip("'")
+                    print("begin_date", begin_date)
+                    print("end_date", end_date)
+                    if begin_date:
+                        leave_application_form['start_date'] = date_processing(begin_date)
+                    if end_date:
+                        leave_application_form['end_date'] = date_processing(end_date)
+
+                    leave_application_form['duration'] = int(np.busday_count(leave_application_form['start_date'], leave_application_form['end_date'])) + 1
+                    leave_application_form['periodType'] = 0
+
+                    # response = str(leave_application_form)
+                else:
+                    session_keywords = chain_session({'question': time, 'context':''})['text']
+                    # Split the string into a list using the comma as a delimiter
+                    split_string_session_keywords = session_keywords.split(",")
+                    session_off = split_string_session_keywords[0].strip("'")
+                    date_off = split_string_session_keywords[1].strip("'")
+                    print(split_string_session_keywords)
+                    print(date_off)
+                    print(session_off)
+                    if date_off:
+                        leave_application_form['start_date'] = date_processing(date_off)
+                        leave_application_form['end_date'] = leave_application_form['start_date']
+                    if session_off == 'sáng':
+                        leave_application_form['periodType'] = 1
+                        leave_application_form['duration'] = 0.5
+                    elif session_off == 'chiều':
+                        leave_application_form['periodType'] = 2
+                        leave_application_form['duration'] = 0.5
+                    elif session_off == 'cả ngày':
+                        leave_application_form['periodType'] = 0
+                        leave_application_form['duration'] = 1
+        except:
+            pass
+
+        if leave_application_form['reviewUser'] == 56:
+            reviewUser_string = 'Nguyễn Thị Mỹ Dung'
+        elif leave_application_form['reviewUser'] == 108:
+            reviewUser_string = 'ĐÀO MINH SÁNG'    
+        elif leave_application_form['reviewUser'] == 137:
+            reviewUser_string = 'TRẦN VĂN KHANG'
+        elif leave_application_form['reviewUser'] == 119:
+            reviewUser_string = 'Trần Đăng Ninh'
+        elif leave_application_form['reviewUser'] == 281:
+            reviewUser_string = 'PHẠM THỊ DIỄM PHÚC'
+        elif leave_application_form['reviewUser'] == 139:
+            reviewUser_string = 'LÝ MINH QUÂN'
+        elif leave_application_form['reviewUser'] == 124:
+            reviewUser_string = 'ĐỔNG HỒNG NHUNG'
+        elif leave_application_form['reviewUser'] == 141:
+            reviewUser_string = 'VÕ TẤN TÀI'
+        elif leave_application_form['reviewUser'] == 298:
+            reviewUser_string = 'Tai Vo'
+        elif leave_application_form['reviewUser'] == 95:
+            reviewUser_string = 'TRẦN THỊ THÚY AN'
+
+        if leave_application_form['leaveType'] == 1:
+            leaveType_string = 'Nghỉ phép có lương'
+        elif leave_application_form['leaveType'] == 2:
+            leaveType_string = 'Nghỉ không lương'    
+        elif leave_application_form['leaveType'] == 8:
+            leaveType_string = 'Nghỉ ốm'
+        elif leave_application_form['leaveType'] == 9:
+            leaveType_string = 'Nghỉ bảo hiểm xã hội'
+        elif leave_application_form['leaveType'] == 5:
+            leaveType_string = 'Nghỉ hội nghị, đào tạo'
+        elif leave_application_form['leaveType'] == 3:
+            leaveType_string = 'Nghỉ khác (đám cưới,...)'
+
+
+        leave_application_form_string = ''
+
+        if leave_application_form['start_date'] != ' ' or leave_application_form['end_date'] != ' ':
+            if datetime.strptime(leave_application_form['start_date'], '%Y-%m-%d').weekday() == 5 or datetime.strptime(leave_application_form['start_date'], '%Y-%m-%d').weekday() == 6:
+                leave_application_form['start_date'] = ' '
+                leave_application_form_string += 'Hiện tại ngày bạn muốn submit nghỉ' + leave_application_form['start_date'] + 'là ngày cuối tuần. Bạn có thể kiểm tra lại ngày bạn muốn submit được không? Vì ngày bạn muốn nghỉ là ngày cuối tuần.'
+            if datetime.strptime(leave_application_form['end_date'], '%Y-%m-%d').weekday() == 5 or datetime.strptime(leave_application_form['end_date'], '%Y-%m-%d').weekday() == 6:
+                leave_application_form['end_date'] = ' '
+                leave_application_form_string += 'Hiện tại ngày bạn muốn submit nghỉ' + leave_application_form['end_date'] + 'là ngày cuối tuần. Bạn có thể kiểm tra lại ngày bạn muốn submit được không? Vì ngày bạn muốn nghỉ là ngày cuối tuần.'
+        # if leave_application_form['start_date'] == ' ' and leave_application_form['end_date'] == ' ':
+        if leave_application_form['start_date'] == ' ':
+            leave_application_form_string += 'Chưa cung cấp ngày bắt đầu nghỉ.'
+        if leave_application_form['end_date'] == ' ':
+            leave_application_form_string += 'Chưa cung cấp ngày kết thúc nghỉ.'
+        if leave_application_form['note'] == ' ':
+            leave_application_form_string += 'Chưa cung cấp nguyên nhân nghỉ.'
+        if leave_application_form['periodType'] == -1:
+            leave_application_form_string += 'Chưa cung cấp buổi nghỉ(sáng, chiều hay cả ngày).'
+        if reviewUser_string == 'unknown':
+            leave_application_form_string += 'Nhập sai tên người quản lí. Kiểm tra lại.'
+        if leave_application_form['reviewUser'] == 0:
+            leave_application_form_string += 'Chưa cung cấp tến người quản lí.'
+        if leave_application_form['leaveType'] == -1:
+            leave_application_form_string += 'Chưa cung cấp hình thức nghỉ.'
+
+        print(leave_application_form_string)
+        update_post_leave(leave_application_form, email)
+
         if leave_application_form_string == '':
             if leave_application_form['periodType'] == 0:
                 periodType = "Cả ngày"
@@ -492,86 +857,25 @@ def post_leave_application_func(user, query, token):
                 periodType = "Buổi sáng"
             elif leave_application_form['periodType'] == 2:
                 periodType = "Buổi chiều"
-            reviewUser = "LÝ MINH QUÂN"
+            # viewUser_string = "LÝ MINH QUÂN"
+
 
             response = f"""Form submit ngày nghỉ của bạn:\n
             ______________________________________________________________________
             Ngày gửi đơn: {today_var}
-            Người duyệt: {reviewUser}
+            Người duyệt: {reviewUser_string}
             Ngày bắt đầu nghỉ: {leave_application_form['start_date']}
             Ngày kết thúc nghỉ: {leave_application_form['end_date']}
             Nghỉ buổi: {periodType}
             Tổng thời gian nghỉ: {leave_application_form['duration']}
-            Lí do: {leave_application_form['note']}
+            Hình thứ nghỉ: {leaveType_string}
+            Lí do: {leave_application_form['note']}    
             ______________________________________________________________________\n
+            
             Bạn có muốn submit đơn nghỉ phép này không?"""
-            print(confirm_chain(query)['text'])
-            confirm = confirm_chain(query)['text']
-
-            if 'es' in confirm and not confirm_delete:
-                url = "https://api-hrm.nois.vn/api/leaveapplication"
-                data = {
-                    "reviewUserId": 139,
-                    "relatedUserId": "",
-                    "fromDate": datetime.strptime(leave_application_form['start_date'], '%Y-%m-%d').strftime('%m/%d/%Y'),
-                    "toDate": datetime.strptime(leave_application_form['end_date'], '%Y-%m-%d').strftime('%m/%d/%Y'),
-                    "leaveApplicationTypeId": 2,
-                    "leaveApplicationNote": leave_application_form['note'],
-                    # "numberOffDay": leave_application_form['duration']
-                    "periodType": leave_application_form['periodType']
-                }
-
-                headers = {
-                    "Authorization": f"Bearer {token}"
-                }
-
-                # Make the request
-                response_data = requests.post(url, json=data, headers=headers)
-
-                print(response_data.status_code)
-
-        #         response_data = requests.post('https://hrm-nois-fake.azurewebsites.net/api/LeaveApplication/Submit', json = {
-        #     "userId": 'c4edb6f7-56c8-444a-803d-5a6c77707e60',
-        #     "reviewUserId": '139',
-        #     "relatedUserId": "string",
-        #     "fromDate": leave_application_form['start_date'],
-        #     "toDate":leave_application_form['end_date'],
-        #     "leaveApplicationTypeId": 1,
-        #     "leaveApplicationNote": leave_application_form['note'],
-        #     "periodType": leave_application_form['periodType'],
-        #     "numberOffDay": leave_application_form['duration'],
-        # })
-        #         print(response_data.text)
-
-                leave_application_form = {
-                'start_date': '',
-                'end_date': '',
-                'duration': 0,
-                'note': '',
-                'periodType': -1,
-            }
-                response = f"""Đã cung cấp đủ thông tin. Đơn sẽ sớm được duyệt. Cảm ơn bạn đã gửi form.
-                Bạn có cần tôi giúp đỡ gì thêm không ạ?"""
-
-            elif 'es' in confirm and confirm_delete:
-                leave_application_form = {
-                'start_date': '',
-                'end_date': '',
-                'duration': 0,
-                'note': '',
-                'periodType': -1,
-            }
-                response_data.status_code = 100
-                response = f"""Đơn nghỉ phép của bạn đã xóa. Bạn có thể gửi một Đơn nghỉ phép khác"""
-                confirm_delete = False
-                
-            elif 'no'in confirm:
-                response = f"""Bạn không muốn giữ Đơn nghỉ phép này nữa hả?"""
-                confirm_delete = True
-            else:
-                pass
+            
         else:
-            result_doc = "Input: " + "Quản lý, còn thiếu thông tin gì về Đơn nghỉ phép nữa không." +"\n Output: " + leave_application_form_string
+            result_doc = "Input: " + "Quản lý, còn thiếu thông tin gì về Đơn nghỉ phép nữa không." +"\n Output: Chỉ tập trung trả lời yêu cầu nhân viên cung cấp những yêu cầu chưa cung cấp :" + leave_application_form_string
             doc = [Document(page_content= result_doc,
                                     metadata={'@search.score': 0,
                                             'metadata_storage_name': 'local-source', 'source': f'doc-0'})]
@@ -580,12 +884,14 @@ def post_leave_application_func(user, query, token):
                                     'user_info': f'''The user chatting with you is named {user['username']}, with email: {user['mail']}. 
                                     '''},
                                 return_only_outputs=False)['output_text']
+            
         return [response,response_data]
     except Exception as e:
-        return str(e) + 'Có phải bạn đang muốn submit ngày nghỉ đúng không? Hiện tại tôi thấy hình như bạn thiếu thời gian nghỉ.'
+        print(e)
     
 
 def date_processing(date_off):
+    print('date_off', date_off)
     if "nay" in date_off:
         day_after_next = today_var
         return day_after_next.strftime("%Y-%m-%d")

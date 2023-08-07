@@ -798,7 +798,7 @@ def run_leave_application_delete(email, query, history, token):
 
     # implemented
     # delete latest
-    elif ( label == "recent"):
+    elif label == "recent":
         print("recent-pass")
         response = get_leave_application()
         label  = include_latest_check(query)['text']

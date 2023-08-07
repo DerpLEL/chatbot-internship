@@ -13,16 +13,6 @@ from googlesearch import search
 from bs4 import BeautifulSoup
 import pyodbc
 
-server = 'sql-chatbot-server.database.windows.net'
-database = 'sql-chatbot'
-username = 'test-chatbot'
-password = 'bMp{]nzt1'
-driver= '{ODBC Driver 17 for SQL Server}'
-
-conn = pyodbc.connect(f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
-
-cursor = conn.cursor()
-
 import pandas as pd
 import ast
 
@@ -30,6 +20,18 @@ from .user import *
 from .post_leave_application import *
 from .get_leave_application import * 
 from .delete_leave_application import *
+
+requests.encoding = 'UTF-8'
+
+server = 'sql-chatbot-server.database.windows.net'
+database = 'sql-chatbot'
+username = 'test-chatbot'
+password = 'bMp{]nzt1'
+driver= '{ODBC Driver 17 for SQL Server}'
+
+conn = pyodbc.connect(f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
+cursor = conn.cursor()
+
 
 public_index_name = "nois-public-v3-index"
 private_index_name = "nois-private-v3-index"
@@ -463,6 +465,8 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         header = {"Authorization": f"Bearer {tok}"}
 
         response = requests.get(url, headers=header)
+        response.encoding = 'UTF-8'
+
         if response.status_code == 200:
             return True
 
@@ -535,7 +539,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
                 response = run_get_leave_application(email, query, token)
             elif leave_application_type == 'post':
                 self.update_conversation_type(['LeaveApplication', 'post'], email)
-                post_leave_application_response = post_leave_application_func(self.user, query, token)
+                post_leave_application_response = post_leave_application_func(self.user, query, token, email)
                 response = post_leave_application_response[0]
                 print(post_leave_application_response)
                 try:
@@ -657,7 +661,9 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
         return txt
 
     def chat_private(self, query, email, name):
-        if self.get_conversation_type(email) == ['','']:
+        print(self.get_conversation_type(email)[0] == 'LeaveApplication')
+        
+        if str(self.get_conversation_type(email)[0]) == '':
             label = self.classifier_chain({'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
         else:
             label = "hrm"

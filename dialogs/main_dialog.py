@@ -183,6 +183,11 @@ class MainDialog(LogoutDialog):
                     await step_context.context.send_activity(
                         f"Your email: {me_info['mail']}"
                     )
+                elif command == "resetAll":
+                    cursor.execute(f"""DELETE FROM history WHERE email = '{me_info['mail']}';""")
+                    await step_context.context.send_activity(
+                        f"Reset data of user: {me_info['mail']}"
+                    )
 
                 else:
                     reply, doc = self.bot.chat(step_context.values["command"], me_info['mail'], me_info['displayName'])
