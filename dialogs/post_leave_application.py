@@ -59,7 +59,7 @@ Your output will be on one line, separated by commas. Do not duplicate keywords.
 Assume the context is about the companies unless specified otherwise. Only return the keywords, do not output anything else.
 Output MUST JUST have 2 data fields: 'time', 'cause'. If any field is missing, the value of that data field is ''
 Field 'time': time for leave application
-Field 'cause': reason for leave application, not related to changing requirement.
+Field 'cause': reason for leave application, not related to changing requirement or type of leave application.
 
 EXAMPLE
 Input: buổi sáng
@@ -77,6 +77,12 @@ Output: '','nhà có việc gấp'
 Input: tôi muốn đổi lí do thành đi học
 Output: '','đi học'
 Input: hình thức nghỉ là nghỉ không lương
+Output: '',''
+Input: hình thức nghỉ là nghỉ ốm
+Output: '',''
+Input: hình thức nghỉ là nghỉ bhxh
+Output: '',''
+Input: hình thức nghỉ là nghỉ công tác
 Output: '',''
 Input: tôi muốn sửa ngày phép thành thứ 5 đến thứ 6 tuần này
 Output: 'thứ 5 đến thứ 6 tuần này',''
@@ -599,11 +605,19 @@ def post_leave_application_func(user, query, token, email):
         response_data.status_code = 0
         reviewUser_string = ''
         leaveType_string = ''
+        periodType = ''
+        
+        if leave_application_form['periodType'] == 0:
+                periodType = "Cả ngày"
+        elif leave_application_form['periodType'] == 1:
+            periodType = "Buổi sáng"
+        elif leave_application_form['periodType'] == 2:
+            periodType = "Buổi chiều"
 
         confirm = confirm_chain(query)['text']
         print(confirm)
 
-        if 'es' in confirm and not confirm_delete:
+        if 'es' in confirm and confirm_delete:
             reviewUser_string = ''
             leaveType_string = ''
 
@@ -644,7 +658,7 @@ def post_leave_application_func(user, query, token, email):
             Bạn có cần tôi giúp đỡ gì thêm không ạ?"""
             return [response,response_data]
 
-        elif 'es' in confirm and confirm_delete:
+        elif 'o' in confirm and confirm_delete:
             leave_application_form = {
                 'start_date': ' ',
                 'end_date': ' ',
@@ -658,14 +672,14 @@ def post_leave_application_func(user, query, token, email):
             update_post_leave(leave_application_form, email)
 
             response_data.status_code = 100
-            response = f"""Đơn nghỉ phép của bạn đã xóa. Bạn có thể gửi một Đơn nghỉ phép khác"""
+            response = f"""Đơn nghỉ phép của bạn đã xóa. Bạn có thể gửi một Đơn nghỉ phép khác."""
             confirm_delete = False
             return [response,response_data]
             
-        elif 'no'in confirm:
-            response = f"""Bạn không muốn giữ Đơn nghỉ phép này nữa hả?"""
-            confirm_delete = True
-            return [response,response_data]
+        # elif 'no' in confirm:
+        #     response = f"""Bạn không muốn giữ Đơn nghỉ phép này nữa hả?"""
+        #     confirm_delete = True
+        #     return [response,response_data]
         else:
             pass
 
@@ -674,7 +688,7 @@ def post_leave_application_func(user, query, token, email):
 
         if reviewUser:
             reviewUser_text = unidecode(reviewUser).lower()
-            query = query.replace(reviewUser_text, "")
+            query = query.replace(reviewUser, "")
             if "dung" in reviewUser_text:
                 reviewUser_string = 'Nguyễn Thị Mỹ Dung'
                 leave_application_form['reviewUser'] = 56
@@ -712,9 +726,10 @@ def post_leave_application_func(user, query, token, email):
         leaveType = chain_leave_type({'question': query, 'context':''})['text']
 
         if leaveType:
+            query = query.replace(leaveType, "")
             leaveType_text = unidecode(leaveType).lower()
             print(leaveType_text)
-            query = query.replace(leaveType, "")
+            
             if "phep" in leaveType_text or "co" in leaveType_text:
                 leave_application_form['leaveType'] = 1
             elif "khong" in leaveType_text:
@@ -725,12 +740,13 @@ def post_leave_application_func(user, query, token, email):
                 leave_application_form['leaveType'] = 5
             elif "om" in leaveType_text:
                 leave_application_form['leaveType'] = 8
-            elif "bhxh" or "bao hiem" in leaveType_text:
+            elif "bhxh" in leaveType_text or "bao hiem" in leaveType_text:
                 leave_application_form['leaveType'] = 9
             else:
                 pass
 
         print("leave_application_form['leaveType']:", leave_application_form['leaveType'])
+        print("query:", query)
 
         
         keywords = chain_leave_application({'question': query, 'context':''})['text']
@@ -824,6 +840,26 @@ def post_leave_application_func(user, query, token, email):
 
         leave_application_form_string = ''
 
+        print(leave_application_form, get_post_leave(email), leave_application_form == get_post_leave(email))
+        if leave_application_form == get_post_leave(email):
+            response =  f"""Hiện bạn đang có một Form submit ngày nghỉ chưa submit:\n
+            ______________________________________________________________________
+            Ngày gửi đơn: {today_var}
+            Người duyệt: {reviewUser_string}
+            Ngày bắt đầu nghỉ: {leave_application_form['start_date']}
+            Ngày kết thúc nghỉ: {leave_application_form['end_date']}
+            Nghỉ buổi: {periodType}
+            Tổng thời gian nghỉ: {leave_application_form['duration']}
+            Hình thứ nghỉ: {leaveType_string}
+            Lí do: {leave_application_form['note']}    
+            ______________________________________________________________________\n
+            
+            Bạn có muốn giữ đơn nghỉ phép này không?"""
+
+            confirm_delete = True
+        
+            return [response,response_data]
+
         if leave_application_form['start_date'] != ' ' or leave_application_form['end_date'] != ' ':
             if datetime.strptime(leave_application_form['start_date'], '%Y-%m-%d').weekday() == 5 or datetime.strptime(leave_application_form['start_date'], '%Y-%m-%d').weekday() == 6:
                 leave_application_form['start_date'] = ' '
@@ -850,6 +886,8 @@ def post_leave_application_func(user, query, token, email):
         print(leave_application_form_string)
         update_post_leave(leave_application_form, email)
 
+        
+
         if leave_application_form_string == '':
             if leave_application_form['periodType'] == 0:
                 periodType = "Cả ngày"
@@ -873,6 +911,8 @@ def post_leave_application_func(user, query, token, email):
             ______________________________________________________________________\n
             
             Bạn có muốn submit đơn nghỉ phép này không?"""
+
+            confirm_delete = True
             
         else:
             result_doc = "Input: " + "Quản lý, còn thiếu thông tin gì về Đơn nghỉ phép nữa không." +"\n Output: Chỉ tập trung trả lời yêu cầu nhân viên cung cấp những yêu cầu chưa cung cấp :" + leave_application_form_string

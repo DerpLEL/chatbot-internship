@@ -478,6 +478,8 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         url = "https://api-hrm.nois.vn/api/user/me"
         header = {"Authorization": f"Bearer {token}"}
         response = requests.get(url, headers=header)
+        response.encoding = 'utf-8'
+
         if response.status_code == 200:
             pass
 
@@ -486,6 +488,8 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             token = self.get_token(email)
             header = {"Authorization": f"Bearer {token}"}
             response = requests.get(url, headers=header)
+            response.encoding = 'utf-8'
+            
             print(response)
             if response.status_code == 200:
                 return "Bạn đã đăng nhập thành công vào HRM.", ''
