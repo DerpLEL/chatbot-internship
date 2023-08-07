@@ -13,6 +13,7 @@ from googlesearch import search
 from bs4 import BeautifulSoup
 import pyodbc
 import tiktoken
+from functools import reduce
 
 server = 'sql-chatbot-server.database.windows.net'
 database = 'sql-chatbot'
@@ -634,9 +635,13 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL);""")
         hist[0] = hist[0].replace("[", "").replace("]", "")
         lst = hist[0].split(",")
         return [s.strip() for s in lst]
+
+    def count_tokens(self, string):
+        token_encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        return len(token_encoding.encode(string))
     
     def add_to_history_sql(self, query, response, email):
-        n = 3
+        n = 1500
         cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
         hist = cursor.fetchone()
 
@@ -652,10 +657,20 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL);""")
         hist = hist[0].split("<sep>")
 
         hist.append(f"{query}||{response}")
-        if len(hist) > n:
-            hist = hist[len(hist) - n:]
+        # if len(hist) > n:
+        #     hist = hist[len(hist) - n:]
+        new_hist = []
+        total = 0
 
-        res = "<sep>".join(hist).replace("'", "''")
+        for i in hist[::-1]:
+            convo_length = self.count_tokens(i)
+            total += convo_length
+            if total > n:
+                break
+
+            new_hist.append(i)
+
+        res = "<sep>".join(new_hist[::-1]).replace("'", "''")
         print(f"History to be updated to SQL: {res}\n")
         cursor.execute(f"""UPDATE history
             SET chat = N'{res}' WHERE email = '{email}';""")
