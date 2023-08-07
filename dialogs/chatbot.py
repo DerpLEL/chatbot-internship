@@ -635,6 +635,10 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL);""")
         hist[0] = hist[0].replace("[", "").replace("]", "")
         lst = hist[0].split(",")
         return [s.strip() for s in lst]
+
+    def count_tokens(self, string):
+        token_encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        return len(token_encoding.encode(string))
     
     def add_to_history_sql(self, query, response, email):
         n = 1500
@@ -672,10 +676,6 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL);""")
             SET chat = N'{res}' WHERE email = '{email}';""")
         conn.commit()
         return
-
-    def count_tokens(self, string):
-        token_encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
-        return len(token_encoding.encode(string))
     
     def get_history_as_txt_sql(self, email):
         cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
