@@ -771,7 +771,8 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
         # target_rows = df[(df[old_header[0]] == header_list[0]) & (df[old_header[1]] == header_list[1]) & (df[old_header[3]] == header_list[3])]
 
         target_rows = df[df[old_header[0]] == header_list[0]]
-        df = pd.read_excel(sas_url, skiprows = target_rows.index[0] + 1)
+        # target_rows.index[0] + 1
+        df = pd.read_excel(sas_url, skiprows=1)
         print(df)
 
         last_row_index = df.index[df.isnull().all(axis=1)][0]
