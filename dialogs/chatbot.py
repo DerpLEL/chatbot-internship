@@ -310,7 +310,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             deployment_name='gpt-35-turbo-16k',
             openai_api_key='400568d9a16740b88aff437480544a39',
             temperature=0.5,
-            max_tokens=1000
+            max_tokens=3000
         )
 
         self.llm2 = AzureChatOpenAI(
