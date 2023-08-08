@@ -223,7 +223,7 @@ Sources:
 
 You must follow these rules:
 1. If user require count or ask how many, you must write pandas code for file csv. The output must be 1 line.
-2. Output just only code. DO NOT produce answer without codes.
+2. Output just only code. DO NOT ANSWER THE QUESTION, only code outputs are accepted.
 3. Must NO COMMENT, NO RESULT like this "Here is the code to get the list of people who haven't paid for their water bills in May with only their name, email, and status:"
 For example:
 Input: Danh sách những người đã đóng tiền tháng 5
@@ -688,7 +688,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
 
             doc = self.get_document(keywords, self.retriever_drink)[:1]
 
-            input_pandas = self.drink_chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt_sql(email)}, return_only_outputs=False)
+            input_pandas = self.drink_chain({'input_documents': doc, 'question': query, 'context': ''}, return_only_outputs=False)
             blob_name = doc[0].metadata['metadata_storage_name']
         
             print(input_pandas['output_text']) 
