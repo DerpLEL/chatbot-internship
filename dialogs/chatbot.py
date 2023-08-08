@@ -221,9 +221,9 @@ Output:"""
 Sources:
 {summaries}
 
-You must follow this rule:
+You must follow these rules:
 1. If user require count or ask how many, you must write pandas code for file csv. The output must be 1 line.
-2. Output just only code.
+2. Output just only code. Do not produce answers without the required pandas codes.
 3. Must NO COMMENT, NO RESULT like this "Here is the code to get the list of people who haven't paid for their water bills in May with only their name, email, and status:"
 For example:
 Input: Danh sách những người đã đóng tiền tháng 5
