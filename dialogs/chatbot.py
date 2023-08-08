@@ -775,8 +775,8 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
         df = pd.read_excel(sas_url, skiprows=1)
         print(df)
 
-        last_row_index = df.index[df.isnull().all(axis=1)][0]
-        df = df.iloc[:last_row_index]
+        # last_row_index = df.index[df.isnull().all(axis=1)][0]
+        # df = df.iloc[:last_row_index]
         # df = df[df['FullName'].notnull()]
         # df = df.iloc[:, df.columns.notna()]
 
