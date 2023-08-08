@@ -132,7 +132,7 @@ class MainDialog(LogoutDialog):
                 else:
                     return await step_context.prompt(
                         TextPrompt.__name__,
-                        PromptOptions()
+                        PromptOptions(),
                     )
                     # res = await step_context.prompt(
                     #     TextPrompt.__name__,
@@ -172,6 +172,13 @@ class MainDialog(LogoutDialog):
                 client = SimpleGraphClient(token_response.token)
                 me_info = await client.get_me()
 
+                await step_context.context.send_activity('**' + me_info['displayName'] + '** ' + 'Đợi tui xíu...')
+                # await step_context.prompt(
+                #         TextPrompt.__name__,
+                #         PromptOptions(),
+                #     )
+
+
                 # display logged in users name
                 if command == "me":      
                     await step_context.context.send_activity(
@@ -193,9 +200,12 @@ class MainDialog(LogoutDialog):
                     reply, doc = self.bot.chat(step_context.values["command"], me_info['mail'], me_info['displayName'])
                     print("doc: " + str(doc))
                     print("reply:"+ str(reply)) 
+                    
                     if type(reply) == str:
+                        reply = '**' + me_info['displayName'] + '** ' + reply
                         await step_context.context.send_activity(reply)
-                    else:                        
+                    else:                 
+                        reply['output_text'] = '**' + me_info['displayName'] + '** ' + reply['output_text']    
                         await step_context.context.send_activity(
                             reply['output_text']
                         )

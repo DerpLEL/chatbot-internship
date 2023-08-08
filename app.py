@@ -15,6 +15,7 @@ from botbuilder.core import (
     MemoryStorage,
     TurnContext,
     UserState,
+    ShowTypingMiddleware,
 )
 from botbuilder.core.integration import aiohttp_error_middleware
 from botbuilder.schema import Activity, ActivityTypes
@@ -78,6 +79,9 @@ BOT = AuthBot(CONVERSATION_STATE, USER_STATE, DIALOG)
 #  fix this part lmao  
 async def messages(req: Request) -> Response:
     # Main bot message handler.
+    ADAPTER.use(ShowTypingMiddleware(0.1, 21.5))
+    
+
     if "application/json" in req.headers["Content-Type"]:
         body = await req.json()
     else:
