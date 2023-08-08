@@ -223,7 +223,7 @@ Sources:
 
 You must follow these rules:
 1. If user require count or ask how many, you must write pandas code for file csv. The output must be 1 line.
-2. Output just only code. Do not produce answer without the required pandas codes.
+2. Output just only code. DO NOT produce answer without codes.
 3. Must NO COMMENT, NO RESULT like this "Here is the code to get the list of people who haven't paid for their water bills in May with only their name, email, and status:"
 For example:
 Input: Danh sách những người đã đóng tiền tháng 5
@@ -235,7 +235,7 @@ Output: df[df['Tình trạng'] == 'Done'][df[df['Tình trạng'] == 'Done']['Ful
 Input: Tổng tiền nước tháng 5 đã thu?
 Output: df['Đã thu'].sum()
 4. You must follow up the structure of dataset.
-For example: If ask aboout fullname is 'Hưng', use must answer with format of dataset is "HƯNG" instead of "hưng" or "Hưng".
+For example: If ask about fullname is 'Hưng', use must answer with format of dataset is "HƯNG" instead of "hưng" or "Hưng".
 <|im_end|>
 {context}
 <|im_start|>user
@@ -372,7 +372,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         self.qa_chain = load_qa_with_sources_chain(llm=self.llm, chain_type="stuff", prompt=PromptTemplate.from_template(self.chat_template))
         self.keywordChain = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_templ))
         self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
-        self.drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
+        self.drink_chain = load_qa_with_sources_chain(llm=self.llm3, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
         self.header_drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.header_templ_drink_fee))
 
         # usecase 2
