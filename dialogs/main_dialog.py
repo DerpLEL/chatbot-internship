@@ -124,7 +124,7 @@ class MainDialog(LogoutDialog):
                         TextPrompt.__name__,
                         PromptOptions(
                             prompt=MessageFactory.text(
-                                "Vui lòng nhập HRM token."
+                                "Vui lòng nhập HRM token. (Optional)"
                             )
                         ),
                     )
