@@ -11,7 +11,7 @@ import numpy as np
 import ast
 import pyodbc
 
-
+url = "https://api-hrm.nois.vn/api"
 
 server = 'sql-chatbot-server.database.windows.net'
 database = 'sql-chatbot'
@@ -556,6 +556,37 @@ def update_post_leave(leave_application_form, email):
         SET post_leave = N'{post_leave}' WHERE email = '{email}';""")
     conn.commit()
     return
+
+
+def get_leave_type_list(token):
+    header = {
+                "Authorization": f"Bearer {token}"
+            }
+    url = "https://api-hrm.nois.vn/api/user/dayoff-data"
+    response = requests.get(url, headers=header)
+
+    if response.status_code == 200:
+        data = response.json()['data']
+        return extract_ids(data)
+        
+    else:
+        return "not successful return get_leave_application"
+    
+
+def extract_ids(data):
+    ids = []
+    if isinstance(data, dict):
+        for key, value in data.items():
+            if key == 'id':
+                ids.append(value)
+            else:
+                ids.extend(extract_ids(value))
+    elif isinstance(data, list):
+        for item in data:
+            ids.extend(extract_ids(item))
+    return ids
+
+
     
 def get_post_leave(email):
     cursor.execute(f"""SELECT post_leave FROM history WHERE email = '{email}';""")
@@ -563,7 +594,7 @@ def get_post_leave(email):
 
     if not hist:
         cursor.execute(f"""INSERT INTO history
-VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
+VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         conn.commit()
 
         return {
@@ -600,6 +631,7 @@ def post_leave_application_func(user, query, token, email):
 
         leave_application_form = get_post_leave(email)
         print(leave_application_form)
+        
 
         response_data = requests.models.Response()
         response_data.status_code = 0
@@ -621,7 +653,7 @@ def post_leave_application_func(user, query, token, email):
             reviewUser_string = ''
             leaveType_string = ''
 
-            url = "https://api-hrm.nois.vn/api/leaveapplication"
+            url_leaveapplication = "https://api-hrm.nois.vn/api/leaveapplication"
             data = {
                 "reviewUserId": leave_application_form['reviewUser'],
                 "relatedUserId": "",
@@ -638,7 +670,7 @@ def post_leave_application_func(user, query, token, email):
             }
 
             # Make the request
-            response_data = requests.post(url, json=data, headers=headers)
+            response_data = requests.post(url_leaveapplication, json=data, headers=headers)
 
             print(response_data.status_code)
 
@@ -720,7 +752,7 @@ def post_leave_application_func(user, query, token, email):
                 reviewUser_string = 'TRẦN THỊ THÚY AN'
                 leave_application_form['reviewUser'] = 95
             else:
-                reviewUser_string = 'unknown'
+                reviewUser_string = ' '
 
 
         leaveType = chain_leave_type({'question': query, 'context':''})['text']
@@ -823,6 +855,7 @@ def post_leave_application_func(user, query, token, email):
             reviewUser_string = 'Tai Vo'
         elif leave_application_form['reviewUser'] == 95:
             reviewUser_string = 'TRẦN THỊ THÚY AN'
+            
 
         if leave_application_form['leaveType'] == 1:
             leaveType_string = 'Nghỉ phép có lương'
@@ -837,10 +870,8 @@ def post_leave_application_func(user, query, token, email):
         elif leave_application_form['leaveType'] == 3:
             leaveType_string = 'Nghỉ khác (đám cưới,...)'
 
-
         leave_application_form_string = ''
 
-        print(leave_application_form, get_post_leave(email), leave_application_form == get_post_leave(email))
         if leave_application_form == get_post_leave(email):
             response =  f"""Hiện bạn đang có một Form submit ngày nghỉ chưa submit:\n
             ______________________________________________________________________
@@ -854,12 +885,12 @@ def post_leave_application_func(user, query, token, email):
             Lí do: {leave_application_form['note']}    
             ______________________________________________________________________\n
             
-            Bạn có muốn giữ đơn nghỉ phép này không?"""
+            Bạn có muốn giữ đơn nghỉ phép này không? Nếu có thì vui lòng bạn cung cấp những thông tin còn thiếu."""
 
             confirm_delete = True
         
             return [response,response_data]
-
+        
         if leave_application_form['start_date'] != ' ' or leave_application_form['end_date'] != ' ':
             if datetime.strptime(leave_application_form['start_date'], '%Y-%m-%d').weekday() == 5 or datetime.strptime(leave_application_form['start_date'], '%Y-%m-%d').weekday() == 6:
                 leave_application_form['start_date'] = ' '
@@ -880,8 +911,26 @@ def post_leave_application_func(user, query, token, email):
             leave_application_form_string += 'Nhập sai tên người quản lí. Kiểm tra lại.'
         if leave_application_form['reviewUser'] == 0:
             leave_application_form_string += 'Chưa cung cấp tến người quản lí.'
+        print(leave_application_form['leaveType'], type(leave_application_form['leaveType']), get_leave_type_list(token))
         if leave_application_form['leaveType'] == -1:
             leave_application_form_string += 'Chưa cung cấp hình thức nghỉ.'
+        elif str(leave_application_form['leaveType']) in get_leave_type_list(token):
+            leave_type_mapping = {
+                1: 'Nghỉ phép có lương',
+                2: 'Nghỉ không lương',
+                8: 'Nghỉ ốm',
+                9: 'Nghỉ bảo hiểm xã hội',
+                5: 'Nghỉ hội nghị, đào tạo',
+                3: 'Nghỉ khác (đám cưới,...)'
+            }
+
+            leave_types = get_leave_type_list(token)
+            leave_type_strings = [leave_type_mapping.get(leave_type) for leave_type in leave_types]
+            string_output = '\n'.join([f'{index + 1}. {leave_type}' for index, leave_type in enumerate(leave_type_strings)])
+
+            response = 'Hiện tại bạn không có loại nghỉ phép ' +  leaveType_string + "Vui lòng bạn nhập lại hình thức nghỉ. Bạn chỉ có thể submit nghỉ phép dưới các hình thức sau đây: \n" + string_output
+
+            return [response, response_data]
 
         print(leave_application_form_string)
         update_post_leave(leave_application_form, email)

@@ -634,7 +634,7 @@ def get_leave_application():
               temp_list.append(i) 
       return temp_list
   else:
-      return "not successful return get_leave_application"
+      return []
 
 def delete_leave_application(application_id):
     global header
@@ -709,7 +709,7 @@ def get_history_delete(email):
 
     if not hist:
         cursor.execute(f"""INSERT INTO history
-VALUES ('{email}', NULL, NULL, NULL, NULL, NULL);""")
+VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         conn.commit()
 
         return ''
@@ -806,8 +806,7 @@ def run_leave_application_delete(email, query, history, token):
         if label == "yes":
             if response == []:
                 return "empty list"
-            if response == []:
-                return "danh sách đơn xin nghỉ phép trống"
+
             else:
                 delete_leave_application(response[0]['id'])
                 return "Đã xóa thành công"

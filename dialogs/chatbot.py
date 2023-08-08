@@ -175,6 +175,15 @@ Chat history:{context}
 <|im_start|>assistant
 """
 
+    delete_custom_template = """ <|im_start|>system
+- if the input is "unrelated response to previous question, cancelled previous action", the output, you should say to that same meaning in formal tone and in vietnamese.
+- if the input is "Đã xóa thành công", for the output, you shold say that the leave application have been deleted in  vietnamese
+- if the input is "empty list", the output should say that the leaving application that awaiting for approval is empty in vietnamese
+Input: {question}
+<|im_start|>assistant
+Output:"""
+
+ 
     classifier_template = """<|im_start|>system
 Given a sentence, assistant will determine if the sentence belongs in 1 of 3 categories, which are:
 - policy
@@ -217,6 +226,22 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
+
+    delete_custom_template = """ <|im_start|>system
+
+- if the input is "unrelated response to previous question, cancelled previous action", the output, you should say to that same meaning in formal tone and in vietnamese.
+
+- if the input is "Đã xóa thành công", for the output, you shold say that the leave application have been deleted in  vietnamese
+
+- if the input is "empty list", the output should say that the leaving application that awaiting for approval is empty in vietnamese
+
+Input: {question}
+
+<|im_start|>assistant
+
+Output:"""
+
+ 
     drink_fee_template = """<|im_start|>system
 Sources:
 {summaries}
@@ -379,7 +404,8 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         self.classifier_hrm_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_hrm))
         #post leave application
         self.leave_application_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_leave_application))
-
+        self.delete_chat_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.delete_custom_template))
+        
 # get document
     def get_document(self, query, retriever):
         # Get top 4 documents
@@ -450,7 +476,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
         if not hist:
             cursor.execute(f"""INSERT INTO history
-    VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
+    VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             conn.commit()
 
             return ''
@@ -473,8 +499,8 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             return True
 
         return False
-
-    def chat(self, query, email, name):
+    
+    def login_HRM(self, query, email):
         global token
         token = self.get_token(email)
         url = "https://api-hrm.nois.vn/api/user/me"
@@ -483,7 +509,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         response.encoding = 'utf-8'
 
         if response.status_code == 200:
-            pass
+            return 'Bạn đã đăng nhập thành công vào HRM.'
 
         else:
             self.update_token(query, email)
@@ -494,9 +520,33 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             
             print(response)
             if response.status_code == 200:
-                return "Bạn đã đăng nhập thành công vào HRM.", ''
+                return "Bạn đã đăng nhập thành công vào HRM."
             else:
-                return "Vui lòng nhập lại HRM token", ''
+                return "Vui lòng nhập lại HRM token."
+
+    def chat(self, query, email, name):
+        # global token
+        # token = self.get_token(email)
+        # url = "https://api-hrm.nois.vn/api/user/me"
+        # header = {"Authorization": f"Bearer {token}"}
+        # response = requests.get(url, headers=header)
+        # response.encoding = 'utf-8'
+
+        # if response.status_code == 200:
+        #     pass
+
+        # else:
+        #     self.update_token(query, email)
+        #     token = self.get_token(email)
+        #     header = {"Authorization": f"Bearer {token}"}
+        #     response = requests.get(url, headers=header)
+        #     response.encoding = 'utf-8'
+            
+        #     print(response)
+        #     if response.status_code == 200:
+        #         return "Bạn đã đăng nhập thành công vào HRM.", ''
+        #     else:
+        #         return "Vui lòng nhập lại HRM token", ''
 
         if self.private:
             # if email not in self.history_private:
@@ -524,8 +574,15 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         return response, doc
 
     def chat_hrm(self, query, email):
+        if not self.test_token(email):
+            self.update_conversation_type(['LeaveApplication', ''], email)
+            if self.login_HRM(query, email) == 'Vui lòng nhập lại HRM token.':
+                return "Vui lòng nhập lại HRM token."
+            elif self.login_HRM(query, email) == 'Bạn đã đăng nhập thành công vào HRM.':
+                return "Bạn đã đăng nhập thành công vào HRM."
+
         print (self.get_conversation_type(email))
-        if self.get_conversation_type(email) == ['','']:
+        if self.get_conversation_type(email) == ['',''] or self.get_conversation_type(email) == ['LeaveApplication','']:
             label_hrm = self.classifier_hrm_chain(query)['text']
         else:
             label_hrm = self.get_conversation_type(email)[0]
@@ -535,7 +592,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         if label_hrm == "User":
             response = run_return_user_response(email, query, token)
         elif label_hrm == "LeaveApplication":
-            if self.get_conversation_type(email) == ['','']:
+            if self.get_conversation_type(email) == ['',''] or self.get_conversation_type(email) == ['LeaveApplication','']:
                 leave_application_type = self.leave_application_chain(query)['text']
             else:
                 leave_application_type = self.get_conversation_type(email)[1]
@@ -565,10 +622,12 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
                 if (response =="unrelated response to previous question, cancelled previous action"):
                     self.update_conversation_type(['', ''], email)
                     self.clear_history()
+                    response = str(self.delete_chat_chain(response)['text'])
                     return response
                 elif (response == "Đã xóa thành công" or response == "empty list"):
                     self.clear_history()
                     self.update_conversation_type(['', ''], email)
+                    response = str(self.delete_chat_chain(response)['text'])
         
         return response
     
@@ -598,7 +657,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
         if not hist:
             cursor.execute(f"""INSERT INTO history
-VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
+VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             conn.commit()
 
             return ['','']
@@ -643,7 +702,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
 
         if not hist:
             cursor.execute(f"""INSERT INTO history
-VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
+VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             conn.commit()
 
             return ""
