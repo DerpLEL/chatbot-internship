@@ -793,7 +793,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         try:
             hist = self.get_history_as_txt_sql(email) if label != 'drink fee' else ''
             response = chain({'input_documents': doc, 'question': query, 'context': hist,
-                                'user_info': f'''The user chatting with you is named {self.user['username']}, with email: {self.user['mail']}. 
+                                'user_info': f'''The user chatting with you is named {name}, with email: {email}. 
                                 '''},
                              return_only_outputs=False)
 
