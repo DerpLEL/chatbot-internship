@@ -689,7 +689,11 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
             doc = self.get_document(keywords, self.retriever_drink)[:1]
 
             input_pandas = self.drink_chain({'input_documents': doc, 'question': query, 'context': ''}, return_only_outputs=False)
-            blob_name = doc[0].metadata['metadata_storage_name']
+
+            try:
+                blob_name = doc[0].metadata['metadata_storage_name']
+            except IndexError:
+                return {'output_text': 'Không tìm thấy file tiền nước, bạn vui lòng hỏi lại với đầy đủ thông tin.'}, None
         
             print(input_pandas['output_text']) 
             temp_result = self.excel_drink_preprocess(input_pandas['output_text'], blob_name, doc)
