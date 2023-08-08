@@ -197,7 +197,7 @@ class MainDialog(LogoutDialog):
                     )
 
                 else:
-                    reply, doc = self.bot.chat(step_context.values["command"], me_info['mail'], me_info['displayName'])
+                    reply, doc = self.bot.chat_private(step_context.values["command"], me_info['mail'], me_info['displayName'])
                     print("doc: " + str(doc))
                     print("reply:"+ str(reply)) 
                     

@@ -1,20 +1,10 @@
-from langchain.prompts   import PromptTemplate
-from langchain.schema import Document
 from azure.core.credentials import AzureKeyCredential
-from langchain.chains import LLMChain
 from azure.search.documents import SearchClient
-from langchain.chat_models import AzureChatOpenAI
-from langchain.chains.qa_with_sources import load_qa_with_sources_chain
 from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
-from langchain.retrievers import AzureCognitiveSearchRetriever
-from azure.core.exceptions import ResourceExistsError
-from datetime import datetime, timedelta
 from googlesearch import search
 from bs4 import BeautifulSoup
-import pyodbc
 
 import pandas as pd
-import ast
 
 from .user import *
 from .post_leave_application import *
@@ -27,11 +17,10 @@ server = 'sql-chatbot-server.database.windows.net'
 database = 'sql-chatbot'
 username = 'test-chatbot'
 password = 'bMp{]nzt1'
-driver= '{ODBC Driver 17 for SQL Server}'
+driver = '{ODBC Driver 17 for SQL Server}'
 
 conn = pyodbc.connect(f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
 cursor = conn.cursor()
-
 
 public_index_name = "nois-public-v3-index"
 private_index_name = "nois-private-v3-index"
@@ -44,15 +33,13 @@ fasf_images_index = "fasf-images-index"
 search_endpoint = 'https://search-service01.search.windows.net'
 search_key = '73Swa5YqUR5IRMwUIqOH6ww2YBm3SveLv7rDmZVXtIAzSeBjEQe9'
 
-# os.environ["AZURE_COGNITIVE_SEARCH_SERVICE_NAME"] = "search-service01"
-# os.environ["AZURE_COGNITIVE_SEARCH_API_KEY"] = "73Swa5YqUR5IRMwUIqOH6ww2YBm3SveLv7rDmZVXtIAzSeBjEQe9
-
 account_name = 'acschatbotnoisintern'
 account_key = 'ohteFF8/tuPx3K0xtA/oIqXSKpx/MTnM4Ia0CbvLXJT1l0KJajB3zvX8A/DsNE9wm3gUq1TDlwve+AStS3nB0A=='
 storage_connection_string = 'DefaultEndpointsProtocol=https;AccountName=acschatbotnoisintern;AccountKey=ohteFF8/tuPx3K0xtA/oIqXSKpx/MTnM4Ia0CbvLXJT1l0KJajB3zvX8A/DsNE9wm3gUq1TDlwve+AStS3nB0A==;EndpointSuffix=core.windows.net'
 blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
 
 token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiI1OWI2N2I2YS1lNWYwLTQ1MzYtOTVmMy1hMzY3ZmY2OWVkODUiLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vNWUyYTNjYmQtMWE1Mi00NWFkLWI1MTQtYWI0Mjk1NmIzNzJjL3YyLjAiLCJpYXQiOjE2OTA4NjMxNjgsIm5iZiI6MTY5MDg2MzE2OCwiZXhwIjoxNjkwODY4NDA5LCJhaW8iOiJBV1FBbS84VUFBQUExRTEvSmZCV2RneFhGNTViNURTUGRjTU85THN6Sk54QnU4aGpGR1I5RnFiaGxPcmhIa1UyeFJCYUliM1gwcDlCYU8xSWtiSmVUcHZTNlVXTE8rZHdaekx1QUhQQ1ZGY25kaUxaMVY2S1JBNXhGck9OaS9NdWVrOWIyclpPRG45SCIsImF6cCI6Ijc2ZWE5MmQ2LTMzMDgtNDBkNS04NjRhLWIyN2ZiOGY1YjI3MyIsImF6cGFjciI6IjAiLCJuYW1lIjoiVGhpZW4gVHJhbiIsIm9pZCI6ImY1MjdhZGI1LWM5OGMtNDg4NS1iYjY3LThkMTc4NTI2ZDI1NCIsInByZWZlcnJlZF91c2VybmFtZSI6InRoaWVuLnRyYW5Abm9pcy52biIsInJoIjoiMC5BVWtBdlR3cVhsSWFyVVcxRkt0Q2xXczNMR3A3dGxudzVUWkZsZk9qWl85cDdZVkpBSE0uIiwicm9sZXMiOlsiVXNlciJdLCJzY3AiOiJhY2Nlc3NfYXNfdXNlciIsInN1YiI6Ik1oTGgzVnBVU2V1VE1FN2xlcjZ6Vk9VSno0Qkx6c3J0S2I4NTh3R1owMUkiLCJ0aWQiOiI1ZTJhM2NiZC0xYTUyLTQ1YWQtYjUxNC1hYjQyOTU2YjM3MmMiLCJ1dGkiOiIwVzJfVk1QMHYwMm5jWkVabFMwcEFBIiwidmVyIjoiMi4wIn0.U2_xKL1VK3A9NK08qT70TsYlL3dMoKSSy3gCyz4C_D1hoHT-dPKxC0oBhDMxSwtvenwcJig3oSsvuwVsIUQBJjDIdjcVp-QU30AogWG4RHL5fuAYE-yToKViALInhMz28zH75zztUN2iYlXEy4MA0gEHtgQ1xRoI_TuiuS04VI_potBsBpNPZJEf-_W1p_klYKGGXAjxxbzuhj8azvffRFdYYyWITRZrAYqH1nHOoIbWNNq3f1YdHZAXILdjL2n5tMTyIRlXUweB0BM8atKkkMh86qiInVD2VFtWXuvoAXkFwq6XrX0wVB_0FQzPz_J52spC5jLFhixp5099Q8osXQ"
+
 
 class chatAI:
     classifier_hrm = """<|im_start|>system
@@ -182,7 +169,6 @@ Chat history:{context}
 Input: {question}
 <|im_start|>assistant
 Output:"""
-
  
     classifier_template = """<|im_start|>system
 Given a sentence, assistant will determine if the sentence belongs in 1 of 3 categories, which are:
@@ -225,22 +211,6 @@ Output: hrm
 Input: {question}
 <|im_start|>assistant
 Output:"""
-
-
-    delete_custom_template = """ <|im_start|>system
-
-- if the input is "unrelated response to previous question, cancelled previous action", the output, you should say to that same meaning in formal tone and in vietnamese.
-
-- if the input is "Đã xóa thành công", for the output, you shold say that the leave application have been deleted in  vietnamese
-
-- if the input is "empty list", the output should say that the leaving application that awaiting for approval is empty in vietnamese
-
-Input: {question}
-
-<|im_start|>assistant
-
-Output:"""
-
  
     drink_fee_template = """<|im_start|>system
 Sources:
@@ -269,64 +239,11 @@ For example: If ask about fullname is 'Hưng', use must answer with format of da
 <|im_start|>assistant
 """
 
-#     keyword_templ_drink_fee = """<|im_start|>system
-# Given a sentence and a conversation about the companies New Ocean and NOIS, assistant will extract keywords based on the conversation and the sentence and translate them to Vietnamese if they're in English and vice versa.
-# Your output will be on one line, in both languages if possible and separated by commas. Do not duplicate keywords.
-# Assume the context is about the companies unless specified otherwise. Only return the keywords, do not output anything else.
-
-
-# EXAMPLE
-# Input: Ai chưa đóng tiền nước tháng 3?
-# Output: input:Vietnamese
-# Input: Was Pepsico a customer of New Ocean?
-# Output: input:English
-# Input: What is FASF?
-# Output: input:English
-# <|im_end|>
-# {context}
-# <|im_start|>user
-# Input: {question}
-# <|im_end|>
-# <|im_start|>assistant
-# Output:"""
-
-    header_templ_drink_fee = """<|im_start|>system
-Sources:
-{summaries}
-
-You must follow this rule:
-1. You will answer the question "What are header of this file?".
-2. Your answer is in list type which includes all header of that file.
-3. Output just only code.
-4. Must NO COMMENT, NO RESULT.
-
-For Example:
-- Input:
-BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed: 3 Unnamed: 4 Unnamed: 5 Unnamed: 6 Unnamed: 7 Unnamed: 8
-0 STT Email FullName April Total Thực thu Note Tình trạng NaN NaN
-1 1 hung.bui@nois.vn BÙI TUẤN HƯNG 78200 78200 NaN Done NaN NaN
-2 2 hiep.dang@nois.vn ĐẶNG DUY HIỆP 30700 30700 NaN Done NaN NaN
-3 3 tai.dang@nois.vn ĐẶNG HỮU TÀI 22500 22500 NaN Done NaN NaN
-4 4 sang.dao@nois.vn ĐÀO MINH SÁNG 5000 NaN NaN NaN NaN NaN
-5 5 nam.do@nois.vn ĐỖ NGỌC NAM 6500 6500 NaN Done NaN NaN
-- Output:
-['STT', 'Email', 'FullName', 'April Total', 'Thực thu', 'Note', 'Tình trạng', 'NaN', 'NaN']
-
-<|im_end|>
-{context}
-<|im_start|>user
-{question}
-<|im_end|>
-<|im_start|>assistant
-"""
-
     def __init__(self):
-        self.history_public = []
         self.history_private = {}
         self.private = False
         self.container_drink_fee_name = 'nois-drink-fee'
         self.container_client = blob_service_client.get_container_client(self.container_drink_fee_name)
-        self.user = {"username":'', "mail":''}
 
         self.llm = AzureChatOpenAI(
             openai_api_type="azure",
@@ -398,11 +315,10 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         self.keywordChain = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_templ))
         self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
         self.drink_chain = load_qa_with_sources_chain(llm=self.llm3, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
-        self.header_drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.header_templ_drink_fee))
 
         # usecase 2
         self.classifier_hrm_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_hrm))
-        #post leave application
+        # post leave application
         self.leave_application_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_leave_application))
         self.delete_chat_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.delete_custom_template))
         
@@ -422,34 +338,6 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             doc_num += 1
 
         return doc
-
-# history
-    def get_history_as_txt(self, n=3):
-        txt = ""
-        hist = self.history_public
-
-        if self.private:
-            hist = self.history_private
-
-        if len(hist) <= n:
-            history = hist
-
-        else:
-            history = hist[len(hist) - n:]
-
-        for i in history:
-            txt += f"\n<|im_start|>user\n{i['user']}\n<|im_end|>\n"
-            txt += f"<|im_start|>assistant\n{i['AI']}\n<|im_end|>"
-
-        return txt
-
-    def add_to_history(self, user_msg, ai_msg, email):
-        hist = self.history_public
-        if self.private:
-            hist = self.history_private[email]
-
-        hist.append({'user': user_msg, 'AI': ai_msg})
-        print(hist)
 
     def update_token(self, token, email):
         cursor.execute(f"""SELECT token FROM history WHERE email = '{email}';""")
@@ -524,56 +412,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             else:
                 return "Vui lòng nhập lại HRM token."
 
-    def chat(self, query, email, name):
-        # global token
-        # token = self.get_token(email)
-        # url = "https://api-hrm.nois.vn/api/user/me"
-        # header = {"Authorization": f"Bearer {token}"}
-        # response = requests.get(url, headers=header)
-        # response.encoding = 'utf-8'
-
-        # if response.status_code == 200:
-        #     pass
-
-        # else:
-        #     self.update_token(query, email)
-        #     token = self.get_token(email)
-        #     header = {"Authorization": f"Bearer {token}"}
-        #     response = requests.get(url, headers=header)
-        #     response.encoding = 'utf-8'
-            
-        #     print(response)
-        #     if response.status_code == 200:
-        #         return "Bạn đã đăng nhập thành công vào HRM.", ''
-        #     else:
-        #         return "Vui lòng nhập lại HRM token", ''
-
-        if self.private:
-            # if email not in self.history_private:
-            #     self.history_private[email] = []
-
-            return self.chat_private(query, email, name)
-
-        return self.chat_public(query)
-
-    def chat_public(self, query):
-        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
-        print(f"Query: {query}\nKeywords: {keywords}")
-
-        chain = self.qa_chain
-        doc = self.get_document(keywords, self.retriever_public)
-
-        try:
-            response = response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(),
-                    'user_info': ''},
-                             return_only_outputs=False)
-        except Exception as e:
-            return {'output_text': f'Cannot generate response, error: {e}'}, doc
-
-        self.add_to_history(query, response['output_text'])
-        return response, doc
-
-    def chat_hrm(self, query, email):
+    def chat_hrm(self, query, email, name):
         if not self.test_token(email):
             self.update_conversation_type(['LeaveApplication', ''], email)
             if self.login_HRM(query, email) == 'Vui lòng nhập lại HRM token.':
@@ -581,8 +420,8 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             elif self.login_HRM(query, email) == 'Bạn đã đăng nhập thành công vào HRM.':
                 return "Bạn đã đăng nhập thành công vào HRM."
 
-        print (self.get_conversation_type(email))
-        if self.get_conversation_type(email) == ['',''] or self.get_conversation_type(email) == ['LeaveApplication','']:
+        print(self.get_conversation_type(email))
+        if self.get_conversation_type(email) == ['', ''] or self.get_conversation_type(email) == ['LeaveApplication','']:
             label_hrm = self.classifier_hrm_chain(query)['text']
         else:
             label_hrm = self.get_conversation_type(email)[0]
@@ -602,7 +441,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
                 response = run_get_leave_application(email, query, token)
             elif leave_application_type == 'post':
                 self.update_conversation_type(['LeaveApplication', 'post'], email)
-                post_leave_application_response = post_leave_application_func(self.user, query, token, email)
+                post_leave_application_response = post_leave_application_func({'username': name, 'mail': email}, query, token, email)
                 response = post_leave_application_response[0]
                 print(post_leave_application_response)
                 try:
@@ -621,11 +460,9 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
                 response = run_leave_application_delete(email, query, "", token)
                 if (response =="unrelated response to previous question, cancelled previous action"):
                     self.update_conversation_type(['', ''], email)
-                    self.clear_history()
                     response = str(self.delete_chat_chain(response)['text'])
                     return response
                 elif (response == "Đã xóa thành công" or response == "empty list"):
-                    self.clear_history()
                     self.update_conversation_type(['', ''], email)
                     response = str(self.delete_chat_chain(response)['text'])
         
@@ -769,7 +606,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             doc = self.get_document(keywords, self.retriever_policy)
 
         elif label == "hrm":
-            response = self.chat_hrm(query, email)
+            response = self.chat_hrm(query, email, name)
             # self.add_to_history_sql(query, response, email)
             return response, " "
         else:
@@ -852,7 +689,3 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             return input_pandas
 
         return result_pandas
-
-    def clear_history(self):
-        self.history_public = []
-        self.history_private = []
