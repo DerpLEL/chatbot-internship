@@ -39,8 +39,6 @@ account_key = 'ohteFF8/tuPx3K0xtA/oIqXSKpx/MTnM4Ia0CbvLXJT1l0KJajB3zvX8A/DsNE9wm
 storage_connection_string = 'DefaultEndpointsProtocol=https;AccountName=acschatbotnoisintern;AccountKey=ohteFF8/tuPx3K0xtA/oIqXSKpx/MTnM4Ia0CbvLXJT1l0KJajB3zvX8A/DsNE9wm3gUq1TDlwve+AStS3nB0A==;EndpointSuffix=core.windows.net'
 blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
 
-token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiI1OWI2N2I2YS1lNWYwLTQ1MzYtOTVmMy1hMzY3ZmY2OWVkODUiLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vNWUyYTNjYmQtMWE1Mi00NWFkLWI1MTQtYWI0Mjk1NmIzNzJjL3YyLjAiLCJpYXQiOjE2OTA4NjMxNjgsIm5iZiI6MTY5MDg2MzE2OCwiZXhwIjoxNjkwODY4NDA5LCJhaW8iOiJBV1FBbS84VUFBQUExRTEvSmZCV2RneFhGNTViNURTUGRjTU85THN6Sk54QnU4aGpGR1I5RnFiaGxPcmhIa1UyeFJCYUliM1gwcDlCYU8xSWtiSmVUcHZTNlVXTE8rZHdaekx1QUhQQ1ZGY25kaUxaMVY2S1JBNXhGck9OaS9NdWVrOWIyclpPRG45SCIsImF6cCI6Ijc2ZWE5MmQ2LTMzMDgtNDBkNS04NjRhLWIyN2ZiOGY1YjI3MyIsImF6cGFjciI6IjAiLCJuYW1lIjoiVGhpZW4gVHJhbiIsIm9pZCI6ImY1MjdhZGI1LWM5OGMtNDg4NS1iYjY3LThkMTc4NTI2ZDI1NCIsInByZWZlcnJlZF91c2VybmFtZSI6InRoaWVuLnRyYW5Abm9pcy52biIsInJoIjoiMC5BVWtBdlR3cVhsSWFyVVcxRkt0Q2xXczNMR3A3dGxudzVUWkZsZk9qWl85cDdZVkpBSE0uIiwicm9sZXMiOlsiVXNlciJdLCJzY3AiOiJhY2Nlc3NfYXNfdXNlciIsInN1YiI6Ik1oTGgzVnBVU2V1VE1FN2xlcjZ6Vk9VSno0Qkx6c3J0S2I4NTh3R1owMUkiLCJ0aWQiOiI1ZTJhM2NiZC0xYTUyLTQ1YWQtYjUxNC1hYjQyOTU2YjM3MmMiLCJ1dGkiOiIwVzJfVk1QMHYwMm5jWkVabFMwcEFBIiwidmVyIjoiMi4wIn0.U2_xKL1VK3A9NK08qT70TsYlL3dMoKSSy3gCyz4C_D1hoHT-dPKxC0oBhDMxSwtvenwcJig3oSsvuwVsIUQBJjDIdjcVp-QU30AogWG4RHL5fuAYE-yToKViALInhMz28zH75zztUN2iYlXEy4MA0gEHtgQ1xRoI_TuiuS04VI_potBsBpNPZJEf-_W1p_klYKGGXAjxxbzuhj8azvffRFdYYyWITRZrAYqH1nHOoIbWNNq3f1YdHZAXILdjL2n5tMTyIRlXUweB0BM8atKkkMh86qiInVD2VFtWXuvoAXkFwq6XrX0wVB_0FQzPz_J52spC5jLFhixp5099Q8osXQ"
-
 
 class chatAI:
     classifier_hrm = """<|im_start|>system
@@ -390,7 +388,6 @@ For example: If ask about fullname is 'Hưng', use must answer with format of da
         return False
     
     def login_HRM(self, query, email):
-        global token
         token = self.get_token(email)
         url = "https://api-hrm.nois.vn/api/user/me"
         header = {"Authorization": f"Bearer {token}"}
@@ -420,6 +417,8 @@ For example: If ask about fullname is 'Hưng', use must answer with format of da
                 return "Vui lòng nhập lại HRM token."
             elif self.login_HRM(query, email) == 'Bạn đã đăng nhập thành công vào HRM.':
                 return "Bạn đã đăng nhập thành công vào HRM."
+
+        token = self.get_token(email)
 
         print(self.get_conversation_type(email))
         if self.get_conversation_type(email) == ['', ''] or self.get_conversation_type(email) == ['LeaveApplication','']:
