@@ -103,8 +103,6 @@ class MainDialog(LogoutDialog):
 
                 client = SimpleGraphClient(token_response.token)
                 me_info = await client.get_me()
-                self.bot.user['username'] = me_info['displayName']
-                self.bot.user['mail'] = me_info['mail']
                 
                 if login == False:
                     login = True

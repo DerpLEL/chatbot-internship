@@ -10,6 +10,7 @@ from .user import *
 from .post_leave_application import *
 from .get_leave_application import * 
 from .delete_leave_application import *
+import tiktoken
 
 requests.encoding = 'UTF-8'
 
@@ -505,9 +506,14 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         hist[0] = hist[0].replace("[", "").replace("]", "")
         lst = hist[0].split(",")
         return [s.strip() for s in lst]
-    
+
+    def count_tokens(self, string):
+        token_encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        return len(token_encoding.encode(string))
+
     def add_to_history_sql(self, query, response, email):
-        n = 3
+        n = 1500
+
         cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
         hist = cursor.fetchone()
 
@@ -516,20 +522,28 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
 
             print(f"History to be updated to SQL: {res}\n")
             cursor.execute(f"""UPDATE history
-                SET chat = N'{res}' WHERE email = '{email}';""")
+            SET chat = N'{res}' WHERE email = '{email}';""")
             conn.commit()
             return
 
         hist = hist[0].split("<sep>")
 
         hist.append(f"{query}||{response}")
-        if len(hist) > n:
-            hist = hist[len(hist) - n:]
+        new_hist = []
+        total = 0
 
-        res = "<sep>".join(hist).replace("'", "''")
+        for i in hist[::-1]:
+            convo_length = self.count_tokens(i)
+            total += convo_length
+            if total > n:
+                break
+
+            new_hist.append(i)
+
+        res = "<sep>".join(new_hist[::-1]).replace("'", "''")
         print(f"History to be updated to SQL: {res}\n")
         cursor.execute(f"""UPDATE history
-            SET chat = N'{res}' WHERE email = '{email}';""")
+        SET chat = N'{res}' WHERE email = '{email}';""")
         conn.commit()
         return
     
@@ -559,7 +573,6 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             except IndexError:
                 break
 
-        # print(f"History from SQL: {txt}\n")
         return txt
 
     def chat_private(self, query, email, name):
@@ -577,11 +590,6 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         chain = self.qa_chain
 
         if label == "drink fee":
-            # self.history_private = []
-
-            # keywordChain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ_drink_fee))
-            # keywords_drink_fee = keywordChain({'context': self.get_history_as_txt(), 'question': query})
-
             doc = self.get_document(keywords, self.retriever_drink)[:1]
 
             input_pandas = self.drink_chain({'input_documents': doc, 'question': query, 'context': ''}, return_only_outputs=False)
@@ -597,9 +605,6 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             result_doc = "Input: " + query +"\n Output: " + str(temp_result)
             print(result_doc)
 
-            # if """count""" not in input_pandas['output_text']:
-            #     self.add_to_history_sql(query, 'Satisfied Anwser', email)
-            #     return {'output_text': str(temp_result)}, doc
             doc[0].page_content = result_doc
 
         elif label == "policy":
@@ -607,7 +612,6 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
 
         elif label == "hrm":
             response = self.chat_hrm(query, email, name)
-            # self.add_to_history_sql(query, response, email)
             return response, " "
         else:
             doc = self.get_document(keywords, self.retriever_private)
@@ -637,23 +641,8 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         except Exception as e:
             return {'output_text': f'Cannot generate response, error: {e}'}, doc
 
-        # self.add_to_history(query, response['output_text'])
         self.add_to_history_sql(query, response['output_text'], email)
         return response, doc
-
-    # def get_docs_using_keyword_string_for_drink_fee(self, keyword, retriever):
-    #     # Get top 4 documents
-    #     res = retriever.search(search_text=keyword, top=1)
-
-    #     doc_num = 1
-    #     doc = []
-    #     for i in res:
-    #         newdoc = Document(page_content=i['content'], 
-    #                           metadata={'@search.score': i['@search.score'], 'metadata_storage_name': i['metadata_storage_name'], 'source': f'doc-{doc_num}'})
-
-    #         doc.append(newdoc)
-    #         doc_num += 1
-    #     return doc
 
     def excel_drink_preprocess(self, input_pandas, file_name, doc):
 
@@ -668,20 +657,9 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
 
         df = pd.read_excel(sas_url)
         doc[0].page_content = df
-        # header = self.header_drink_chain({'input_documents': doc, 'question': 'What is Header of this file?', 'context': ''}, return_only_outputs=False)
-        # old_header = list(df.columns)
-        # header_list = ast.literal_eval(header['output_text'])
-        # # target_rows = df[(df[old_header[0]] == header_list[0]) & (df[old_header[1]] == header_list[1]) & (df[old_header[3]] == header_list[3])]
-        #
-        # target_rows = df[df[old_header[0]] == header_list[0]]
-        # target_rows.index[0] + 1
+
         df = pd.read_excel(sas_url, skiprows=1)
         print(df)
-
-        # last_row_index = df.index[df.isnull().all(axis=1)][0]
-        # df = df.iloc[:last_row_index]
-        # df = df[df['FullName'].notnull()]
-        # df = df.iloc[:, df.columns.notna()]
 
         try:
             result_pandas = eval(input_pandas) 
