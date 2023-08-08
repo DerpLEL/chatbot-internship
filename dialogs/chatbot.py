@@ -232,6 +232,8 @@ Inpput:có bao nhiêu người có tên là Bảo trong tiền nước tháng 5?
 Output: df[df['FullName'].str.contains('BẢO')]['FullName'].count()
 Input: có bao nhiêu người có tên là Hiệp đã đóng tiền nước tháng 5?
 Output: df[df['Tình trạng'] == 'Done'][df[df['Tình trạng'] == 'Done']['FullName'].str.contains('HIỆP')]['FullName'].count()
+Input: Tổng tiền nước tháng 5 đã thu?
+Output: df[df['Thực thu'] != 0].sum()
 4. You must follow up the structure of dataset.
 For example: If ask aboout fullname is 'Hưng', use must answer with format of dataset is "HƯNG" instead of "hưng" or "Hưng".
 <|im_end|>
