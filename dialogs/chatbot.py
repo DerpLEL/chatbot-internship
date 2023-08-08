@@ -308,7 +308,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             deployment_name='gpt-35-turbo-16k',
             openai_api_key='400568d9a16740b88aff437480544a39',
             temperature=0.5,
-            max_tokens=400
+            max_tokens=1000
         )
 
         self.llm2 = AzureChatOpenAI(
@@ -318,7 +318,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             deployment_name='gpt-35-turbo-16k',
             openai_api_key='400568d9a16740b88aff437480544a39',
             temperature=0.7,
-            max_tokens=600
+            max_tokens=1000
         )
 
         self.llm3 = AzureChatOpenAI(
@@ -328,7 +328,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             deployment_name='gpt-35-turbo-16k',
             openai_api_key='400568d9a16740b88aff437480544a39',
             temperature=0.0,
-            max_tokens=600
+            max_tokens=1000
         )
 
         self.retriever_public = SearchClient(
@@ -695,9 +695,9 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
             result_doc = "Input: " + query +"\n Output: " + str(temp_result)
             print(result_doc)
 
-            if """count""" not in input_pandas['output_text']:
-                self.add_to_history_sql(query, 'Satisfied Anwser', email)
-                return {'output_text': str(temp_result)}, doc
+            # if """count""" not in input_pandas['output_text']:
+            #     self.add_to_history_sql(query, 'Satisfied Anwser', email)
+            #     return {'output_text': str(temp_result)}, doc
             doc[0].page_content = result_doc
 
         elif label == "policy":
