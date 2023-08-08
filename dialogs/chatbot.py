@@ -768,7 +768,9 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL);""")
         header = self.header_drink_chain({'input_documents': doc, 'question': 'What is Header of this file?', 'context': ''}, return_only_outputs=False)
         old_header = list(df.columns)
         header_list = ast.literal_eval(header['output_text'])
-        target_rows = df[(df[old_header[0]] == header_list[0]) & (df[old_header[1]] == header_list[1]) & (df[old_header[3]] == header_list[3])]
+        # target_rows = df[(df[old_header[0]] == header_list[0]) & (df[old_header[1]] == header_list[1]) & (df[old_header[3]] == header_list[3])]
+
+        target_rows = df[df[old_header[0]] == header_list[0]]
         df = pd.read_excel(sas_url, skiprows = target_rows.index[0] + 1)
         print(df)
 

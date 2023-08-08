@@ -172,12 +172,12 @@ class MainDialog(LogoutDialog):
                 client = SimpleGraphClient(token_response.token)
                 me_info = await client.get_me()
 
-                await step_context.context.send_activity('**' + me_info['displayName'] + '** ' + 'Đợi tui xíu...')
+                # '**' + me_info['displayName'] + '** ' + 'Đợi tui xíu...'
+                test = await step_context.context.send_activity('...')
                 # await step_context.prompt(
                 #         TextPrompt.__name__,
                 #         PromptOptions(),
                 #     )
-
 
                 # display logged in users name
                 if command == "me":      
@@ -209,6 +209,8 @@ class MainDialog(LogoutDialog):
                         await step_context.context.send_activity(
                             reply['output_text']
                         )
+
+                # await step_context.context.delete_activity(test.id)
         else:
             await step_context.context.send_activity("We couldn't log you in.")
 
