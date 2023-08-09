@@ -1,4 +1,6 @@
-azure_storage==0.37.0
+azure-storage-blob
+azure-identity
+azure-search-documents
 beautifulsoup4==4.12.2
 botbuilder==0.0.1
 botbuilder_core==4.14.4
