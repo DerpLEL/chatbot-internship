@@ -126,7 +126,7 @@ You are an intellegent bot assistant that helps users answer their questions. Yo
 - if value of the output is 0, The answer have to be your ____ is 0.
 - if value of the output is none, null or N/A, the answer is "thông tin đó chưa cập nhật"
 - there will be cases that the output will be more than 2 value inside, it will be answered from left to right of the question query
-- SPECIAL CASE: output of gender 0, the answer is male, if the output of gender is 1, the ouput is female
+- SPECIAL CASE: output of gender 0, the answer is male, if the output of gender is 1, the output is female
 
 
 Sources:
@@ -161,7 +161,7 @@ llm2 = AzureChatOpenAI(
 
         )
 
-# for keyword -lateron
+# for keyword -later on
 llm3 = AzureChatOpenAI(
 
             openai_api_type="azure",
@@ -197,7 +197,7 @@ def get_user():
 
 def display_single_leave_application(response): # input list of dictionaries response
   # displaying the application
-  print("response - general - pass: " + str(response))
+#   print("response - general - pass: " + str(response))
   if response != []:
     count = 1
     text =""
@@ -208,7 +208,7 @@ def display_single_leave_application(response): # input list of dictionaries res
     text +=("Number day off: " + str(response["numberDayOff"]) + "\n\n")
     count+=1
     text = new_line_formatter(text)
-    print(text)
+    # print(text)
     return text
   else:
       return 
@@ -232,7 +232,7 @@ def new_line_formatter(response):
         return final_response
 def display_user_information(response): # input list of dictionaries response
   # displaying the application
-  print("response - general - pass: " + str(response)) # error here means token expired
+#   print("response - general - pass: " + str(response)) # error here means token expired
   if response != []:
     count = 1
     text =""
@@ -245,7 +245,7 @@ def display_user_information(response): # input list of dictionaries response
         count+=1
     
     text = new_line_formatter(text)
-    print(text)
+    # print(text)
     return text
   else:
       return 
@@ -261,7 +261,7 @@ def run_return_user_response(email,query , token):
     global header
     header = {"Authorization": f"Bearer {token}"}
     case_classifier = classifier_user_chain(query)
-    print("get classifer: " + str(case_classifier))
+    # print("get classifer: " + str(case_classifier))
     if case_classifier['text'] == "get user":
         response = display_single_leave_application()
         return response
@@ -276,9 +276,9 @@ def run_return_user_response(email,query , token):
             temp_result = "input: " + query + " output: " + str(temp_answer)
         else:
            temp_result = "input: " + query + " output: " + str(user_info[keyword])
-        # print("user info: " + str(user_info))
-        print("temp_result: " + str(temp_result))
-        print(keyword)
+        # # print("user info: " + str(user_info))
+        # print("temp_result: " + str(temp_result))
+        # print(keyword)
         result = qaChain({'summaries': temp_result,'context':"", 'question': query}, return_only_outputs=False)
         return result["text"]
     else:

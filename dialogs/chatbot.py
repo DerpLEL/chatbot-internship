@@ -158,7 +158,7 @@ Search query:
 Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. Your answer must adhere to the following criteria:
 You MUST follow this rule:
 - If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese. 
-- Be brief but friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
+- Be friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
 - If the user greets you, respond accordingly.
 
 {user_info}
@@ -449,22 +449,22 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             hist = self.history_private[email]
 
         hist.append({'user': user_msg, 'AI': ai_msg})
-        print(hist)
+        # print(hist)
 
     def update_token(self, token, email):
         cursor.execute(f"""SELECT token FROM history WHERE email = '{email}';""")
         conv_type = cursor.fetchone()
-        print(conv_type)
+        # print(conv_type)
         token = token.replace("'", "''")
 
         if not conv_type[0]:
-            print(f"Conversation type to be updated to SQL: {token}\n")
+            # print(f"Conversation type to be updated to SQL: {token}\n")
             cursor.execute(f"""UPDATE history
                 SET token = N'{token}' WHERE email = '{email}';""")
             conn.commit()
             return
         
-        print(f"Conversation type to be updated to SQL: {token}\n")
+        # print(f"Conversation type to be updated to SQL: {token}\n")
         cursor.execute(f"""UPDATE history
             SET token = N'{token}' WHERE email = '{email}';""")
         conn.commit()
@@ -518,7 +518,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             response = requests.get(url, headers=header)
             response.encoding = 'utf-8'
             
-            print(response)
+            # print(response)
             if response.status_code == 200:
                 return "Bạn đã đăng nhập thành công vào HRM."
             else:
@@ -542,7 +542,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
         #     response = requests.get(url, headers=header)
         #     response.encoding = 'utf-8'
             
-        #     print(response)
+        # #     print(response)
         #     if response.status_code == 200:
         #         return "Bạn đã đăng nhập thành công vào HRM.", ''
         #     else:
@@ -558,7 +558,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
     def chat_public(self, query):
         keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
-        print(f"Query: {query}\nKeywords: {keywords}")
+        # print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
         doc = self.get_document(keywords, self.retriever_public)
@@ -581,14 +581,14 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             elif self.login_HRM(query, email) == 'Bạn đã đăng nhập thành công vào HRM.':
                 return "Bạn đã đăng nhập thành công vào HRM."
 
-        print (self.get_conversation_type(email))
+        # print (self.get_conversation_type(email))
         if self.get_conversation_type(email) == ['',''] or self.get_conversation_type(email) == ['LeaveApplication','']:
             label_hrm = self.classifier_hrm_chain(query)['text']
         else:
             label_hrm = self.get_conversation_type(email)[0]
 
         response = """"""
-        print(label_hrm)
+        # print(label_hrm)
         if label_hrm == "User":
             response = run_return_user_response(email, query, token)
         elif label_hrm == "LeaveApplication":
@@ -597,14 +597,14 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
             else:
                 leave_application_type = self.get_conversation_type(email)[1]
 
-            print(leave_application_type)
+            # print(leave_application_type)
             if leave_application_type == 'get':
                 response = run_get_leave_application(email, query, token)
             elif leave_application_type == 'post':
                 self.update_conversation_type(['LeaveApplication', 'post'], email)
                 post_leave_application_response = post_leave_application_func(self.user, query, token, email)
                 response = post_leave_application_response[0]
-                print(post_leave_application_response)
+                # print(post_leave_application_response)
                 try:
                     if post_leave_application_response[1].status_code == 200:
                         self.update_conversation_type(['', ''], email)
@@ -617,7 +617,7 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 
             elif leave_application_type == 'delete':
                 self.update_conversation_type(['LeaveApplication','delete'], email)
-                print("delete - pass")
+                # print("delete - pass")
                 response = run_leave_application_delete(email, query, "", token)
                 if (response =="unrelated response to previous question, cancelled previous action"):
                     self.update_conversation_type(['', ''], email)
@@ -634,18 +634,18 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
     def update_conversation_type(self, conversation_type, email):
         cursor.execute(f"""SELECT conversation_type FROM history WHERE email = '{email}';""")
         conv_type = cursor.fetchone()
-        print(conv_type)
+        # print(conv_type)
         res = str(conversation_type).replace("'", "")
 
-        print(res)
+        # print(res)
         if not conv_type[0]:
-            print(f"Conversation type to be updated to SQL: {res}\n")
+            # print(f"Conversation type to be updated to SQL: {res}\n")
             cursor.execute(f"""UPDATE history
                 SET conversation_type = N'{res}' WHERE email = '{email}';""")
             conn.commit()
             return
         
-        print(f"Conversation type to be updated to SQL: {res}\n")
+        # print(f"Conversation type to be updated to SQL: {res}\n")
         cursor.execute(f"""UPDATE history
             SET conversation_type = N'{res}' WHERE email = '{email}';""")
         conn.commit()
@@ -677,7 +677,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         if not hist[0]:
             res = f"{query}||{response}".replace("'", "''")
 
-            print(f"History to be updated to SQL: {res}\n")
+            # print(f"History to be updated to SQL: {res}\n")
             cursor.execute(f"""UPDATE history
                 SET chat = N'{res}' WHERE email = '{email}';""")
             conn.commit()
@@ -690,7 +690,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             hist = hist[len(hist) - n:]
 
         res = "<sep>".join(hist).replace("'", "''")
-        print(f"History to be updated to SQL: {res}\n")
+        # print(f"History to be updated to SQL: {res}\n")
         cursor.execute(f"""UPDATE history
             SET chat = N'{res}' WHERE email = '{email}';""")
         conn.commit()
@@ -722,20 +722,20 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             except IndexError:
                 break
 
-        # print(f"History from SQL: {txt}\n")
+        # # print(f"History from SQL: {txt}\n")
         return txt
 
     def chat_private(self, query, email, name):
-        print(self.get_conversation_type(email)[0] == 'LeaveApplication')
+        # print(self.get_conversation_type(email)[0] == 'LeaveApplication')
         
         if str(self.get_conversation_type(email)[0]) == '':
             label = self.classifier_chain({'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
         else:
             label = "hrm"
 
-        print("label " + label)
+        # print("label " + label)
         keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
-        print(keywords)
+        # print(keywords)
 
         chain = self.qa_chain
 
@@ -754,11 +754,11 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             except IndexError:
                 return {'output_text': 'Không tìm thấy file tiền nước, bạn vui lòng hỏi lại với đầy đủ thông tin.'}, None
         
-            print(input_pandas['output_text']) 
+            # print(input_pandas['output_text']) 
             temp_result = self.excel_drink_preprocess(input_pandas['output_text'], blob_name, doc)
-            print(temp_result)
+            # print(temp_result)
             result_doc = "Input: " + query +"\n Output: " + str(temp_result)
-            print(result_doc)
+            # print(result_doc)
 
             # if """count""" not in input_pandas['output_text']:
             #     self.add_to_history_sql(query, 'Satisfied Anwser', email)
@@ -839,7 +839,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         # target_rows = df[df[old_header[0]] == header_list[0]]
         # target_rows.index[0] + 1
         df = pd.read_excel(sas_url, skiprows=1)
-        print(df)
+        # print(df)
 
         # last_row_index = df.index[df.isnull().all(axis=1)][0]
         # df = df.iloc[:last_row_index]

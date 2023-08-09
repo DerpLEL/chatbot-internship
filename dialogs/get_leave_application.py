@@ -12,7 +12,6 @@ header = {}
 classifier_usecase2 = """<|im_start|>system
 
 Given a sentence, assistant will determine if the sentence belongs in 1 of 2 categories, which are:
-
 - LeaveApplication
 - User
 - Certification
@@ -21,7 +20,6 @@ Given a sentence, assistant will determine if the sentence belongs in 1 of 2 cat
 You answer the question "Is the user's question related to ?"
 
 EXAMPLE:
-
 Input: tôi muốn submit ngày nghỉ
 Output: LeaveApplication
 Input: tôi cần thông tin của tôi
@@ -40,14 +38,8 @@ Input: tôi muốn hủy lịch họp phòng meeting số 1.
 Output: Meeting
 
 <|im_end|>
-
-
-
-
 Input: {question}
-
 <|im_start|>assistant
-
 Output:"""
 
 # User_clasifier
@@ -122,12 +114,7 @@ Ouput: latest application
 
 
 <|im_end|>
-
-
-
-
 Input: {question}
-
 <|im_start|>assistant
 
 Output:"""
@@ -330,7 +317,7 @@ def get_leave_application():
               temp_list.append(i) 
       return temp_list
   else:
-      return
+      return ["token expired"]
   
 
 def new_line_formatter(response):
@@ -351,29 +338,40 @@ def new_line_formatter(response):
 
         return final_response
     
-def display_leave_application(response): # input list of dictionaries response
+def display_leave_application(response):
+    """
+    Input: application id
+
+    Output:
+        temp_list: None
+    Purpose: delete leave application from HRM from website url
+    """  
+  # input list of dictionaries response
   # displaying the application
-  print("response - general - pass: " + str(response))
-  if response != []:
-    count = 1
-    text =""
-    for i in response:
-        text += ("Leave application number " + str(count) +" :\n")
-        text += ("Application id: " +str(i["id"])  +"\n")
-        text += ("From date: " + str(i["fromDate"])  + "\n")
-        text +=("To date: " + str(i["toDate"]) + "\n")
-        text +=("Number day off: " + str(i["numberDayOff"]) + "\n\n")
-        count+=1
+    # print("response - general - pass: " + str(response)) # error here means token expired
+    if response != []:
+        count = 1
+        text = ""
+        for i in response:
+            text += ("Đơn xin nghỉ việc  " + str(count) +" :\n")
+            text += ("ID: " +str(i["id"])  +"\n")
+            text += ("Từ ngày: " + str(i["fromDate"])  + "\n")
+            text +=("Đến ngày: " + str(i["toDate"]) + "\n")
+            text +=("Số ngày nghỉ: " + str(i["numberDayOff"]) + "\n\n")
+            count+=1
+       
+        text = new_line_formatter(text)
+        text = text[:0] + "\n______________________________________________________________________" + text[0:]
+        text += " ______________________________________________________________________"
+        # print(text)
+        return text
+    else:
+        return
     
-    text = new_line_formatter(text)
-    print(text)
-    return text
-  else:
-      return 
 # single dict
 def display_single_leave_application(response): # input list of dictionaries response
   # displaying the application
-  print("response - general - pass: " + str(response))
+#   print("response - general - pass: " + str(response))
   if response != []:
     count = 1
     text =""
@@ -384,7 +382,7 @@ def display_single_leave_application(response): # input list of dictionaries res
     text +=("Number day off: " + str(response["numberDayOff"]) + "\n\n")
     count+=1
     text = new_line_formatter(text)
-    print(text)
+    # print(text)
     return text
   else:
       return 
@@ -398,8 +396,10 @@ def run_get_leave_application(email, query, token):
     label_get_application = classifier_leave_application_get(query)['text']
     # THIS IS FOR general --> ask again if user want to perform any action with it, save these into history
     
-    print(label_get_application)
+    # print(label_get_application)
     response = get_leave_application()
+    if response == ["token expired"]:
+        return response[0]
     if response != []:
         if (label_get_application =="general"):
             result = display_leave_application(response) + "\n Bạn muốn tôi giúp gì thêm "
@@ -410,9 +410,9 @@ def run_get_leave_application(email, query, token):
         elif (label_get_application =="quantity general"):
             size_of_leave_application = len(response)
             temp_result = "input: " + query + ", output: " + str(size_of_leave_application)
-            print(temp_result)
+            # print(temp_result)
             result = qaChain({'summaries': temp_result,'context':"", 'question': query}, return_only_outputs=False)
-            print(result)
+            # print(result)
             return result["text"]
 
 
@@ -425,8 +425,8 @@ def run_get_leave_application(email, query, token):
             counter = 0
             keyword = keyword_chain(query)['text']
             value_to_compare = value_extract(query)['text']
-            print(keyword)
-            print(value_to_compare)
+            # print(keyword)
+            # print(value_to_compare)
             # list of dict for leav3 application
             size_of_leave_application = len(response)
             num = 0
@@ -446,7 +446,7 @@ def run_get_leave_application(email, query, token):
         # THIS IS FOR latest application specific
         # elif (label_get_application == "latest application specific"):     
         #     keyword = keyword_chain(query)['text']
-        #     print("first response: " + str(response[0]))
+        # #     print("first response: " + str(response[0]))
         #     display_response = display_single_leave_application(response[0])
         #     try:
         #         temp_result = "input: " + query + " output: " + str(response[0][keyword])

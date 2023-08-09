@@ -19,12 +19,16 @@ from .chatbot import *
 
 login = False
 
+"""
+    if Input = "logout"
+    logout the chatbot
+"""
 class LogoutDialog(ComponentDialog):
     def __init__(self, dialog_id: str, connection_name: str):
         super(LogoutDialog, self).__init__(dialog_id)
 
         self.connection_name = connection_name
-        print(connection_name)
+        # print(connection_name)
 
     async def on_begin_dialog(
         self, inner_dc: DialogContext, options: object
@@ -51,6 +55,14 @@ class LogoutDialog(ComponentDialog):
                 await inner_dc.context.send_activity("Bạn đã đăng xuất thành công.")
                 return await inner_dc.cancel_all_dialogs()
 
+"""
+    Input: 
+        LogoutDialog: class for check command "logout"
+    Output:
+        output from chatbot and send them to bot
+    Purpose:
+        make login bot in water fall: prompt_step -> login_step -> command_step -> process_step -> (loop) prompt_step 
+"""
 
 class MainDialog(LogoutDialog):
     def __init__(self, connection_name: str):
@@ -124,7 +136,7 @@ class MainDialog(LogoutDialog):
                         TextPrompt.__name__,
                         PromptOptions(
                             prompt=MessageFactory.text(
-                                "Vui lòng nhập HRM token. (Optional)"
+                                "Tôi có thể giúp gì được cho bạn."
                             )
                         ),
                     )
@@ -197,18 +209,25 @@ class MainDialog(LogoutDialog):
                     )
 
                 else:
-                    reply, doc = self.bot.chat(step_context.values["command"], me_info['mail'], me_info['displayName'])
-                    print("doc: " + str(doc))
-                    print("reply:"+ str(reply)) 
-                    
-                    if type(reply) == str:
-                        reply = '**' + me_info['displayName'] + '** ' + reply
-                        await step_context.context.send_activity(reply)
-                    else:                 
-                        reply['output_text'] = '**' + me_info['displayName'] + '** ' + reply['output_text']    
+                    try:
+                        reply, doc = self.bot.chat(step_context.values["command"], me_info['mail'], me_info['displayName'])
+                        # print("doc: " + str(doc))
+                        # print("reply:"+ str(reply)) 
+                        
+                        if type(reply) == str:
+                            reply = '**' + me_info['displayName'] + '** ' + reply
+                            await step_context.context.send_activity(reply)
+                        else:                 
+                            reply['output_text'] = '**' + me_info['displayName'] + '** ' + reply['output_text']    
+                            await step_context.context.send_activity(
+                                reply['output_text']
+                            )
+                    except:
+                        cursor.execute(f"""DELETE FROM history WHERE email = '{me_info['mail']}';""")
                         await step_context.context.send_activity(
-                            reply['output_text']
+                            f"Hiện tại hệ thống đang gặp một chút vấn đề. :(( \nBạn có thể gửi tin nhắn vừa rồi sau một vài giây được không."
                         )
+                        print("error")
 
                 # await step_context.context.delete_activity(test.id)
         else:

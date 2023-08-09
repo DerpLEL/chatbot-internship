@@ -11,6 +11,8 @@ import numpy as np
 import ast
 import pyodbc
 
+"""Connect to SQL """
+
 url = "https://api-hrm.nois.vn/api"
 
 server = 'sql-chatbot-server.database.windows.net'
@@ -21,6 +23,14 @@ driver= '{ODBC Driver 17 for SQL Server}'
 
 conn = pyodbc.connect(f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
 cursor = conn.cursor()
+
+
+"""
+    Load Large Model Language of Azure Open AI
+    llm: using for generating final output
+    llm2: using for generating output
+    llm3: using for getting keyword
+"""
 
 llm = AzureChatOpenAI(
             openai_api_type="azure",
@@ -52,6 +62,7 @@ llm3 = AzureChatOpenAI(
     max_tokens=600
 )
 
+"""prompt for getting keyword 'time' and 'cause' of leave application"""
 
 keyword_leave_application = """<|im_start|>system
 Given a sentence and a conversation, assistant will extract keywords based on the conversation and the sentence.
@@ -122,6 +133,7 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
+"""prompt for getting keyword 'name of manager' of leave application"""
 
 keyword_name_manager = """<|im_start|>system
 Given a sentence and a conversation, assistant will extract keywords based on the conversation and the sentence.
@@ -161,6 +173,8 @@ Input: {question}
 Output:"""
 
 
+"""prompt for getting keyword 'leave type' of leave application"""
+
 keyword_leave_type = """<|im_start|>system
 Given a sentence and a conversation, assistant will extract keywords based on the conversation and the sentence.
 Your output will be on one line, separated by commas. Do not duplicate keywords.
@@ -188,7 +202,6 @@ Output: 'Nghỉ hội nghị, đào tạo'
 Input: hình thức nghỉ Nghỉ khác
 Output: 'Nghỉ khác'
 
-
 <|im_end|>
 {context}
 <|im_start|>user
@@ -198,7 +211,7 @@ Input: {question}
 Output:"""
 
 
-
+"""prompt for getting keyword '' of leave application"""
 
 date_determine = """<|im_start|>system
 Given a sentence, assistant will determine if the sentence just belongs in 1 of 2 categories, which are:
@@ -245,6 +258,8 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
+"""prompt for getting keyword 'leave application' of leave application"""
+
 keyword_bANDe = """<|im_start|>system
 Given a sentence and a conversation, assistant will extract keywords based on the conversation and the sentence.
 Your output will be on one line, separated by commas. Do not duplicate keywords.
@@ -281,6 +296,8 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
+"""prompt for checking the input already have date details"""
+
 check_specific_date = """<|im_start|>system
 Given a sentence, assistant will determine if the sentence belongs in 1 of 2 categories, which are:
 - "yes"
@@ -307,6 +324,9 @@ Output: yes
 Input: {question}
 <|im_start|>assistant
 Output:"""
+
+
+"""prompt for getting keyword of specific weekday"""
 
 keyword_specific_weekday = """<|im_start|>system
 Given a sentence and a conversation, assistant will extract keywords based on the conversation and the sentence.
@@ -336,6 +356,9 @@ Input: {question}
 <|im_end|>
 <|im_start|>assistant
 Output:"""
+
+
+"""prompt for getting keyword of specific date"""
 
 keyword_specific_date = """<|im_start|>system
 Given a sentence and a conversation, assistant will extract keywords based on the conversation and the sentence.
@@ -385,6 +408,8 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
+"""prompt for generate final output"""
+
 chat_template = """<|im_start|>system
 Assistant helps the company employees. Your answer must adhere to the following criteria:
 You must follow this rule:
@@ -407,6 +432,8 @@ Chat history:{context}
 <|im_start|>assistant
 """
 
+
+"""prompt for generate keyword session"""
 keyword_session = """<|im_start|>system
 Given a sentence and a conversation, assistant will extract keywords based on the conversation and the sentence.
 Your output will be on one line, separated by commas. Do not duplicate keywords.
@@ -460,6 +487,8 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
+
+"""prompt for checking the answer is yes, no or neutral"""
 confirm_template = """<|im_start|>system
 Given a sentence, assistant will determine if the sentence belongs in 1 of 2 categories, which are:
 - "yes"
@@ -510,7 +539,7 @@ Input: {question}
 Output:"""
 
 
-
+"""Crete chain for each prompt"""
 chain_leave_application = LLMChain(llm=llm3, prompt=PromptTemplate.from_template(keyword_leave_application))
 chain_name_manager = LLMChain(llm=llm3, prompt=PromptTemplate.from_template(keyword_name_manager))
 chain_leave_type = LLMChain(llm=llm3, prompt=PromptTemplate.from_template(keyword_leave_type))
@@ -524,6 +553,7 @@ qa_chain = load_qa_with_sources_chain(llm=llm, chain_type="stuff", prompt=Prompt
 chain_session = LLMChain(llm=llm3, prompt=PromptTemplate.from_template(keyword_session))
 confirm_chain = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(confirm_template))
 
+#getting today
 today_var = datetime.now().date()
 leave_application_form = {
             'start_date': ' ',
@@ -538,6 +568,15 @@ leave_application_form = {
 confirm_delete = False
 
 
+"""
+    Input: 
+        leave_application_form: include label of conversasion and type of API. for example: ['LeaveApplication', 'post']
+        email: email of the user
+    Output:
+        return
+    Purpose:
+        update post leave application form in sql server
+"""
 def update_post_leave(leave_application_form, email):
     cursor.execute(f"""SELECT post_leave FROM history WHERE email = '{email}';""")
     conv_type = cursor.fetchone()
@@ -545,18 +584,27 @@ def update_post_leave(leave_application_form, email):
     post_leave = leave_application_form_str.replace("'", "''")
 
     if not conv_type[0]:
-        print(f"Post leave application form to be updated to SQL: {post_leave}\n")
+        # # print(f"Post leave application form to be updated to SQL: {post_leave}\n")
         cursor.execute(f"""UPDATE history
             SET post_leave = N'{post_leave}' WHERE email = '{email}';""")
         conn.commit()
         return
     
-    print(f"Post leave application form to be updated to SQL: {post_leave}\n")
+    # # print(f"Post leave application form to be updated to SQL: {post_leave}\n")
     cursor.execute(f"""UPDATE history
         SET post_leave = N'{post_leave}' WHERE email = '{email}';""")
     conn.commit()
     return
 
+
+"""
+    Input: 
+        token: token of HRM login
+    Output:
+        return success or not
+    Purpose:
+        get leave type of the user(nghỉ có lương, không lương,...)
+"""
 
 def get_leave_type_list(token):
     header = {
@@ -573,6 +621,15 @@ def get_leave_type_list(token):
         return "not successful return get_leave_application"
     
 
+"""
+    Input: 
+       data: list of number of leave type
+    Output:
+        ids: list of string of leave type
+    Purpose:
+       extract id of leave type to string of leave type
+"""
+
 def extract_ids(data):
     ids = []
     if isinstance(data, dict):
@@ -587,7 +644,15 @@ def extract_ids(data):
     return ids
 
 
-    
+
+"""
+    Input: 
+       email: email of user
+    Output:
+        leave_application_form
+    Purpose:
+       getting leave application form form sql database
+"""
 def get_post_leave(email):
     cursor.execute(f"""SELECT post_leave FROM history WHERE email = '{email}';""")
     hist = cursor.fetchone()
@@ -623,16 +688,27 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
     return ast.literal_eval(leave_application_form_str)
 
 
-
+"""
+    Input: 
+        user: name of user
+        query: input from user
+        token: token of HRM
+        email: email of user
+    Output:
+        [response,response_data]
+        respone: response to user
+        response_data: status from HRM server when sending a request
+    Purpose:
+       post a leave application to HRM
+"""
 def post_leave_application_func(user, query, token, email):
     try:
         global leave_application_form
         global confirm_delete
 
         leave_application_form = get_post_leave(email)
-        print(leave_application_form)
+        # # print(leave_application_form)
         
-
         response_data = requests.models.Response()
         response_data.status_code = 0
         reviewUser_string = ''
@@ -647,7 +723,7 @@ def post_leave_application_func(user, query, token, email):
             periodType = "Buổi chiều"
 
         confirm = confirm_chain(query)['text']
-        print(confirm)
+        # print(confirm)
 
         if 'es' in confirm and confirm_delete:
             reviewUser_string = ''
@@ -672,7 +748,7 @@ def post_leave_application_func(user, query, token, email):
             # Make the request
             response_data = requests.post(url_leaveapplication, json=data, headers=headers)
 
-            print(response_data.status_code)
+            # print(response_data.status_code)
 
             leave_application_form = {
                 'start_date': ' ',
@@ -760,7 +836,7 @@ def post_leave_application_func(user, query, token, email):
         if leaveType:
             query = query.replace(leaveType, "")
             leaveType_text = unidecode(leaveType).lower()
-            print(leaveType_text)
+            # print(leaveType_text)
             
             if "phep" in leaveType_text or "co" in leaveType_text:
                 leave_application_form['leaveType'] = 1
@@ -777,8 +853,8 @@ def post_leave_application_func(user, query, token, email):
             else:
                 pass
 
-        print("leave_application_form['leaveType']:", leave_application_form['leaveType'])
-        print("query:", query)
+        # print("leave_application_form['leaveType']:", leave_application_form['leaveType'])
+        # print("query:", query)
 
         
         keywords = chain_leave_application({'question': query, 'context':''})['text']
@@ -788,20 +864,20 @@ def post_leave_application_func(user, query, token, email):
         if note:
             leave_application_form['note'] = note
         
-        print("time", time)
-        print("note", note)
+        # print("time", time)
+        # print("note", note)
 
         try:
             if time:
-                print(date_determine_chain(time)['text'])
+                # print(date_determine_chain(time)['text'])
                 if "es" in date_determine_chain(time)['text']:
                     keywords_bANDe = chain_bANDe({'question': query, 'context':''})['text']
                     # response = keywords_bANDe
                     values_keywords_bANDe = keywords_bANDe.split(",")
                     begin_date = values_keywords_bANDe[0].strip("'")
                     end_date = values_keywords_bANDe[1].strip("'")
-                    print("begin_date", begin_date)
-                    print("end_date", end_date)
+                    # print("begin_date", begin_date)
+                    # print("end_date", end_date)
                     if begin_date:
                         leave_application_form['start_date'] = date_processing(begin_date)
                     if end_date:
@@ -817,9 +893,9 @@ def post_leave_application_func(user, query, token, email):
                     split_string_session_keywords = session_keywords.split(",")
                     session_off = split_string_session_keywords[0].strip("'")
                     date_off = split_string_session_keywords[1].strip("'")
-                    print(split_string_session_keywords)
-                    print(date_off)
-                    print(session_off)
+                    # print(split_string_session_keywords)
+                    # print(date_off)
+                    # print(session_off)
                     if date_off:
                         leave_application_form['start_date'] = date_processing(date_off)
                         leave_application_form['end_date'] = leave_application_form['start_date']
@@ -911,7 +987,7 @@ def post_leave_application_func(user, query, token, email):
             leave_application_form_string += 'Nhập sai tên người quản lí. Kiểm tra lại.'
         if leave_application_form['reviewUser'] == 0:
             leave_application_form_string += 'Chưa cung cấp tến người quản lí.'
-        print(leave_application_form['leaveType'], type(leave_application_form['leaveType']), get_leave_type_list(token))
+        # print(leave_application_form['leaveType'], type(leave_application_form['leaveType']), get_leave_type_list(token))
         if leave_application_form['leaveType'] == -1:
             leave_application_form_string += 'Chưa cung cấp hình thức nghỉ.'
         elif str(leave_application_form['leaveType']) in get_leave_type_list(token):
@@ -932,7 +1008,7 @@ def post_leave_application_func(user, query, token, email):
 
             return [response, response_data]
 
-        print(leave_application_form_string)
+        # print(leave_application_form_string)
         update_post_leave(leave_application_form, email)
 
         
@@ -980,7 +1056,7 @@ def post_leave_application_func(user, query, token, email):
     
 
 def date_processing(date_off):
-    print('date_off', date_off)
+    # print('date_off', date_off)
     if "nay" in date_off:
         day_after_next = today_var
         return day_after_next.strftime("%Y-%m-%d")
