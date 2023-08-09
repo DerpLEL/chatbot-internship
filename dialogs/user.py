@@ -191,29 +191,53 @@ qaChain = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(chat_template))
 
 # function define
 def get_user():
-  response = requests.get(url, headers=header)  
-  return response.json()['data'] 
+    """
+    Input: None
+            
+            
+    Output: 
+        response: user's data as dictionary
+    Purpose: return user's data as dictionary
+    """            
+    response = requests.get(url, headers=header)  
+    return response.json()['data'] 
 
 
-def display_single_leave_application(response): # input list of dictionaries response
+def display_single_leave_application(response):
+    """
+    Input: None
+            
+            
+    Output: 
+        response: user's data as dictionary
+    Purpose: return user's data as dictionary
+    """     
+   # input list of dictionaries response
   # displaying the application
-  print("response - general - pass: " + str(response))
-  if response != []:
-    count = 1
-    text =""
-    text += ("Leave application number " + str(count) +" :\n")
-    text += ("Application id: " +str(response["id"])  +"\n")
-    text += ("From date: " + str(response["fromDate"])  + "\n")
-    text +=("To date: " + str(response["toDate"]) + "\n")
-    text +=("Number day off: " + str(response["numberDayOff"]) + "\n\n")
-    count+=1
-    text = new_line_formatter(text)
-    print(text)
-    return text
-  else:
-      return 
+    print("response - general - pass: " + str(response))
+    if response != []:
+        count = 1
+        text =""
+        text += ("Leave application number " + str(count) +" :\n")
+        text += ("Application id: " +str(response["id"])  +"\n")
+        text += ("From date: " + str(response["fromDate"])  + "\n")
+        text +=("To date: " + str(response["toDate"]) + "\n")
+        text +=("Number day off: " + str(response["numberDayOff"]) + "\n\n")
+        count+=1
+        text = new_line_formatter(text)
+        print(text)
+        return text
+    else:
+        return 
 
 def new_line_formatter(response):
+    """
+    Input: response (str)
+
+    Output:
+        temp_list: formatted output (str)
+    Purpose: make the input str go under new line
+    """        
     # check empty
     if response == "":
         return
@@ -230,34 +254,59 @@ def new_line_formatter(response):
                 final_response += '<br>'  # Add an extra <div></div> between paragraphs
 
         return final_response
-def display_user_information(response): # input list of dictionaries response
+def display_user_information(response): 
+    """
+    Input: response (dictionary of user's information)
+
+    Output:
+        temp_list: list of dictionary to displaying all the leave appliciation 
+    Purpose: get leave application from HRM from website url 
+    """  
+  # input list of dictionaries response
   # displaying the application
-  print("response - general - pass: " + str(response)) # error here means token expired
-  if response != []:
-    count = 1
-    text =""
-    for i in response:
-        text += ("Leave application number " + str(count) +" :\n")
-        text += ("Application id: " +str(i["id"])  +"\n")
-        text += ("From date: " + str(i["fromDate"])  + "\n")
-        text +=("To date: " + str(i["toDate"]) + "\n")
-        text +=("Number day off: " + str(i["numberDayOff"]) + "\n\n")
-        count+=1
-    
-    text = new_line_formatter(text)
-    print(text)
-    return text
-  else:
-      return 
+    print("response - general - pass: " + str(response)) # error here means token expired
+    if response != []:
+        count = 1
+        text =""
+        for i in response:
+            text += ("Leave application number " + str(count) +" :\n")
+            text += ("Application id: " +str(i["id"])  +"\n")
+            text += ("From date: " + str(i["fromDate"])  + "\n")
+            text +=("To date: " + str(i["toDate"]) + "\n")
+            text +=("Number day off: " + str(i["numberDayOff"]) + "\n\n")
+            count+=1
+        
+        text = new_line_formatter(text)
+        print(text)
+        return text
+    else:
+        return 
 # must have url
 
 
 def convertList(string):
+    """
+    Input: string ( a string of keyword(s) seperate by "-" )
+
+    Output:
+        li: list of keywords(str) 
+    Purpose: seperate keywords that asked by user
+    """      
     li = list(string.split("-"))
     return li
 
 
 def run_return_user_response(email,query , token):
+    """
+    Input: 
+        query: user's question, request
+        token: user's token to HRM
+
+    Output:
+        result['text']: output of bot generated used backend to selected out keyword and search in user's HRM profile
+    Purpose: get user's information
+    """      
+
     global header
     header = {"Authorization": f"Bearer {token}"}
     case_classifier = classifier_user_chain(query)

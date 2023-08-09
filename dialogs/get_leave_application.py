@@ -322,18 +322,32 @@ qaChain = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(chat_template))
 
 # function define
 def get_leave_application():
-  response = requests.get(url + "/leaveapplication/paging?pageIndex=0&pageSize=50&type=0", headers=header)
-  temp_list = []
-  if response.status_code == 200:
-      for i in response.json()['data']['items']:
-          if i["reviewStatusName"] != "Đồng ý":
-              temp_list.append(i) 
-      return temp_list
-  else:
-      return
+    """
+    Input: None
+
+    Output:
+        temp_list: list of dictionary to displaying all the leave appliciation 
+    Purpose: get leave application from HRM from website url 
+    """    
+    response = requests.get(url + "/leaveapplication/paging?pageIndex=0&pageSize=50&type=0", headers=header)
+    temp_list = []
+    if response.status_code == 200:
+        for i in response.json()['data']['items']:
+            if i["reviewStatusName"] != "Đồng ý":
+                temp_list.append(i) 
+        return temp_list
+    else:
+        return
   
 
 def new_line_formatter(response):
+    """
+    Input: response (str)
+
+    Output:
+        temp_list: formatted output (str)
+    Purpose: make the input str go under new line
+    """        
     # check empty
     if response == "":
         return
@@ -351,47 +365,70 @@ def new_line_formatter(response):
 
         return final_response
     
-def display_leave_application(response): # input list of dictionaries response
+def display_leave_application(response):
+    """
+    Input: None
+
+    Output:
+        temp_list: list of dictionary to displaying all the leave appliciation 
+    Purpose: get leave application from HRM from website url 
+    """  
+   # input list of dictionaries response
   # displaying the application
-  print("response - general - pass: " + str(response))
-  if response != []:
-    count = 1
-    text =""
-    for i in response:
-        text += ("Leave application number " + str(count) +" :\n")
-        text += ("Application id: " +str(i["id"])  +"\n")
-        text += ("From date: " + str(i["fromDate"])  + "\n")
-        text +=("To date: " + str(i["toDate"]) + "\n")
-        text +=("Number day off: " + str(i["numberDayOff"]) + "\n\n")
-        count+=1
-    
-    text = new_line_formatter(text)
-    print(text)
-    return text
-  else:
-      return 
+    print("response - general - pass: " + str(response))
+    if response != []:
+        count = 1
+        text =""
+        for i in response:
+            text += ("Leave application number " + str(count) +" :\n")
+            text += ("Application id: " +str(i["id"])  +"\n")
+            text += ("From date: " + str(i["fromDate"])  + "\n")
+            text +=("To date: " + str(i["toDate"]) + "\n")
+            text +=("Number day off: " + str(i["numberDayOff"]) + "\n\n")
+            count+=1
+        
+        text = new_line_formatter(text)
+        print(text)
+        return text
+    else:
+        return 
 # single dict
-def display_single_leave_application(response): # input list of dictionaries response
-  # displaying the application
-  print("response - general - pass: " + str(response))
-  if response != []:
-    count = 1
-    text =""
-    text += ("Leave application number " + str(count) +" :\n")
-    text += ("Application id: " +str(response["id"])  +"\n")
-    text += ("From date: " + str(response["fromDate"])  + "\n")
-    text +=("To date: " + str(response["toDate"]) + "\n")
-    text +=("Number day off: " + str(response["numberDayOff"]) + "\n\n")
-    count+=1
-    text = new_line_formatter(text)
-    print(text)
-    return text
-  else:
-      return 
+def display_single_leave_application(response): 
+    """
+    Input: email: email to search the current user to sql server
+            
+
+    Output: history of history_delete
+    Purpose: get history_delete from sql server 
+    """   
+    # input list of dictionaries response
+    # displaying the application
+    print("response - general - pass: " + str(response))
+    if response != []:
+        count = 1
+        text =""
+        text += ("Leave application number " + str(count) +" :\n")
+        text += ("Application id: " +str(response["id"])  +"\n")
+        text += ("From date: " + str(response["fromDate"])  + "\n")
+        text +=("To date: " + str(response["toDate"]) + "\n")
+        text +=("Number day off: " + str(response["numberDayOff"]) + "\n\n")
+        count+=1
+        text = new_line_formatter(text)
+        print(text)
+        return text
+    else:
+        return 
 
 
 # history_delete = ""
 def run_get_leave_application(email, query, token):
+    """
+    Input: email: email to search the current user to sql server
+            query: question/command from user 
+            token: HRM token that the user inputted
+    Output: None
+    Purpose: function to run all function of get_leave_application (run this in the chatbot.py)
+    """        
     global header
     global history_delete
     header = {"Authorization": f"Bearer {token}"}
