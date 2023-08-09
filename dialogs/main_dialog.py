@@ -171,7 +171,7 @@ class MainDialog(LogoutDialog):
                 # me_info = await client.get_me()
 
                 # '**' + me_info['displayName'] + '** ' + 'Đợi tui xíu...'
-                test = await step_context.context.send_activity('...')
+                await step_context.context.send_activity('...')
                 # await step_context.prompt(
                 #         TextPrompt.__name__,
                 #         PromptOptions(),
