@@ -107,7 +107,7 @@ class MainDialog(LogoutDialog):
                 if login == False:
                     login = True
 
-                    token_state = self.bot.test_token(SimpleGraphClient(token_response.token).get_me()['mail'])
+                    token_state = self.bot.test_token((await SimpleGraphClient(token_response.token).get_me())['mail'])
                     if token_state:
                         return await step_context.prompt(
                             TextPrompt.__name__,
@@ -180,30 +180,31 @@ class MainDialog(LogoutDialog):
                 # display logged in users name
                 if command == "me":      
                     await step_context.context.send_activity(
-                        f"You are {SimpleGraphClient(token_response.token).get_me()['displayName']}"
+                        f"You are {(await SimpleGraphClient(token_response.token).get_me())['displayName']}"
                     )
 
                 # display logged in users email
                 elif command == "email":
                     await step_context.context.send_activity(
-                        f"Your email: {SimpleGraphClient(token_response.token).get_me()['mail']}"
+                        f"Your email: {(await SimpleGraphClient(token_response.token).get_me())['mail']}"
                     )
                 elif command.lower() == "resetall":
-                    cursor.execute(f"""UPDATE history SET chat = N'' WHERE email = '{SimpleGraphClient(token_response.token).get_me()['mail']}';""")
+                    cursor.execute(f"""UPDATE history SET chat = N'' WHERE email = '{(await SimpleGraphClient(token_response.token).get_me())['mail']}';""")
                     await step_context.context.send_activity(
-                        f"Reset data of user: {SimpleGraphClient(token_response.token).get_me()['mail']}"
+                        f"Reset data of user: {(await SimpleGraphClient(token_response.token).get_me())['mail']}"
                     )
 
                 else:
-                    reply, doc = self.bot.chat_private(step_context.values["command"], SimpleGraphClient(token_response.token).get_me()['mail'], SimpleGraphClient(token_response.token).get_me()['displayName'])
+                    reply, doc = self.bot.chat_private(step_context.values["command"], (await SimpleGraphClient(token_response.token).get_me())['mail'], (await SimpleGraphClient(token_response.token).get_me())['displayName'])
                     print("doc: " + str(doc))
                     print("reply:"+ str(reply)) 
                     
                     if type(reply) == str:
-                        reply = '**' + SimpleGraphClient(token_response.token).get_me()['displayName'] + '** ' + reply
+                        reply = '**' + (await SimpleGraphClient(token_response.token).get_me())['displayName'] + '** ' + reply
                         await step_context.context.send_activity(reply)
+
                     else:                 
-                        reply['output_text'] = '**' + SimpleGraphClient(token_response.token).get_me()['displayName'] + '** ' + reply['output_text']
+                        reply['output_text'] = '**' + (await SimpleGraphClient(token_response.token).get_me())['displayName'] + '** ' + reply['output_text']
                         await step_context.context.send_activity(
                             reply['output_text']
                         )
