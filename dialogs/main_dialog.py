@@ -189,7 +189,14 @@ class MainDialog(LogoutDialog):
                         f"Your email: {(await SimpleGraphClient(token_response.token).get_me())['mail']}"
                     )
                 elif command.lower().strip() == "resetall":
-                    cursor.execute(f"""UPDATE history SET chat = N'' WHERE email = '{(await SimpleGraphClient(token_response.token).get_me())['mail']}';""")
+                    col_names = [
+                        'chat', 'post_leave', 'del_leave', 'conversation_type',
+                        'token', 'confirm_check', 'leave_type'
+                    ]
+
+                    for i in col_names:
+                        cursor.execute(f"""UPDATE history SET {i} = N'' WHERE email = '{(await SimpleGraphClient(token_response.token).get_me())['mail']}';""")
+
                     await step_context.context.send_activity(
                         f"Reset data of user: {(await SimpleGraphClient(token_response.token).get_me())['mail']}"
                     )
