@@ -1,3 +1,4 @@
+import pyodbc
 from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
 from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
