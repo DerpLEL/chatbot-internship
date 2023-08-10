@@ -19,8 +19,9 @@ database = 'sql-chatbot'
 username = 'test-chatbot'
 password = 'bMp{]nzt1'
 driver = '{ODBC Driver 17 for SQL Server}'
+conn_str = f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}'
 
-conn = pyodbc.connect(f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
+conn = pyodbc.connect(conn_str)
 cursor = conn.cursor()
 
 public_index_name = "nois-public-v3-index"
