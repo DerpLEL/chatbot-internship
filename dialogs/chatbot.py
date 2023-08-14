@@ -115,6 +115,19 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
+    query_short_prompt = """Below is the history of questions so far and a new question posed by the user.
+Generate a full context question based on past question(s) and the new question. The given question history is in chronological order.
+The resulting question must be in the same language as the current question.
+
+QUESTION HISTORY:
+{context}
+
+CURRENT QUESTION:
+{question}
+
+RESULTING QUESTION:
+"""
+
     keyword_templ = """Below is a history of the conversation so far, and an input question asked by the user that needs to be answered by querying relevant company documents.
 Do not answer the question. Output queries must be in both English and Vietnamese and MUST strictly follow this format: (<Vietnamese queries>) | (<English queries>).
 Examples are provided down below:
@@ -323,7 +336,8 @@ For example: If ask about fullname is 'Hưng', use must answer with format of da
         # post leave application
         self.leave_application_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_leave_application))
         self.delete_chat_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.delete_custom_template))
-        
+        self.query_short_chain = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.query_short_prompt))
+
 # get document
     def get_document(self, query, retriever):
         # Get top 4 documents
@@ -577,6 +591,34 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
 
         return txt
 
+    def get_history_query_short(self, email):
+        cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
+        hist = cursor.fetchone()
+
+        if not hist:
+            cursor.execute(f"""INSERT INTO history
+VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
+            conn.commit()
+
+            return ""
+
+        if not hist[0]:
+            return ""
+
+        hist = hist[0].split("<sep>")
+
+        txt = ""
+        for row in hist:
+            i = row.split('||')
+
+            try:
+                txt += f"- {i[0]}\n"
+                # txt += f"<|im_start|>assistant\n{i[1]}\n<|im_end|>"
+            except IndexError:
+                break
+
+        return txt
+
     def chat_private(self, query, email, name):
         print(self.get_conversation_type(email)[0] == 'LeaveApplication')
         
@@ -586,8 +628,9 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             label = "hrm"
 
         print("label " + label)
-        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
-        print(keywords)
+        # keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
+        keywords = self.query_short_chain({'question': query, 'context': self.get_history_query_short(email)})['text']
+        print("Keywords: ", keywords)
 
         chain = self.qa_chain
 
