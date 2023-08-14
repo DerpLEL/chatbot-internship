@@ -93,45 +93,42 @@ class MainDialog(LogoutDialog):
         return await step_context.begin_dialog(OAuthPrompt.__name__)
 
     async def login_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-            global login
+            # global login
 
             if step_context.result:
-                if login == False:
-                    await step_context.context.send_activity("Bạn đã đăng nhập thành công.")
-                
-                token_response = step_context.result
-
-                # client = SimpleGraphClient(token_response.token)
-                # me_info = await client.get_me()
-                
-                if login == False:
-                    login = True
-
-                    token_state = self.bot.test_token((await SimpleGraphClient(token_response.token).get_me())['mail'])
-                    if token_state:
-                        return await step_context.prompt(
-                            TextPrompt.__name__,
-                            PromptOptions(
-                                prompt=MessageFactory.text(
-                                    "Đã lấy được HRM token."
-                                )
-                            )
-                        )
-
-                    return await step_context.prompt(
-                        TextPrompt.__name__,
-                        PromptOptions(
-                            prompt=MessageFactory.text(
-                                "Vui lòng nhập HRM token. (Optional)"
-                            )
-                        ),
-                    )
-
-                else:
-                    return await step_context.prompt(
-                        TextPrompt.__name__,
-                        PromptOptions(),
-                    )
+                # if login == False:
+                #     await step_context.context.send_activity("Bạn đã đăng nhập thành công.")
+                #
+                # token_response = step_context.result
+                #
+                # if login == False:
+                #     login = True
+                #
+                #     token_state = self.bot.test_token((await SimpleGraphClient(token_response.token).get_me())['mail'])
+                #     if token_state:
+                #         return await step_context.prompt(
+                #             TextPrompt.__name__,
+                #             PromptOptions(
+                #                 prompt=MessageFactory.text(
+                #                     "Đã lấy được HRM token."
+                #                 )
+                #             )
+                #         )
+                #
+                #     return await step_context.prompt(
+                #         TextPrompt.__name__,
+                #         PromptOptions(
+                #             prompt=MessageFactory.text(
+                #                 "Vui lòng nhập HRM token. (Optional)"
+                #             )
+                #         ),
+                #     )
+                #
+                # else:
+                return await step_context.prompt(
+                    TextPrompt.__name__,
+                    PromptOptions(),
+                )
                     # res = await step_context.prompt(
                     #     TextPrompt.__name__,
                     #     PromptOptions()
