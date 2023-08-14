@@ -44,7 +44,7 @@ blob_service_client = BlobServiceClient.from_connection_string(storage_connectio
 
 class chatAI:
     classifier_hrm = """<|im_start|>system
-Given a sentence, assistant will determine if the sentence belongs in 1 of 2 categories, which are:
+Given a sentence, assistant will determine if the sentence belongs in 1 of 4 categories, which are:
 - LeaveApplication
 - User
 - Certification
