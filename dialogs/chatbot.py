@@ -72,6 +72,7 @@ Output: Meeting
 Input: {question}
 <|im_start|>assistant
 Output:"""
+
     classifier_leave_application = """<|im_start|>system
 Given a sentence, assistant will determine if the sentence belongs in 1 of 3 categories, which are:
 - get
