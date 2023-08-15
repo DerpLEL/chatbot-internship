@@ -13,10 +13,12 @@ from botbuilder.dialogs.prompts import (
 from botbuilder.schema import HeroCard, CardImage
 from botbuilder.core import BotFrameworkAdapter
 from botbuilder.schema import ActivityTypes
+from botbuilder.schema import Activity
 
 from simple_graph_client import SimpleGraphClient
 from .chatbot import *
 
+# import app.py
 login = False
 
 class LogoutDialog(ComponentDialog):
@@ -53,10 +55,12 @@ class LogoutDialog(ComponentDialog):
 
 
 class MainDialog(LogoutDialog):
-    def __init__(self, connection_name: str):
+    def __init__(self, connection_name: str, bot_adapter: BotFrameworkAdapter):
         self.show_welcome = False
 
+        self.bot_adapter = bot_adapter
         super(MainDialog, self).__init__(MainDialog.__name__, connection_name)
+        
 
         self.add_dialog(
             OAuthPrompt(
@@ -163,7 +167,11 @@ class MainDialog(LogoutDialog):
                 # me_info = await client.get_me()
 
                 # '**' + me_info['displayName'] + '** ' + 'Đợi tui xíu...'
-                await step_context.context.send_activity('...')
+
+                # replace here
+                print("process_step")
+                typing_activity = Activity(type=ActivityTypes.typing)
+                await step_context.context.send_activity(typing_activity)
                 # await step_context.prompt(
                 #         TextPrompt.__name__,
                 #         PromptOptions(),

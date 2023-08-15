@@ -31,6 +31,7 @@ CONFIG = DefaultConfig()
 # See https://aka.ms/about-bot-adapter to learn more about how bots work.
 SETTINGS = BotFrameworkAdapterSettings(CONFIG.APP_ID, CONFIG.APP_PASSWORD)
 ADAPTER = BotFrameworkAdapter(SETTINGS)
+ADAPTER.use(ShowTypingMiddleware(0.1, 21.5))
 
 # Catch-all for errors.
 async def on_error(context: TurnContext, error: Exception):
@@ -69,7 +70,7 @@ USER_STATE = UserState(MEMORY)
 CONVERSATION_STATE = ConversationState(MEMORY)
 
 # Create dialog
-DIALOG = MainDialog(CONFIG.CONNECTION_NAME)
+DIALOG = MainDialog(CONFIG.CONNECTION_NAME,ADAPTER)
 
 # Create Bot
 BOT = AuthBot(CONVERSATION_STATE, USER_STATE, DIALOG)
@@ -79,7 +80,7 @@ BOT = AuthBot(CONVERSATION_STATE, USER_STATE, DIALOG)
 #  fix this part lmao  
 async def messages(req: Request) -> Response:
     # Main bot message handler.
-    ADAPTER.use(ShowTypingMiddleware(0.1, 21.5))
+    # ADAPTER.use(ShowTypingMiddleware(0.1, 21.5))
     
 
     if "application/json" in req.headers["Content-Type"]:
