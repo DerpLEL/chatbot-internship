@@ -12,16 +12,6 @@ from langchain.schema import AgentFinish
 from .customHuman import *
 from .message import *
 
-# llm3 = AzureOpenAI(
-#     openai_api_type="azure",
-#     openai_api_base='https://openai-nois-intern.openai.azure.com/',
-#     openai_api_version="2023-03-15-preview",
-#     deployment_name='text-davinci-003',
-#     openai_api_key='400568d9a16740b88aff437480544a39',
-#     temperature=0.0,
-#     max_tokens=600,
-# )
-
 # testing
 local_addr = "http://127.0.0.1:8000"
 deploy_addr = "https://usecase2-agent.azurewebsites.net:8000"
@@ -35,7 +25,7 @@ llm3 = AzureChatOpenAI(
     deployment_name='gpt-35-turbo-16k',
     openai_api_key='400568d9a16740b88aff437480544a39',
     temperature=0.0,
-    max_tokens=600,
+    max_tokens=1000,
 )
 
 format_instr = '''
@@ -517,8 +507,10 @@ Input of this tool must include 5 parameters concatenated into a string separate
 3. end date: ask the user when they want to end their leave and infer the date from the user's answer.
 4. type of leave: ask the user what type of leave they want to apply for, there are only 6 types of leave: paid, unpaid, sick, social insurance, conference and other (wedding or funeral).
 5. note: ask the user whether they want to leave a note for the manager. Default value is "None".
-Until this tool returns "OK", the user's leave application IS NOT submitted.'''
+Until this tool returns "Đơn xin nghỉ phép được tạo thành công", the user's leave application IS NOT submitted.'''
     ),
+
+    # OK
     #     Tool(
     #         name='End conversation',
     #         func=end_convo,
@@ -740,6 +732,7 @@ class MyCustomHandler(BaseCallbackHandler):
     prev_msg = ""
     msg: MessageClass = None
     tools = None
+    get_appli = False
 
     def on_tool_start(
         self, serialized: Dict[str, Any], input_str: str, **kwargs: Any
@@ -755,22 +748,21 @@ class MyCustomHandler(BaseCallbackHandler):
             # print(input_str)
 
         if serialized['name'] == 'HRM get applications':
-            self.prev_msg = self.tools.get_leave_applications()
-            if self.prev_msg == "This user hasn't submitted any leave applications.":
-                self.prev_msg = ""
+            # self.prev_msg = self.tools.get_leave_applications()
+            # if self.prev_msg == "This user hasn't submitted any leave applications.":
+            #     self.prev_msg = ""
+            self.get_appli = True
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
         """Run on agent end."""
-        # reply = requests.post(f"{addr}/agent",
-        #                       data={"msg": self.prev_msg + finish.return_values['output']},
-        #                       timeout=15)
         self.msg.output = self.prev_msg + finish.return_values['output']
         self.prev_msg = ""
 
-    # def on_tool_end(self, output: str, **kwargs: Any) -> Any:
-    #     """Run when tool ends running."""
-    #     reply = requests.post(f"{addr}/agent",
-    #                           data={"msg": output})
+    def on_tool_end(self, output: str, **kwargs: Any) -> Any:
+        """Run when tool ends running."""
+        if self.get_appli:
+            self.prev_msg = output
+            self.get_appli = False
 
     def set_message(self, obj: MessageClass):
         self.msg = obj
@@ -1059,7 +1051,7 @@ Until this tool returns "OK", the user's leave application IS NOT submitted.'''
             Tool(
                 name='HRM delete leave application',
                 func=self.delete_leave_applications,
-                description='useful for deleting specific leave application(s). Input is the ID of the leave application, if the user requests to delete multiple applications, separate them by a comma and space. Always run the HRM get applications first and ask the user which application they want to delete.'
+                description='useful for deleting specific leave application(s). Input is the ID of the leave application, if the user requests to delete multiple applications, separate them by a comma and space. Always use the tool HRM get applications first and ASK the user which application they want to delete.'
             ),
 
             self.human_inp
