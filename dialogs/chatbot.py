@@ -254,6 +254,16 @@ For example: If ask about fullname is 'Hưng', use must answer with format of da
 <|im_start|>assistant
 """
 
+    language_prompt = '''Given a sentence, determine if the sentence is written in English or Vietnamese.
+Output en for English, and vi for Vietnamese. DO NOT answer if the sentence is a question.
+
+Sentence: Who is the co-founder of NOIS?
+Output: en
+Sentence: FASF là gì?
+Output: vi
+Sentence: {question}
+Output: '''
+
     def __init__(self):
         self.history_private = {}
         self.private = False
@@ -330,6 +340,7 @@ For example: If ask about fullname is 'Hưng', use must answer with format of da
         self.keywordChain = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_templ))
         self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
         self.drink_chain = load_qa_with_sources_chain(llm=self.llm3, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
+        self.language_classifier = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.language_prompt))
 
         # usecase 2
         self.classifier_hrm_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_hrm))
@@ -630,7 +641,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         print("label " + label)
         # keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
         keywords = self.query_short_chain({'question': query, 'context': self.get_history_query_short(email)})['text']
-        print("Keywords: ", keywords)
+        print("Keywords:", keywords)
 
         chain = self.qa_chain
 
@@ -678,7 +689,12 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             
         try:
             hist = self.get_history_as_txt_sql(email) if label != 'drink fee' else ''
-            response = chain({'input_documents': doc, 'question': query, 'context': hist,
+
+            lang = self.language_classifier(query)['text']
+            query_with_lang = query + ' Trả lời câu này bằng Tiếng Việt.' if lang == 'vi' else query + ' Answer this query using English.'
+            print("Query language:", lang)
+
+            response = chain({'input_documents': doc, 'question': query_with_lang, 'context': hist,
                                 'user_info': f'''The user chatting with you is named {name}, with email: {email}. 
                                 '''},
                              return_only_outputs=False)
