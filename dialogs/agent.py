@@ -994,7 +994,7 @@ class Toolset:
         if '@' in query and query != user_email:
             return f"Access denied, only the data of the current user {user_email} can be accessed."
 
-        response = requests.get(url + f'/api/User/me?email={user_email}')
+        response = requests.get("https://api-hrm.nois.vn/api/user/me", headers=self.header)
 
         if response.status_code == 200:
             return_text = "User info:\n"
@@ -1003,9 +1003,10 @@ class Toolset:
             for i in user_data.items():
                 return_text += f"- {i[0]}: {i[1]}\n"
                 if i[0] == "maxDayOff":
-                    remaining_day_off = requests.get(url + f'/api/User/dayoff-data?email={user_email}').json()['data'][
-                        'dayOffAllow']
-                    return_text += f"- remainingDayOff: {remaining_day_off}\n"
+                    # remaining_day_off = requests.get(url + f'/api/User/dayoff-data?email={user_email}').json()['data'][
+                    #     'dayOffAllow']
+                    # return_text += f"- remainingDayOff: {remaining_day_off}\n"
+                    return_text += f"- remainingDayOff: {user_data['maxDayOff'] - user_data['offDay']}\n"
 
             return return_text
 
