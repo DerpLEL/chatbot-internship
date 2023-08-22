@@ -22,8 +22,8 @@ password = 'bMp{]nzt1'
 driver = '{ODBC Driver 17 for SQL Server}'
 conn_str = f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}'
 
-conn = pyodbc.connect(conn_str)
-cursor = conn.cursor()
+# conn = pyodbc.connect(conn_str)
+# cursor = conn.cursor()
 
 public_index_name = "nois-public-v3-index"
 private_index_name = "nois-private-v3-index"
@@ -367,6 +367,9 @@ Output: '''
         return doc
 
     def update_token(self, token, email):
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+
         cursor.execute(f"""SELECT token FROM history WHERE email = '{email}';""")
         conv_type = cursor.fetchone()
         print(conv_type)
@@ -382,10 +385,14 @@ Output: '''
         print(f"Conversation type to be updated to SQL: {token}\n")
         cursor.execute(f"""UPDATE history
             SET token = N'{token}' WHERE email = '{email}';""")
+
         conn.commit()
+        conn.close()
         return
     
     def get_token(self, email):
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
         cursor.execute(f"""SELECT token FROM history WHERE email = '{email}';""")
         hist = cursor.fetchone()
 
@@ -393,12 +400,15 @@ Output: '''
             cursor.execute(f"""INSERT INTO history
     VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             conn.commit()
+            conn.close()
 
             return ''
 
         if not hist[0]:
+            conn.close()
             return ''
-        
+
+        conn.close()
         return hist[0]
 
     def test_token(self, email):
@@ -497,6 +507,8 @@ Output: '''
         return response
     
     def update_conversation_type(self, conversation_type, email):
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
         cursor.execute(f"""SELECT conversation_type FROM history WHERE email = '{email}';""")
         conv_type = cursor.fetchone()
         print(conv_type)
@@ -508,15 +520,19 @@ Output: '''
             cursor.execute(f"""UPDATE history
                 SET conversation_type = N'{res}' WHERE email = '{email}';""")
             conn.commit()
+            conn.close()
             return
         
         print(f"Conversation type to be updated to SQL: {res}\n")
         cursor.execute(f"""UPDATE history
             SET conversation_type = N'{res}' WHERE email = '{email}';""")
         conn.commit()
+        conn.close()
         return
     
     def get_conversation_type(self, email):
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
         cursor.execute(f"""SELECT conversation_type FROM history WHERE email = '{email}';""")
         hist = cursor.fetchone()
 
@@ -524,14 +540,18 @@ Output: '''
             cursor.execute(f"""INSERT INTO history
 VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             conn.commit()
+            conn.close()
 
             return ['','']
 
         if not hist[0]:
+            conn.close()
             return ['','']
         
         hist[0] = hist[0].replace("[", "").replace("]", "")
         lst = hist[0].split(",")
+
+        conn.close()
         return [s.strip() for s in lst]
 
     def count_tokens(self, string):
@@ -541,6 +561,8 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
     def add_to_history_sql(self, query, response, email):
         n = 1500
 
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
         cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
         hist = cursor.fetchone()
 
@@ -551,6 +573,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             cursor.execute(f"""UPDATE history
             SET chat = N'{res}' WHERE email = '{email}';""")
             conn.commit()
+            conn.close()
             return
 
         hist = hist[0].split("<sep>")
@@ -572,9 +595,13 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         cursor.execute(f"""UPDATE history
         SET chat = N'{res}' WHERE email = '{email}';""")
         conn.commit()
+        conn.close()
         return
     
     def get_history_as_txt_sql(self, email):
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+
         cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
         hist = cursor.fetchone()
 
@@ -582,10 +609,12 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             cursor.execute(f"""INSERT INTO history
 VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             conn.commit()
+            conn.close()
 
             return ""
 
         if not hist[0]:
+            conn.close()
             return ""
 
         hist = hist[0].split("<sep>")
@@ -600,9 +629,13 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             except IndexError:
                 break
 
+        conn.close()
         return txt
 
     def get_history_query_short(self, email):
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+
         cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
         hist = cursor.fetchone()
 
@@ -610,10 +643,12 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             cursor.execute(f"""INSERT INTO history
 VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             conn.commit()
+            conn.close()
 
             return ""
 
         if not hist[0]:
+            conn.close()
             return ""
 
         hist = hist[0].split("<sep>")
@@ -628,6 +663,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             except IndexError:
                 break
 
+        conn.close()
         return txt
 
     def chat_private(self, query, email, name):

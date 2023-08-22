@@ -181,13 +181,19 @@ class MainDialog(LogoutDialog):
                         f"Your email: {(await SimpleGraphClient(token_response.token).get_me())['mail']}"
                     )
                 elif command.lower().strip() == "resetall":
-                    col_names = [
-                        'chat', 'post_leave', 'del_leave', 'conversation_type',
-                        'token', 'confirm_check', 'leave_type'
-                    ]
+                    conn = pyodbc.connect(conn_str)
+                    cursor = conn.cursor()
 
-                    for i in col_names:
-                        cursor.execute(f"""UPDATE history SET {i} = N'' WHERE email = '{(await SimpleGraphClient(token_response.token).get_me())['mail']}';""")
+                    cursor.execute(f"""UPDATE history SET chat = N'' 
+                    post_leave = N''
+                    del_leave = N''
+                    conversation_type = N''
+                    token = N''
+                    confirm_check = N''
+                    leave_type = N''
+                    WHERE email = '{(await SimpleGraphClient(token_response.token).get_me())['mail']}';""")
+                    conn.commit()
+                    conn.close()
 
                     await step_context.context.send_activity(
                         f"Reset data of user: {(await SimpleGraphClient(token_response.token).get_me())['mail']}"
