@@ -184,15 +184,17 @@ class MainDialog(LogoutDialog):
                     conn = pyodbc.connect(conn_str)
                     cursor = conn.cursor()
 
-                    cursor.execute(f"""UPDATE history SET chat = N'' 
-                    post_leave = N''
-                    del_leave = N''
-                    conversation_type = N''
-                    token = N''
-                    confirm_check = N''
-                    leave_type = N''
+                    cursor.execute(f"""UPDATE history SET chat = N'', 
+                    post_leave = N'',
+                    del_leave = N'',
+                    conversation_type = N'',
+                    token = N'',
+                    confirm_check = N'',
+                    leave_type = N'',
+                    confirm_delete = N''
                     WHERE email = '{(await SimpleGraphClient(token_response.token).get_me())['mail']}';""")
                     conn.commit()
+
                     conn.close()
 
                     await step_context.context.send_activity(
