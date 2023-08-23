@@ -1,4 +1,4 @@
-from langchain.prompts import PromptTemplate
+from langchain.prompts   import PromptTemplate
 from langchain.schema import Document
 from azure.core.credentials import AzureKeyCredential
 from langchain.chains import LLMChain
@@ -18,7 +18,7 @@ import ast
 
 from .user import *
 from .post_leave_application import *
-from .get_leave_application import *
+from .get_leave_application import * 
 from .delete_leave_application import *
 
 requests.encoding = 'UTF-8'
@@ -27,7 +27,7 @@ server = 'sql-chatbot-server.database.windows.net'
 database = 'sql-chatbot'
 username = 'test-chatbot'
 password = 'bMp{]nzt1'
-driver = '{ODBC Driver 17 for SQL Server}'
+driver= '{ODBC Driver 17 for SQL Server}'
 
 public_index_name = "nois-public-v3-index"
 private_index_name = "nois-private-v3-index"
@@ -46,11 +46,9 @@ search_key = '73Swa5YqUR5IRMwUIqOH6ww2YBm3SveLv7rDmZVXtIAzSeBjEQe9'
 account_name = 'acschatbotnoisintern'
 account_key = 'ohteFF8/tuPx3K0xtA/oIqXSKpx/MTnM4Ia0CbvLXJT1l0KJajB3zvX8A/DsNE9wm3gUq1TDlwve+AStS3nB0A=='
 storage_connection_string = 'DefaultEndpointsProtocol=https;AccountName=acschatbotnoisintern;AccountKey=ohteFF8/tuPx3K0xtA/oIqXSKpx/MTnM4Ia0CbvLXJT1l0KJajB3zvX8A/DsNE9wm3gUq1TDlwve+AStS3nB0A==;EndpointSuffix=core.windows.net'
-blob_service_client = BlobServiceClient.from_connection_string(
-    storage_connection_string)
+blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
 
 token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiI1OWI2N2I2YS1lNWYwLTQ1MzYtOTVmMy1hMzY3ZmY2OWVkODUiLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vNWUyYTNjYmQtMWE1Mi00NWFkLWI1MTQtYWI0Mjk1NmIzNzJjL3YyLjAiLCJpYXQiOjE2OTA4NjMxNjgsIm5iZiI6MTY5MDg2MzE2OCwiZXhwIjoxNjkwODY4NDA5LCJhaW8iOiJBV1FBbS84VUFBQUExRTEvSmZCV2RneFhGNTViNURTUGRjTU85THN6Sk54QnU4aGpGR1I5RnFiaGxPcmhIa1UyeFJCYUliM1gwcDlCYU8xSWtiSmVUcHZTNlVXTE8rZHdaekx1QUhQQ1ZGY25kaUxaMVY2S1JBNXhGck9OaS9NdWVrOWIyclpPRG45SCIsImF6cCI6Ijc2ZWE5MmQ2LTMzMDgtNDBkNS04NjRhLWIyN2ZiOGY1YjI3MyIsImF6cGFjciI6IjAiLCJuYW1lIjoiVGhpZW4gVHJhbiIsIm9pZCI6ImY1MjdhZGI1LWM5OGMtNDg4NS1iYjY3LThkMTc4NTI2ZDI1NCIsInByZWZlcnJlZF91c2VybmFtZSI6InRoaWVuLnRyYW5Abm9pcy52biIsInJoIjoiMC5BVWtBdlR3cVhsSWFyVVcxRkt0Q2xXczNMR3A3dGxudzVUWkZsZk9qWl85cDdZVkpBSE0uIiwicm9sZXMiOlsiVXNlciJdLCJzY3AiOiJhY2Nlc3NfYXNfdXNlciIsInN1YiI6Ik1oTGgzVnBVU2V1VE1FN2xlcjZ6Vk9VSno0Qkx6c3J0S2I4NTh3R1owMUkiLCJ0aWQiOiI1ZTJhM2NiZC0xYTUyLTQ1YWQtYjUxNC1hYjQyOTU2YjM3MmMiLCJ1dGkiOiIwVzJfVk1QMHYwMm5jWkVabFMwcEFBIiwidmVyIjoiMi4wIn0.U2_xKL1VK3A9NK08qT70TsYlL3dMoKSSy3gCyz4C_D1hoHT-dPKxC0oBhDMxSwtvenwcJig3oSsvuwVsIUQBJjDIdjcVp-QU30AogWG4RHL5fuAYE-yToKViALInhMz28zH75zztUN2iYlXEy4MA0gEHtgQ1xRoI_TuiuS04VI_potBsBpNPZJEf-_W1p_klYKGGXAjxxbzuhj8azvffRFdYYyWITRZrAYqH1nHOoIbWNNq3f1YdHZAXILdjL2n5tMTyIRlXUweB0BM8atKkkMh86qiInVD2VFtWXuvoAXkFwq6XrX0wVB_0FQzPz_J52spC5jLFhixp5099Q8osXQ"
-
 
 class chatAI:
     classifier_hrm = """<|im_start|>system
@@ -181,6 +179,7 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
+ 
     classifier_template = """<|im_start|>system
 Given a sentence, assistant will determine if the sentence belongs in 1 of 3 categories, which are:
 - policy
@@ -223,6 +222,7 @@ Input: {question}
 <|im_start|>assistant
 Output:"""
 
+
     delete_custom_template = """ <|im_start|>system
 
 - if the input is "unrelated response to previous question, cancelled previous action", the output, you should say to that same meaning in formal tone and in vietnamese.
@@ -237,6 +237,7 @@ Input: {question}
 
 Output:"""
 
+ 
     drink_fee_template = """<|im_start|>system
 Sources:
 {summaries}
@@ -315,74 +316,13 @@ BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed:
 <|im_start|>assistant
 """
 
-    confirm_template = """<|im_start|>system
-Given a sentence, assistant will determine if the sentence belongs in 1 of 2 categories, which are:
-- "yes"
-- "no"
-- "neutral"
-You answer the question "Does user input mean consent?"
-"yes": user agree 
-example for case "yes": yes, ok, ờ, có, ừ, um, uhm, okie, ô kê, đồng ý...
-"no": user not agree 
-example for case "no": không, không đồng ý,...
-"neutral: neutral user input (sáng mai, đi học, ...)
-EXAMPLE
-Input: yes
-Output: yes
-Input: no
-Output: no
-Input: Đi học
-Output: neutral
-Input: ok
-Output: yes
-Input: not ok
-Output: no
-Input: thứ 5
-Output: neutral
-Input: dạ
-Output: yes
-Input: không
-Output: no
-Input: sáng mai
-Output: neutral
-Input: Xác nhận
-Output: yes
-Input: hủy
-Output: no
-Input: đi công tác
-Output: neutral
-Input: phải
-Output: yes
-Input: cancel
-Output: no
-Input: ngày 7
-Output: neutral
-
-<|im_end|>
-
-Input: {question}
-<|im_start|>assistant
-Output:"""
-
-    language_prompt = '''Given a sentence, determine if the sentence is written in English or Vietnamese.
-Output en for English, and vi for Vietnamese. DO NOT answer if the sentence is a question.
-
-Sentence: Who is the co-founder of NOIS?
-Output: en
-Sentence: FASF là gì?
-Output: vi
-Sentence: {question}
-Output: '''
-
     def __init__(self):
         self.history_public = []
         self.history_private = {}
         self.private = False
-        self.confirm_delete = False
         self.container_drink_fee_name = 'nois-drink-fee'
-        self.container_client = blob_service_client.get_container_client(
-            self.container_drink_fee_name)
-        self.user = {"username": '', "mail": ''}
+        self.container_client = blob_service_client.get_container_client(self.container_drink_fee_name)
+        self.user = {"username":'', "mail":''}
 
         self.llm = AzureChatOpenAI(
             openai_api_type="azure",
@@ -450,31 +390,18 @@ Output: '''
             searchMode="all",
         )
 
-        self.qa_chain = load_qa_with_sources_chain(
-            llm=self.llm, chain_type="stuff", prompt=PromptTemplate.from_template(self.chat_template))
-        self.keywordChain = LLMChain(
-            llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_templ))
-        self.classifier_chain = LLMChain(
-            llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
-        self.drink_chain = load_qa_with_sources_chain(
-            llm=self.llm3, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
-        self.header_drink_chain = load_qa_with_sources_chain(
-            llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.header_templ_drink_fee))
-        self.language_classifier = LLMChain(
-            llm=self.llm3, prompt=PromptTemplate.from_template(self.language_prompt))
+        self.qa_chain = load_qa_with_sources_chain(llm=self.llm, chain_type="stuff", prompt=PromptTemplate.from_template(self.chat_template))
+        self.keywordChain = LLMChain(llm=self.llm3, prompt=PromptTemplate.from_template(self.keyword_templ))
+        self.classifier_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
+        self.drink_chain = load_qa_with_sources_chain(llm=self.llm3, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
+        self.header_drink_chain = load_qa_with_sources_chain(llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.header_templ_drink_fee))
 
         # usecase 2
-        self.classifier_hrm_chain = LLMChain(
-            llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_hrm))
-        # post leave application
-        self.leave_application_chain = LLMChain(
-            llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_leave_application))
-        self.delete_chat_chain = LLMChain(
-            llm=self.llm2, prompt=PromptTemplate.from_template(self.delete_custom_template))
-
-        self.confirm_chain = LLMChain(
-            llm=llm2, prompt=PromptTemplate.from_template(confirm_template))
-
+        self.classifier_hrm_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_hrm))
+        #post leave application
+        self.leave_application_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_leave_application))
+        self.delete_chat_chain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.delete_custom_template))
+        
 # get document
     def get_document(self, query, retriever):
         # Get top 4 documents
@@ -521,11 +448,7 @@ Output: '''
         # print(hist)
 
     def update_token(self, token, email):
-        conn = pyodbc.connect(
-            f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
-        cursor = conn.cursor()
-        cursor.execute(
-            f"""SELECT token FROM history WHERE email = '{email}';""")
+        cursor.execute(f"""SELECT token FROM history WHERE email = '{email}';""")
         conv_type = cursor.fetchone()
         # print(conv_type)
         token = token.replace("'", "''")
@@ -535,36 +458,28 @@ Output: '''
             cursor.execute(f"""UPDATE history
                 SET token = N'{token}' WHERE email = '{email}';""")
             conn.commit()
-            conn.close()
             return
-
+        
         # print(f"Conversation type to be updated to SQL: {token}\n")
         cursor.execute(f"""UPDATE history
             SET token = N'{token}' WHERE email = '{email}';""")
         conn.commit()
-        conn.close()
         return
-
+    
     def get_token(self, email):
-        conn = pyodbc.connect(
-            f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
-        cursor = conn.cursor()
-        cursor.execute(
-            f"""SELECT token FROM history WHERE email = '{email}';""")
+        cursor.execute(f"""SELECT token FROM history WHERE email = '{email}';""")
         hist = cursor.fetchone()
 
         if not hist:
             cursor.execute(f"""INSERT INTO history
     VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             conn.commit()
-            conn.close()
+
             return ''
 
         if not hist[0]:
-            conn.close()
             return ''
-
-        conn.close()
+        
         return hist[0]
 
     def test_token(self, email):
@@ -580,7 +495,7 @@ Output: '''
             return True
 
         return False
-
+    
     def login_HRM(self, query, email):
         global token
         token = self.get_token(email)
@@ -598,7 +513,7 @@ Output: '''
             header = {"Authorization": f"Bearer {token}"}
             response = requests.get(url, headers=header)
             response.encoding = 'utf-8'
-
+            
             # print(response)
             if response.status_code == 200:
                 return "Bạn đã đăng nhập thành công vào HRM."
@@ -622,7 +537,7 @@ Output: '''
         #     header = {"Authorization": f"Bearer {token}"}
         #     response = requests.get(url, headers=header)
         #     response.encoding = 'utf-8'
-
+            
         # #     print(response)
         #     if response.status_code == 200:
         #         return "Bạn đã đăng nhập thành công vào HRM.", ''
@@ -639,8 +554,7 @@ Output: '''
         return self.chat_private(query, email, name)
 
     def chat_public(self, query):
-        keywords = self.keywordChain(
-            {'question': query, 'context': self.get_history_as_txt()})['text']
+        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt()})['text']
         # print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
@@ -648,48 +562,13 @@ Output: '''
 
         try:
             response = response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(),
-                                         'user_info': ''},
-                                        return_only_outputs=False)
+                    'user_info': ''},
+                             return_only_outputs=False)
         except Exception as e:
             return {'output_text': f'Cannot generate response, error: {e}'}, doc
 
         self.add_to_history(query, response['output_text'])
         return response, doc
-
-    def get_post_leave(self, email):
-        cursor.execute(
-            f"""SELECT post_leave FROM history WHERE email = '{email}';""")
-        hist = cursor.fetchone()
-
-        if not hist:
-            cursor.execute(f"""INSERT INTO history
-    VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
-            conn.commit()
-
-            return {
-                'start_date': ' ',
-                'end_date': ' ',
-                'duration': 0,
-                'note': ' ',
-                'periodType': -1,
-                'reviewUser': 0,
-                'leaveType': -1,
-            }
-
-        if not hist[0]:
-            return {
-                'start_date': ' ',
-                'end_date': ' ',
-                'duration': 0,
-                'note': ' ',
-                'periodType': -1,
-                'reviewUser': 0,
-                'leaveType': -1,
-            }
-
-        leave_application_form_str = hist[0].replace("''", "'")
-
-        return ast.literal_eval(leave_application_form_str)
 
     def chat_hrm(self, query, email):
         if not self.test_token(email):
@@ -699,7 +578,8 @@ Output: '''
             elif self.login_HRM(query, email) == 'Bạn đã đăng nhập thành công vào HRM.':
                 return "Bạn đã đăng nhập thành công vào HRM."
 
-        if self.get_conversation_type(email) == ['', ''] or self.get_conversation_type(email) == ['LeaveApplication', '']:
+        # print (self.get_conversation_type(email))
+        if self.get_conversation_type(email) == ['',''] or self.get_conversation_type(email) == ['LeaveApplication','']:
             label_hrm = self.classifier_hrm_chain(query)['text']
         else:
             label_hrm = self.get_conversation_type(email)[0]
@@ -709,104 +589,17 @@ Output: '''
         if label_hrm == "User":
             response = run_return_user_response(email, query, token)
         elif label_hrm == "LeaveApplication":
-            if self.get_conversation_type(email) == ['', ''] or self.get_conversation_type(email) == ['LeaveApplication', '']:
-                leave_application_type = self.leave_application_chain(query)[
-                    'text']
+            if self.get_conversation_type(email) == ['',''] or self.get_conversation_type(email) == ['LeaveApplication','']:
+                leave_application_type = self.leave_application_chain(query)['text']
             else:
                 leave_application_type = self.get_conversation_type(email)[1]
 
+            # print(leave_application_type)
             if leave_application_type == 'get':
                 response = run_get_leave_application(email, query, token)
             elif leave_application_type == 'post':
-                leave_application_form = get_post_leave(email)
-
-                confirm = self.confirm_chain(query)['text']
-
-                if 'o' in confirm and self.confirm_delete:
-                    leave_application_form = {
-                        'start_date': ' ',
-                        'end_date': ' ',
-                        'duration': 0,
-                        'note': ' ',
-                        'periodType': -1,
-                        'reviewUser': 0,
-                        'leaveType': -1,
-                    }
-
-                    update_post_leave(leave_application_form, email)
-
-                    response = f"""Đơn nghỉ phép của bạn đã xóa. Bạn có thể gửi một Đơn nghỉ phép khác."""
-                    self.confirm_delete = False
-                    self.update_conversation_type(['', ''], email)
-                    return response
-
-                if self.get_conversation_type(email) != ['LeaveApplication', 'post'] and leave_application_form['start_date'] != ' ':
-                    self.update_conversation_type(
-                        ['LeaveApplication', 'post'], email)
-                    if leave_application_form['periodType'] == 0:
-                        periodType = "Cả ngày"
-                    elif leave_application_form['periodType'] == 1:
-                        periodType = "Buổi sáng"
-                    elif leave_application_form['periodType'] == 2:
-                        periodType = "Buổi chiều"
-
-                    if leave_application_form['reviewUser'] == 56:
-                        reviewUser_string = 'Nguyễn Thị Mỹ Dung'
-                    elif leave_application_form['reviewUser'] == 108:
-                        reviewUser_string = 'ĐÀO MINH SÁNG'
-                    elif leave_application_form['reviewUser'] == 137:
-                        reviewUser_string = 'TRẦN VĂN KHANG'
-                    elif leave_application_form['reviewUser'] == 119:
-                        reviewUser_string = 'Trần Đăng Ninh'
-                    elif leave_application_form['reviewUser'] == 281:
-                        reviewUser_string = 'PHẠM THỊ DIỄM PHÚC'
-                    elif leave_application_form['reviewUser'] == 139:
-                        reviewUser_string = 'LÝ MINH QUÂN'
-                    elif leave_application_form['reviewUser'] == 124:
-                        reviewUser_string = 'ĐỔNG HỒNG NHUNG'
-                    elif leave_application_form['reviewUser'] == 141:
-                        reviewUser_string = 'VÕ TẤN TÀI'
-                    elif leave_application_form['reviewUser'] == 298:
-                        reviewUser_string = 'Tai Vo'
-                    elif leave_application_form['reviewUser'] == 95:
-                        reviewUser_string = 'TRẦN THỊ THÚY AN'
-
-                    if leave_application_form['leaveType'] == 1:
-                        leaveType_string = 'Nghỉ phép có lương'
-                    elif leave_application_form['leaveType'] == 2:
-                        leaveType_string = 'Nghỉ không lương'
-                    elif leave_application_form['leaveType'] == 8:
-                        leaveType_string = 'Nghỉ ốm'
-                    elif leave_application_form['leaveType'] == 9:
-                        leaveType_string = 'Nghỉ bảo hiểm xã hội'
-                    elif leave_application_form['leaveType'] == 5:
-                        leaveType_string = 'Nghỉ hội nghị, đào tạo'
-                    elif leave_application_form['leaveType'] == 3:
-                        leaveType_string = 'Nghỉ khác (đám cưới,...)'
-
-                    response = f"""Hiện bạn đang có một Form submit ngày nghỉ chưa submit:\n
-                    ______________________________________________________________________
-                    Người duyệt: {reviewUser_string}
-                    Ngày bắt đầu nghỉ: {leave_application_form['start_date']}
-                    Ngày kết thúc nghỉ: {leave_application_form['end_date']}
-                    Nghỉ buổi: {periodType}
-                    Tổng thời gian nghỉ: {leave_application_form['duration']}
-                    Hình thứ nghỉ: {leaveType_string}
-                    Lí do: {leave_application_form['note']}    
-                    ______________________________________________________________________\n
-                    
-                    Bạn có muốn giữ đơn nghỉ phép này không? Nếu có thì vui lòng bạn cung cấp những thông tin còn thiếu."""
-
-                    self.confirm_delete = True
-                    self.update_conversation_type(
-                        ['LeaveApplication', 'post'], email)
-                    return response
-
-                self.update_conversation_type(
-                    ['LeaveApplication', 'post'], email)
-
-                post_leave_application_response = post_leave_application_func(
-                    self.user, query, token, email)
+                self.update_conversation_type(['LeaveApplication', 'post'], email)
+                post_leave_application_response = post_leave_application_func(self.user, query, token, email)
                 response = post_leave_application_response[0]
                 # print(post_leave_application_response)
                 try:
@@ -820,12 +613,10 @@ Output: '''
                     pass
 
             elif leave_application_type == 'delete':
-                self.update_conversation_type(
-                    ['LeaveApplication', 'delete'], email)
+                self.update_conversation_type(['LeaveApplication','delete'], email)
                 # print("delete - pass")
-                response = run_leave_application_delete(
-                    email, query, "", token)
-                if (response == "unrelated response to previous question, cancelled previous action"):
+                response = run_leave_application_delete(email, query, "", token)
+                if (response =="unrelated response to previous question, cancelled previous action"):
                     self.update_conversation_type(['', ''], email)
                     self.clear_history()
                     response = str(self.delete_chat_chain(response)['text'])
@@ -834,15 +625,13 @@ Output: '''
                     self.clear_history()
                     self.update_conversation_type(['', ''], email)
                     response = str(self.delete_chat_chain(response)['text'])
-
+        
         return response
-
+    
     def update_conversation_type(self, conversation_type, email):
-        conn = pyodbc.connect(
-            f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
+        conn = pyodbc.connect(f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
         cursor = conn.cursor()
-        cursor.execute(
-            f"""SELECT conversation_type FROM history WHERE email = '{email}';""")
+        cursor.execute(f"""SELECT conversation_type FROM history WHERE email = '{email}';""")
         conv_type = cursor.fetchone()
 
         # print(conv_type)
@@ -856,20 +645,18 @@ Output: '''
             conn.commit()
             conn.close()
             return
-
+        
         # print(f"Conversation type to be updated to SQL: {res}\n")
         cursor.execute(f"""UPDATE history
             SET conversation_type = N'{res}' WHERE email = '{email}';""")
         conn.commit()
         conn.close()
         return
-
+    
     def get_conversation_type(self, email):
-        conn = pyodbc.connect(
-            f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
+        conn = pyodbc.connect(f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
         cursor = conn.cursor()
-        cursor.execute(
-            f"""SELECT conversation_type FROM history WHERE email = '{email}';""")
+        cursor.execute(f"""SELECT conversation_type FROM history WHERE email = '{email}';""")
         hist = cursor.fetchone()
 
         if not hist:
@@ -878,24 +665,22 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             conn.commit()
             conn.close()
 
-            return ['', '']
+            return ['','']
 
         if not hist[0]:
             conn.close()
-            return ['', '']
-
+            return ['','']
+        
         hist[0] = hist[0].replace("[", "").replace("]", "")
         lst = hist[0].split(",")
         conn.close()
         return [s.strip() for s in lst]
-
+    
     def add_to_history_sql(self, query, response, email):
         n = 3
-        conn = pyodbc.connect(
-            f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
+        conn = pyodbc.connect(f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
         cursor = conn.cursor()
-        cursor.execute(
-            f"""SELECT chat FROM history WHERE email = '{email}';""")
+        cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
         hist = cursor.fetchone()
 
         if not hist[0]:
@@ -921,13 +706,11 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         conn.commit()
         conn.close()
         return
-
+    
     def get_history_as_txt_sql(self, email):
-        conn = pyodbc.connect(
-            f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
+        conn = pyodbc.connect(f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
         cursor = conn.cursor()
-        cursor.execute(
-            f"""SELECT chat FROM history WHERE email = '{email}';""")
+        cursor.execute(f"""SELECT chat FROM history WHERE email = '{email}';""")
         hist = cursor.fetchone()
 
         if not hist:
@@ -959,16 +742,14 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
 
     def chat_private(self, query, email, name):
         # print(self.get_conversation_type(email)[0] == 'LeaveApplication')
-
+        
         if str(self.get_conversation_type(email)[0]) == '':
-            label = self.classifier_chain(
-                {'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
+            label = self.classifier_chain({'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
         else:
             label = "hrm"
 
         # print("label " + label)
-        keywords = self.keywordChain(
-            {'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
+        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
         # print(keywords)
 
         chain = self.qa_chain
@@ -981,19 +762,17 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
 
             doc = self.get_document(keywords, self.retriever_drink)[:1]
 
-            input_pandas = self.drink_chain(
-                {'input_documents': doc, 'question': query, 'context': ''}, return_only_outputs=False)
+            input_pandas = self.drink_chain({'input_documents': doc, 'question': query, 'context': ''}, return_only_outputs=False)
 
             try:
                 blob_name = doc[0].metadata['metadata_storage_name']
             except IndexError:
                 return {'output_text': 'Không tìm thấy file tiền nước, bạn vui lòng hỏi lại với đầy đủ thông tin.'}, None
-
+        
             # print(input_pandas['output_text'])
-            temp_result = self.excel_drink_preprocess(
-                input_pandas['output_text'], blob_name, doc)
+            temp_result = self.excel_drink_preprocess(input_pandas['output_text'], blob_name, doc)
             # print(temp_result)
-            result_doc = "Input: " + query + "\n Output: " + str(temp_result)
+            result_doc = "Input: " + query +"\n Output: " + str(temp_result)
             # print(result_doc)
 
             # if """count""" not in input_pandas['output_text']:
@@ -1012,7 +791,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             doc = self.get_document(keywords, self.retriever_private)
             try:
                 num_results = 3
-
+                
                 for result in search(query + "hiện tại", num_results=num_results):
                     response = requests.get(result)
                     html_content = response.text
@@ -1025,17 +804,11 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
                     doc[0].page_content = text[:4100]
             except:
                 pass
-
+            
         try:
-            hist = self.get_history_as_txt_sql(
-                email) if label != 'drink fee' else ''
-
-            lang = self.language_classifier(query)['text']
-            query_with_lang = query + ' Trả lời câu này bằng Tiếng Việt.' if lang == 'vi' else query + \
-                ' Answer this query using English.'
-
-            response = chain({'input_documents': doc, 'question': query_with_lang, 'context': hist,
-                              'user_info': f'''The user chatting with you is named {name}, with email: {email}. 
+            hist = self.get_history_as_txt_sql(email) if label != 'drink fee' else ''
+            response = chain({'input_documents': doc, 'question': query, 'context': hist,
+                                'user_info': f'''The user chatting with you is named {name}, with email: {email}. 
                                 '''},
                              return_only_outputs=False)
 
@@ -1053,7 +826,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
     #     doc_num = 1
     #     doc = []
     #     for i in res:
-    #         newdoc = Document(page_content=i['content'],
+    #         newdoc = Document(page_content=i['content'], 
     #                           metadata={'@search.score': i['@search.score'], 'metadata_storage_name': i['metadata_storage_name'], 'source': f'doc-{doc_num}'})
 
     #         doc.append(newdoc)
@@ -1062,15 +835,14 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
 
     def excel_drink_preprocess(self, input_pandas, file_name, doc):
 
-        sas_i = generate_blob_sas(account_name=account_name,
-                                  container_name=self.container_drink_fee_name,
-                                  blob_name=file_name,
-                                  account_key=account_key,
-                                  permission=BlobSasPermissions(read=True),
-                                  expiry=datetime.utcnow() + timedelta(hours=1))
+        sas_i = generate_blob_sas(account_name = account_name,
+                            container_name = self.container_drink_fee_name,
+                            blob_name = file_name,
+                            account_key=account_key,
+                            permission=BlobSasPermissions(read=True),
+                            expiry=datetime.utcnow() + timedelta(hours=1))
 
-        sas_url = 'https://' + account_name+'.blob.core.windows.net/' + \
-            self.container_drink_fee_name + '/' + file_name + '?' + sas_i
+        sas_url = 'https://' + account_name+'.blob.core.windows.net/' + self.container_drink_fee_name + '/' + file_name + '?' + sas_i
 
         df = pd.read_excel(sas_url)
         doc[0].page_content = df
@@ -1090,7 +862,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         # df = df.iloc[:, df.columns.notna()]
 
         try:
-            result_pandas = eval(input_pandas)
+            result_pandas = eval(input_pandas) 
         except Exception as e:
             return input_pandas
 

@@ -256,56 +256,34 @@ latest_application_date_classifier = """
 SENTENCE: {output}
 OUTPUT:"""
 llm2 = AzureChatOpenAI(
-
             openai_api_type="azure",
-
             openai_api_base='https://openai-nois-intern.openai.azure.com/',
-
             openai_api_version="2023-03-15-preview",
-
             deployment_name='gpt-35-turbo-16k',
-
             openai_api_key='400568d9a16740b88aff437480544a39',
-
             temperature=0.7,
-
             max_tokens=600
-
         )
 
 # for keyword -lateron
 llm3 = AzureChatOpenAI(
-
             openai_api_type="azure",
-
             openai_api_base='https://openai-nois-intern.openai.azure.com/',
-
             openai_api_version="2023-03-15-preview",
-
             deployment_name='gpt-35-turbo-16k',
-
             openai_api_key='400568d9a16740b88aff437480544a39',
-
             temperature=0.5,
-
             max_tokens=600
-
         )
 
 # using section
 
 usecase2_classifier_chain = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(classifier_usecase2))
-
 classifier_user_chain = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(classifier_user))
-
 classifier_leave_application_get = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(classifier_question_leave_application))
-
 keyword_chain = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(keyword_templ_leave_application))
-
 value_extract = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(extracted_value_quantity_specific))
-
 qaChain = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(chat_template))
-
 
 # function define
 def get_leave_application():

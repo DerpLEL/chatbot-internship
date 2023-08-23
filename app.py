@@ -5,8 +5,10 @@ import sys
 import traceback
 from datetime import datetime
 from http import HTTPStatus
+import jsonpickle
 
 from aiohttp import web
+from flask import Flask, request, Response, render_template
 from aiohttp.web import Request, Response, json_response
 from botbuilder.core import (
     BotFrameworkAdapter,
@@ -24,15 +26,34 @@ from bots import AuthBot
 
 # Create the loop and Flask app
 from config import DefaultConfig
-from dialogs import MainDialog, chatbot
+from dialogs import MainDialog
+
+import asyncio
+import threading
+import time
+import nest_asyncio
+
+from dialogs.echobot import*
+
+bot = EchoBot()
+
+
+nest_asyncio.apply()
+
+
 CONFIG = DefaultConfig()
 
 # Create adapter.
 # See https://aka.ms/about-bot-adapter to learn more about how bots work.
 SETTINGS = BotFrameworkAdapterSettings(CONFIG.APP_ID, CONFIG.APP_PASSWORD)
 ADAPTER = BotFrameworkAdapter(SETTINGS)
+ADAPTER.use(ShowTypingMiddleware(0.1, 0.5))
+
+LOOP = asyncio.get_event_loop()
 
 # Catch-all for errors.
+
+
 async def on_error(context: TurnContext, error: Exception):
     # This check writes out errors to console log .vs. app insights.
     # NOTE: In production environment, you should consider logging this to Azure
@@ -76,33 +97,161 @@ BOT = AuthBot(CONVERSATION_STATE, USER_STATE, DIALOG)
 
 
 # Listen for incoming requests on /api/messages.
-#  fix this part lmao  
-async def messages(req: Request) -> Response:
-    # Main bot message handler.
-    ADAPTER.use(ShowTypingMiddleware(0.1, 21.5))
-    
+#  fix this part lmao
 
-    if "application/json" in req.headers["Content-Type"]:
-        body = await req.json()
+app = Flask(__name__)
+
+
+@app.route('/')
+def index():
+    return render_template('chat.html')
+
+
+@app.route("/get", methods=["GET", "POST"])
+def chat():
+    msg = request.form["msg"]
+
+    response = bot.chat(msg)
+
+    return response
+
+# def worker():
+#     # ADAPTER.use(ShowTypingMiddleware(0.5, 1))
+#     if "application/json" in request.headers["Content-Type"]:
+#         body = request.json
+#     else:
+#         return jsonpickle.encode(Response(status=415))
+#     activity = Activity().deserialize(body)
+#     auth_header = request.headers["Authorization"] if "Authorization" in request.headers else ""
+#     ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
+
+# async def worker():
+#     # Các tác vụ bạn muốn tiến hành trong tiến trình này
+#     print("Tiến trình đang chạy...")
+#     for i in range(1,100):
+#         print(i)
+
+# @app.route("/api/messages", methods=["POST"])
+# def messages():
+#     # ADAPTER.use(ShowTypingMiddleware(0.5, 1))
+#     if "application/json" in request.headers["Content-Type"]:
+#         body = request.json
+#     else:
+#         return jsonpickle.encode(Response(status=415))
+
+#     activity = Activity().deserialize(body)
+#     auth_header = request.headers["Authorization"] if "Authorization" in request.headers else ""
+
+#     async def worker():
+#         await ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
+
+#     def run_worker():
+#         asyncio.run(worker())
+
+#     # print(await ADAPTER.process_activity(activity, auth_header, BOT.on_turn))
+#     try:
+#         for _ in range(2):
+    # thread = threading.Thread(target=run_worker, daemon=True)
+    # thread.start()
+
+#         return jsonpickle.encode(Response(status=201))
+#     except Exception as exception:
+#         raise exception
+
+
+@app.route("/api/messages", methods=["POST"])
+async def messages():
+    if "application/json" in request.headers["Content-Type"]:
+        body = request.json
     else:
-        return Response(status=HTTPStatus.UNSUPPORTED_MEDIA_TYPE)
+        return jsonpickle.encode(Response(status=415))
 
     activity = Activity().deserialize(body)
+    auth_header = request.headers["Authorization"] if "Authorization" in request.headers else ""
 
-    auth_header = req.headers["Authorization"] if "Authorization" in req.headers else ""
-    response = await ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
-
-    if response:
-        return json_response(data=response.body, status=response.status)
-
-    return Response(status=HTTPStatus.OK)
-
-
-APP = web.Application(middlewares=[aiohttp_error_middleware])
-APP.router.add_post("/api/messages", messages)
-
-if __name__ == "__main__":
+    # print(await ADAPTER.process_activity(activity, auth_header, BOT.on_turn))
     try:
-        web.run_app(APP, host="localhost", port=CONFIG.PORT)
-    except Exception as error:
-        raise error
+        # async def worker():
+        #     await ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
+        #     task = LOOP.create_task(ADAPTER.process_activity(activity, auth_header, BOT.on_turn))
+        #     LOOP.run_until_complete(task)
+
+        # def run_worker():
+        #     asyncio.run(worker())
+
+        # thread = threading.Thread(target=run_worker, daemon=True)
+        # thread.start()
+
+        # task = LOOP.create_task(aux_func())
+
+        # Run the event loop until all tasks are compxleted
+        # await asyncio.wait_for(task, timeout=5)
+
+        # async def run_session():
+        #     async def aux_func(turn_context):
+        #         DIALOG.change_intent(turn_context.activity.text)
+
+        #     tasks = [
+        #         # asyncio.create_task(ADAPTER.process_activity(activity, auth_header, aux_func)),
+        #         asyncio.create_task(ADAPTER.process_activity(activity, auth_header, BOT.on_turn)),
+        #     ]
+
+        #     # await asyncio.gather(*tasks)
+        #     await asyncio.wait(tasks)
+        # await asyncio.run(asyncio.gather(*tasks))
+
+        # asyncio.run(run_session())
+
+        # # await ADAPTER.process_activity(activity, auth_header, aux_func)
+        # # await ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
+
+        # async def worker():
+        #     await ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
+
+        # def run_worker():
+        #     asyncio.run(worker())
+
+        # thread = threading.Thread(target=run_worker, daemon=False)
+        # thread.start()
+
+        async def worker():
+            start_time = time.time()
+            await ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
+            end_time = time.time()
+            print(end_time - start_time)
+            if end_time - start_time < 5.0:
+                await ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
+
+        async def run_session():
+            task = asyncio.create_task(worker())
+            await asyncio.ensure_future(task)
+            # await asyncio.wait_for(task)
+            # await task
+            await task
+
+        # asyncio.run(run_session())
+        thread = threading.Thread(
+            target=asyncio.run(run_session()), daemon=False)
+        thread.start()
+        thread.join()
+
+        #     # async def aux_func(turn_context):
+        #     #     DIALOG.change_intent(turn_context.activity.text)
+        #     # await ADAPTER.process_activity(activity, auth_header, aux_func)
+        #     await ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
+
+        # task = LOOP.create_task(run_session())
+        # LOOP.run_until_complete(task)
+
+        return jsonpickle.encode(Response(status=201))
+    except Exception as exception:
+        raise exception
+
+if __name__ == '__main__':
+    import os
+    HOST = 'localhost'
+    try:
+        PORT = 3978
+    except ValueError:
+        PORT = 5555
+    app.run(debug=False, threaded=True, host="0.0.0.0", port=CONFIG.PORT)
