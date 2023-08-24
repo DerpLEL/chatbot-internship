@@ -257,6 +257,7 @@ For example: If ask about fullname is 'Hưng', use must answer with format of da
 
     language_prompt = '''Given a sentence, determine if the sentence is written in English or Vietnamese.
 Output en for English, and vi for Vietnamese. DO NOT answer if the sentence is a question.
+If given a sentence with both Vietnamese and English, output vi.
 
 Sentence: Who is the co-founder of NOIS?
 Output: en
