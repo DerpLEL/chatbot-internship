@@ -257,13 +257,13 @@ For example: If ask about fullname is 'Hưng', use must answer with format of da
 
     language_prompt = '''Given a sentence, determine if the sentence is written in English or Vietnamese.
 Output en for English, and vi for Vietnamese. DO NOT answer if the sentence is a question.
-If given a sentence with both Vietnamese and English, output vi.
+If given a sentence with both Vietnamese and English, the default is Vietnamese.
 
 Sentence: Who is the co-founder of NOIS?
 Output: en
 Sentence: FASF là gì?
 Output: vi
-Sentence: Hi chatbot, Andy Tran của công ty NOIS là ai?
+Sentence: Hiện tại có bao nhiêu tool đang bị down?
 Output: vi
 Sentence: {question}
 Output: '''
@@ -737,7 +737,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             hist = self.get_history_as_txt_sql(email) if label != 'drink fee' else ''
 
             lang = self.language_classifier(query)['text'].strip()
-            query_with_lang = query + ' Answer this query using English.' if lang == 'en' else query + ' Trả lời câu này bằng Tiếng Việt.'
+            query_with_lang = query + ' Answer this query using English.' if lang == 'en' else query + ' Answer this query using Vietnamese.'
             lang_in_prompt = 'English' if lang == 'en' else 'Vietnamese'
             print("Query language:", lang)
 
