@@ -684,8 +684,14 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
 
         chain = self.qa_chain
 
+        label = "drink fee"
         if label == "drink fee":
-            doc = self.get_document(keywords, self.retriever_drink)[:1]
+            # doc = self.get_document(keywords, self.retriever_drink)[:1]
+            df = pd.read_excel("D:/cb2/botver2/tool_status.xlsx")
+            content = df.to_string()
+
+            doc = [Document(page_content=content, metadata={'source': f'doc-1',
+                                                            'metadata_storage_name': 'tool_status.xlsx'})]
 
             input_pandas = self.drink_chain({'input_documents': doc, 'question': query, 'context': ''}, return_only_outputs=False)
 
@@ -747,19 +753,19 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
 
     def excel_drink_preprocess(self, input_pandas, file_name, doc):
 
-        sas_i = generate_blob_sas(account_name = account_name,
-                            container_name = self.container_drink_fee_name,
-                            blob_name = file_name,
-                            account_key=account_key,
-                            permission=BlobSasPermissions(read=True),
-                            expiry=datetime.utcnow() + timedelta(hours=1))
-
-        sas_url = 'https://' + account_name+'.blob.core.windows.net/' + self.container_drink_fee_name + '/' + file_name + '?' + sas_i
-
+        # sas_i = generate_blob_sas(account_name = account_name,
+        #                     container_name = self.container_drink_fee_name,
+        #                     blob_name = file_name,
+        #                     account_key=account_key,
+        #                     permission=BlobSasPermissions(read=True),
+        #                     expiry=datetime.utcnow() + timedelta(hours=1))
+        #
+        # sas_url = 'https://' + account_name+'.blob.core.windows.net/' + self.container_drink_fee_name + '/' + file_name + '?' + sas_i
+        sas_url = "D:/cb2/botver2/tool_status.xlsx"
         df = pd.read_excel(sas_url)
         doc[0].page_content = df
 
-        df = pd.read_excel(sas_url, skiprows=1)
+        df = pd.read_excel(sas_url)
         print(df)
 
         try:
