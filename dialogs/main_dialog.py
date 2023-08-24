@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
-
+import botbuilder.schema
 from botbuilder.core import MessageFactory, CardFactory
 from botbuilder.dialogs import WaterfallDialog, WaterfallStepContext, DialogTurnResult, ComponentDialog, DialogContext
 from botbuilder.dialogs.prompts import (
@@ -163,7 +163,7 @@ class MainDialog(LogoutDialog):
                 # me_info = await client.get_me()
 
                 # '**' + me_info['displayName'] + '** ' + 'Đợi tui xíu...'
-                await step_context.context.send_activity('...')
+                await step_context.context.send_activity("...")
                 # await step_context.prompt(
                 #         TextPrompt.__name__,
                 #         PromptOptions(),
@@ -188,7 +188,6 @@ class MainDialog(LogoutDialog):
                     post_leave = N'',
                     del_leave = N'',
                     conversation_type = N'',
-                    token = N'',
                     confirm_check = N'',
                     leave_type = N'',
                     confirm_delete = N''
