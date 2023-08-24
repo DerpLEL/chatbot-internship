@@ -8,6 +8,7 @@ from langchain.agents.agent_toolkits.openapi import planner
 import requests
 
 url = "https://api-hrm.nois.vn/api/user/me"
+url_off_date = ""
 header = {}
 
 # User_clasifier
@@ -203,7 +204,7 @@ def get_user():
     return response.json()['data'] 
 
 
-def display_single_leave_application(response):
+def display_user_info(response):
     """
     Input: None
             
@@ -213,23 +214,65 @@ def display_single_leave_application(response):
     Purpose: return user's data as dictionary
     """     
    # input list of dictionaries response
+   #   yearOffDay: Số ngày phép đã có
+
+# offDay: Số ngày phép đã nghỉ
+
+# bonusDayOff: phép thâm niên
+
+# allowDayOff: ngày phép được dung
+
+# maxDayOff: số ngày phép tối đa
+
+# sickDayOff: số ngày phép nghỉ ốm
+
+# offDayForSick: phép nghỉ ốm đã dùng
+
+# allowDayOffSick: số ngày phép được dung
+    day_off_info = get_day_off_user(response)
+
   # displaying the application
-    print("response - general - pass: " + str(response))
+    print("passed - user _ get info")
     if response != []:
         count = 1
         text =""
-        text += ("Leave application number " + str(count) +" :\n")
-        text += ("Application id: " +str(response["id"])  +"\n")
-        text += ("From date: " + str(response["fromDate"])  + "\n")
-        text +=("To date: " + str(response["toDate"]) + "\n")
-        text +=("Number day off: " + str(response["numberDayOff"]) + "\n\n")
+        text += ("Họ và tên: " +str(response["fullName"])  +"\n")
+        text += ("Email: " +str(response["id"])  +"\n")
+        text += ("Công việc: " + str(response["jobTitle"]) +  " " + str(response["roles"]) + "\n")
+        text +=("Số điện thoại: " + str(response["mobilePhone"]) + "\n")
+        text +=("Ngày sinh: " + (str(response["birthday"]))[:-9] + "\n")
+
+        # using differentday_off url 
+        text +=("Số ngày đã nghỉ: " + str(day_off_info["offDay"]) + "\n")
+        text +=("Số ngày đã nghỉ phép thâm niên: " + str(day_off_info["bonusDayOff"]) + "\n")
+        text +=("Số ngày đã nghỉ phép được dùng: " + str(day_off_info["allowDayOff"]) + "\n")
+        text +=("Số ngày đã nghỉ phép tối đa: " + str(day_off_info["maxDayOff"]) + "\n")
+        text +=("Số ngày đã nghỉ phép tối đa: " + str(day_off_info["sickDayOff"]) + "\n")
+        text +=("Số ngày đã nghỉ phép nghỉ ốm đã dùng: " + str(day_off_info["offDayForSick"]) + "\n")
+        text +=("Số ngày đã số ngày phép được dùng: " + str(day_off_info["allowDayOffSick"]) + "\n")
+
         count+=1
         text = new_line_formatter(text)
         print(text)
         return text
     else:
-        return 
+        return "error get user information failed"
 
+def get_day_off_user(response):
+    header = {
+    "api-key": "2NFGmIbGKlPkedZ25Mo9vQyM0CKSmABieUk-SCGzm9A"
+    }
+    url_day_off = "https://api-hrm.nois.vn/api/chatbot/dayoff?email=" + response['email']
+
+    response = requests.get(url_day_off, headers=header)
+
+
+    if response.status_code == 200:
+        return response.json()['data']
+    else:
+        return "get error"
+    
+    
 def new_line_formatter(response):
     """
     Input: response (str)
@@ -264,24 +307,10 @@ def display_user_information(response):
     """  
   # input list of dictionaries response
   # displaying the application
-    print("response - general - pass: " + str(response)) # error here means token expired
-    if response != []:
-        count = 1
-        text =""
-        for i in response:
-            text += ("Leave application number " + str(count) +" :\n")
-            text += ("Application id: " +str(i["id"])  +"\n")
-            text += ("From date: " + str(i["fromDate"])  + "\n")
-            text +=("To date: " + str(i["toDate"]) + "\n")
-            text +=("Number day off: " + str(i["numberDayOff"]) + "\n\n")
-            count+=1
-        
-        text = new_line_formatter(text)
-        print(text)
-        return text
-    else:
-        return 
-# must have url
+
+  
+
+
 
 
 def convertList(string):
@@ -311,24 +340,27 @@ def run_return_user_response(email,query , token):
     header = {"Authorization": f"Bearer {token}"}
     case_classifier = classifier_user_chain(query)
     print("get classifer: " + str(case_classifier))
-    if case_classifier['text'] == "get user":
-        response = display_single_leave_application()
-        return response
-    elif case_classifier['text'] =="get user specific":
-        user_info = get_user()
-        keyword = keyword_chain(query)['text']
-        keyword_list = convertList(keyword)
-        temp_answer = ""
-        if len(keyword_list) > 1:
-            for i in keyword_list:
-                temp_answer += str(user_info[i])
-            temp_result = "input: " + query + " output: " + str(temp_answer)
-        else:
-           temp_result = "input: " + query + " output: " + str(user_info[keyword])
-        # print("user info: " + str(user_info))
-        print("temp_result: " + str(temp_result))
-        print(keyword)
-        result = qaChain({'summaries': temp_result,'context':"", 'question': query}, return_only_outputs=False)
-        return result["text"]
-    else:
-       return "error"
+    # if case_classifier['text'] == "get user":
+    #     response = display_single_leave_application()
+    #     return responsedisplay_single_leave_application
+    # elif case_classifier['text'] =="get user specific":
+    #     user_info = get_user()
+    #     keyword = keyword_chain(query)['text']
+    #     keyword_list = convertList(keyword)
+    #     temp_answer = ""
+    #     if len(keyword_list) > 1:
+    #         for i in keyword_list:
+    #             temp_answer += str(user_info[i])
+    #         temp_result = "input: " + query + " output: " + str(temp_answer)
+    #     else:
+    #        temp_result = "input: " + query + " output: " + str(user_info[keyword])
+    #     # print("user info: " + str(user_info))
+    #     print("temp_result: " + str(temp_result))
+    #     print(keyword)
+    #     result = qaChain({'summaries': temp_result,'context':"", 'question': query}, return_only_outputs=False)
+    #     return result["text"]
+    # else:
+    #    return "error"
+    user_data = get_user()
+    return display_user_info(user_data)
+    # work for only one case only -- display all 

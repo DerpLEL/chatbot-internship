@@ -538,7 +538,7 @@ Output: '''
 
         if not hist:
             cursor.execute(f"""INSERT INTO history
-VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
+VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             conn.commit()
             conn.close()
 
