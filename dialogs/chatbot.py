@@ -156,10 +156,11 @@ Question:
 Search query:
 """
 
+    '''- If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese. '''
+
     chat_template = """<|im_start|>system
-Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. Your answer must adhere to the following criteria:
-You MUST follow this rule:
-- If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese. 
+Assistant is fluent in {lang} and helps the company employees and users with their questions about the companies New Ocean and NOIS.
+You MUST follow these rules:
 - Be brief but friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
 - If the user greets you, respond accordingly.
 
@@ -260,6 +261,8 @@ Output en for English, and vi for Vietnamese. DO NOT answer if the sentence is a
 Sentence: Who is the co-founder of NOIS?
 Output: en
 Sentence: FASF là gì?
+Output: vi
+Sentence: Hi chatbot, Andy Tran của công ty NOIS là ai?
 Output: vi
 Sentence: {question}
 Output: '''
@@ -398,7 +401,7 @@ Output: '''
 
         if not hist:
             cursor.execute(f"""INSERT INTO history
-    VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
+    VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             conn.commit()
             conn.close()
 
@@ -538,7 +541,7 @@ Output: '''
 
         if not hist:
             cursor.execute(f"""INSERT INTO history
-VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
+VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             conn.commit()
             conn.close()
 
@@ -675,8 +678,8 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             label = "hrm"
 
         print("label " + label)
-        # keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
-        keywords = self.query_short_chain({'question': query, 'context': self.get_history_query_short(email)})['text']
+        keywords = self.keywordChain({'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
+        # keywords = self.query_short_chain({'question': query, 'context': self.get_history_query_short(email)})['text']
         print("Keywords:", keywords)
 
         chain = self.qa_chain
@@ -726,13 +729,14 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         try:
             hist = self.get_history_as_txt_sql(email) if label != 'drink fee' else ''
 
-            lang = self.language_classifier(query)['text']
-            query_with_lang = query + ' Trả lời câu này bằng Tiếng Việt.' if lang == 'vi' else query + ' Answer this query using English.'
+            lang = self.language_classifier(query)['text'].strip()
+            query_with_lang = query + ' Answer this query using English.' if lang == 'en' else query + ' Trả lời câu này bằng Tiếng Việt.'
+            lang_in_prompt = 'English' if lang == 'en' else 'Vietnamese'
             print("Query language:", lang)
 
             response = chain({'input_documents': doc, 'question': query_with_lang, 'context': hist,
-                                'user_info': f'''The user chatting with you is named {name}, with email: {email}. 
-                                '''},
+                             'user_info': f'''The user chatting with you is named {name}, with email: {email}. 
+                             ''', 'lang': lang_in_prompt},
                              return_only_outputs=False)
 
         except Exception as e:
