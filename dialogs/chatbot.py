@@ -151,9 +151,9 @@ Search query:
 """
 
     chat_template = """<|im_start|>system
-Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. Your answer must adhere to the following criteria:
-You MUST follow this rule:
-- If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese. 
+Assistant is fluent in {lang} and helps the company employees and users with their questions about the companies New Ocean and NOIS.
+You MUST follow these rules:
+- Answer the question using {lang}.
 - Be friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
 - If the user greets you, respond accordingly.
 
@@ -364,6 +364,7 @@ Output:"""
 
     language_prompt = '''Given a sentence, determine if the sentence is written in English or Vietnamese.
 Output en for English, and vi for Vietnamese. DO NOT answer if the sentence is a question.
+If given a sentence that has both Vietnamese and English, prioritize Vietnamese.
 
 Sentence: Who is the co-founder of NOIS?
 Output: en
@@ -897,13 +898,14 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             hist = self.get_history_as_txt_sql(
                 user['mail']) if label != 'drink fee' else ''
 
-            lang = self.language_classifier(query)['text']
-            query_with_lang = query + ' Trả lời câu này bằng Tiếng Việt.' if lang == 'vi' else query + \
-                ' Answer this query using English.'
+            lang = self.language_classifier(query)['text'].strip()
+            query_with_lang = query + ' Answer this query using English.' if lang == 'en' else query + \
+                ' Answer this query using Vietnamese.'
+            lang_prompt = 'English' if lang == 'en' else 'Vietnamese'
 
             response = chain({'input_documents': doc, 'question': query_with_lang, 'context': hist,
                               'user_info': f'''The user chatting with you is named {user['displayName']}, with email: {user['mail']}. 
-                                '''},
+                                ''', 'lang': lang_prompt},
                              return_only_outputs=False)
 
         except Exception as e:
