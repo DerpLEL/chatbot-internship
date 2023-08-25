@@ -154,6 +154,9 @@ class MainDialog(LogoutDialog):
                             '**' + (await client.get_me())['displayName'] + '** ' + f"Reset all data: {(await client.get_me())['mail']}"
                         )
 
+                    elif re.sub('<at>.*?</at>', '', step_context.context.activity.text).lower().strip() == "agent":
+                        pass
+
                     else:
                         await step_context.context.send_activity('**' + (await client.get_me())['displayName'] + '** ' + self.bot.chat(re.sub('<at>.*?</at>', '', step_context.context.activity.text), await client.get_me(), token_response.token)[0])
                         # try:
