@@ -80,6 +80,7 @@ Output: Meeting
 Input: {question}
 <|im_start|>assistant
 Output:"""
+
     classifier_leave_application = """<|im_start|>system
 Given a sentence, assistant will determine if the sentence belongs in 1 of 3 categories, which are:
 - get
@@ -180,14 +181,14 @@ Input: {question}
 Output:"""
 
     classifier_template = """<|im_start|>system
-Given a sentence, assistant will determine if the sentence belongs in 1 of 3 categories, which are:
+Given a sentence, assistant will determine if the sentence belongs in 1 of 4 categories, which are:
 - policy
 - drink fee
 - hrm
 - other
 
-Do not answer the question,     `only output the appropriate category.
-**QUESTION REGARDS TO HRM: question related to submitting a leave application, get leave application, 
+Do not answer the question, only output the appropriate category.
+**QUESTION REGARDS TO HRM: question related to submitting a leave application, get leave application, booking a meeting, 
 get user id in hrm and all the same as the one mentioned above.
 
 EXAMPLE
@@ -215,24 +216,12 @@ Input: tôi muốn hủy đơn tôi đã submit
 Output: hrm
 Input: tôi cần thông tin của tôi
 Output: hrm
+Input: tôi muốn đặt meeting
+Output: hrm
 <|im_end|>
 
 Input: {question}
 <|im_start|>assistant
-Output:"""
-
-    delete_custom_template = """ <|im_start|>system
-
-- if the input is "unrelated response to previous question, cancelled previous action", the output, you should say to that same meaning in formal tone and in vietnamese.
-
-- if the input is "Đã xóa thành công", for the output, you shold say that the leave application have been deleted in  vietnamese
-
-- if the input is "empty list", the output should say that the leaving application that awaiting for approval is empty in vietnamese
-
-Input: {question}
-
-<|im_start|>assistant
-
 Output:"""
 
     drink_fee_template = """<|im_start|>system
@@ -282,36 +271,6 @@ For example: If ask about fullname is 'Hưng', use must answer with format of da
 # <|im_end|>
 # <|im_start|>assistant
 # Output:"""
-
-    header_templ_drink_fee = """<|im_start|>system
-Sources:
-{summaries}
-
-You must follow this rule:
-1. You will answer the question "What are header of this file?".
-2. Your answer is in list type which includes all header of that file.
-3. Output just only code.
-4. Must NO COMMENT, NO RESULT.
-
-For Example:
-- Input:
-BẢNG TỔNG HỢP TIỀN NƯỚC THÁNG 04/2023 Unnamed: 1 Unnamed: 2 Unnamed: 3 Unnamed: 4 Unnamed: 5 Unnamed: 6 Unnamed: 7 Unnamed: 8
-0 STT Email FullName April Total Thực thu Note Tình trạng NaN NaN
-1 1 hung.bui@nois.vn BÙI TUẤN HƯNG 78200 78200 NaN Done NaN NaN
-2 2 hiep.dang@nois.vn ĐẶNG DUY HIỆP 30700 30700 NaN Done NaN NaN
-3 3 tai.dang@nois.vn ĐẶNG HỮU TÀI 22500 22500 NaN Done NaN NaN
-4 4 sang.dao@nois.vn ĐÀO MINH SÁNG 5000 NaN NaN NaN NaN NaN
-5 5 nam.do@nois.vn ĐỖ NGỌC NAM 6500 6500 NaN Done NaN NaN
-- Output:
-['STT', 'Email', 'FullName', 'April Total', 'Thực thu', 'Note', 'Tình trạng', 'NaN', 'NaN']
-
-<|im_end|>
-{context}
-<|im_start|>user
-{question}
-<|im_end|>
-<|im_start|>assistant
-"""
 
     confirm_template = """<|im_start|>system
 Given a sentence, assistant will determine if the sentence belongs in 1 of 2 categories, which are:
@@ -457,8 +416,6 @@ Output: '''
             llm=self.llm2, prompt=PromptTemplate.from_template(self.classifier_template))
         self.drink_chain = load_qa_with_sources_chain(
             llm=self.llm3, chain_type="stuff", prompt=PromptTemplate.from_template(self.drink_fee_template))
-        self.header_drink_chain = load_qa_with_sources_chain(
-            llm=self.llm2, chain_type="stuff", prompt=PromptTemplate.from_template(self.header_templ_drink_fee))
         self.language_classifier = LLMChain(
             llm=self.llm3, prompt=PromptTemplate.from_template(self.language_prompt))
 
@@ -844,6 +801,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         if str(self.get_conversation_type(user['mail'])[0]) == '':
             label = self.classifier_chain(
                 {'question': query, 'context': self.get_history_as_txt_sql(user['mail'])})['text']
+
         else:
             label = "hrm"
 
@@ -876,6 +834,10 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             response = self.chat_hrm(query, user, token)
             # self.add_to_history_sql(query, response, email)
             return response, " "
+
+        elif label == 'meeting':
+            return {'output_text': 'Meeting book thingy'}, None
+
         else:
             doc = self.get_document(keywords, self.retriever_private)
             try:
@@ -968,3 +930,6 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
     def clear_history(self):
         self.history_public = []
         self.history_private = []
+
+    def try_request(self, email, token):
+        return run_return_user_response(None, {'mail': email}, token)
