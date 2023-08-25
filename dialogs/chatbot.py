@@ -862,7 +862,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             try:
                 blob_name = doc[0].metadata['metadata_storage_name']
             except IndexError:
-                return 'Không tìm thấy file tiền nước, bạn vui lòng hỏi lại với đầy đủ thông tin.', None
+                return 'Không tìm thấy file tiền nước, bạn vui lòng thử lại.', None
 
             temp_result = self.excel_drink_preprocess(
                 input_pandas['output_text'], blob_name, doc)
