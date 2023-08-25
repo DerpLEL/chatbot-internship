@@ -33,11 +33,6 @@ import threading
 import time
 import nest_asyncio
 
-from dialogs.echobot import*
-
-bot = EchoBot()
-
-
 nest_asyncio.apply()
 
 
@@ -219,12 +214,12 @@ async def messages():
             await ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
             end_time = time.time()
             print(end_time - start_time)
-            if end_time - start_time < 5.0:
+            if end_time - start_time < 0.5:
                 await ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
 
         async def run_session():
-            task = asyncio.create_task(worker())
-            await asyncio.ensure_future(task)
+            task = asyncio.ensure_future(worker())
+            # await asyncio.ensure_future(task)
             # await asyncio.wait_for(task)
             # await task
             await task

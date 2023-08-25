@@ -102,8 +102,6 @@ class MainDialog(LogoutDialog):
                 [
                     self.prompt_step,
                     self.login_step,
-                    # self.command_step,
-                    # self.process_step,
                 ],
             )
         )
@@ -120,21 +118,22 @@ class MainDialog(LogoutDialog):
             token_response = step_context.result
             client = SimpleGraphClient(token_response.token)
             try:
-                if (await client.get_me())['displayName'] and step_context.context.activity.text:
-                    print(step_context.context.activity.text)
+                if (await client.get_me())['displayName'] and re.sub('<at>.*?</at>', '', step_context.context.activity.text):
+                    print(re.sub('<at>.*?</at>', '',
+                          step_context.context.activity.text))
                     typing_activity = Activity(type=ActivityTypes.typing)
                     await step_context.context.send_activity(typing_activity)
 
-                    if step_context.context.activity.text == "me":
+                    if re.sub('<at>.*?</at>', '', step_context.context.activity.text) == "me":
                         await step_context.context.send_activity(
-                            f"You are {(await client.get_me())['displayName']}"
+                            '**' + (await client.get_me())['displayName'] + '** ' + f"You are {(await client.get_me())['displayName']}"
                         )
                         # display logged in users email
-                    elif step_context.context.activity.text == "email":
+                    elif re.sub('<at>.*?</at>', '', step_context.context.activity.text) == "email":
                         await step_context.context.send_activity(
-                            f"Your email: {(await client.get_me())['mail']}"
+                            '**' + (await client.get_me())['displayName'] + '** ' + f"Your email: {(await client.get_me())['mail']}"
                         )
-                    elif step_context.context.activity.text.lower().strip() == "resetall":
+                    elif re.sub('<at>.*?</at>', '', step_context.context.activity.text).lower().strip() == "resetall":
                         conn = pyodbc.connect(
                             f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
                         cursor = conn.cursor()
@@ -149,29 +148,18 @@ class MainDialog(LogoutDialog):
                         confirm_delete = N''
                         WHERE email = '{(await SimpleGraphClient(token_response.token).get_me())['mail']}';""")
                         conn.commit()
-
                         conn.close()
 
-
+                        await step_context.context.send_activity(
+                            '**' + (await client.get_me())['displayName'] + '** ' + f"Reset all data: {(await client.get_me())['mail']}"
+                        )
 
                     else:
-                        try:
-                            await step_context.context.send_activity('**' + (await client.get_me())['displayName'] + '** ' + self.bot.chat(step_context.context.activity.text, (await client.get_me())['mail'], (await client.get_me())['displayName'])[0]['output_text'])
-                            return await step_context.end_dialog()
-                        except:
-                            await step_context.context.send_activity('**' + (await client.get_me())['displayName'] + '** ' + self.bot.chat(step_context.context.activity.text, (await client.get_me())['mail'], (await client.get_me())['displayName'])[0])
-                            return await step_context.end_dialog()
-                            # reply, doc =
-
-                            # if type(reply) == str:
-                            #     reply = '**' + me_info['displayName'] + '** ' + reply
-                            #     await step_context.context.send_activity(reply)
-                            # else:
-                            #     reply['output_text'] = '**' + me_info['displayName'] + '** ' + reply['output_text']
-                            #     await step_context.context.send_activity(
-                            #         reply['output_text'])
-
-                    # print(step_context.values["command"] = step_context.result)
+                        await step_context.context.send_activity('**' + (await client.get_me())['displayName'] + '** ' + self.bot.chat(re.sub('<at>.*?</at>', '', step_context.context.activity.text), await client.get_me(), token_response.token)[0])
+                        # try:
+                        #     await step_context.context.send_activity('**' + (await client.get_me())['displayName'] + '** ' + self.bot.chat(re.sub('<at>.*?</at>', '', step_context.context.activity.text), (await client.get_me())['mail'], (await client.get_me())['displayName'])[0]['output_text'])
+                        # except:
+                        #     await step_context.context.send_activity('**' + (await client.get_me())['displayName'] + '** ' + self.bot.chat(re.sub('<at>.*?</at>', '', step_context.context.activity.text), (await client.get_me())['mail'], (await client.get_me())['displayName'])[0])
 
             except:
                 conn = pyodbc.connect(
@@ -192,116 +180,8 @@ class MainDialog(LogoutDialog):
                 conn.close()
 
             return await step_context.end_dialog()
-            # return await step_context.next(None)
 
         await step_context.context.send_activity(
             "Bạn đã đăng nhập thất bại. Vui lòng đăng nhập lại."
         )
-        return await step_context.end_dialog()
-
-    async def command_step(self, step_context: WaterfallStepContext) -> DialogTurnResult:
-        print(step_context.result)
-        step_context.values["command"] = step_context.result
-        print(step_context.values["command"])
-
-        # Call the prompt again because we need the token. The reasons for this are:
-        # 1. If the user is already logged in we do not need to store the token locally in the bot and worry
-        #    about refreshing it. We can always just call the prompt again to get the token.
-        # 2. We never know how long it will take a user to respond. By the time the
-        #    user responds the token may have expired. The user would then be prompted to login again.
-        #
-        # There is no reason to store the token locally in the bot because we can always just call
-        # the OAuth prompt to get the token or get a new token if needed.
-        return await step_context.begin_dialog(OAuthPrompt.__name__)
-
-    async def process_step(
-        self, step_context: WaterfallStepContext
-    ) -> DialogTurnResult:
-        print(4)
-        if step_context.result:
-            token_response = step_context.result
-            if token_response and token_response.token:
-                command = step_context.values["command"]
-                command = re.sub('<at>.*?</at>', '', command)
-                # print(command)
-
-                client = SimpleGraphClient(token_response.token)
-                me_info = await client.get_me()
-
-                # '**' + me_info['displayName'] + '** ' + 'Đợi tui xíu...'
-                # test = await step_context.context.send_activity('**' + me_info['displayName'] + '** ' + 'Đợi tui xíu...')
-
-                typing_activity = Activity(type=ActivityTypes.typing)
-                await step_context.context.send_activity(typing_activity)
-
-                if command == "me":
-                    await step_context.context.send_activity(
-                        f"You are {me_info['a']}"
-                    )
-
-                # display logged in users email
-                elif command == "email":
-                    await step_context.context.send_activity(
-                        f"Your email: {me_info['mail']}"
-                    )
-                elif command.lower().strip() == "resetall":
-                    conn = pyodbc.connect(
-                        f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
-                    cursor = conn.cursor()
-
-                    cursor.execute(f"""UPDATE history SET chat = N'', 
-                    post_leave = N'',
-                    del_leave = N'',
-                    conversation_type = N'',
-                    token = N'',
-                    confirm_check = N'',
-                    leave_type = N'',
-                    confirm_delete = N''
-                    WHERE email = '{(await SimpleGraphClient(token_response.token).get_me())['mail']}';""")
-                    conn.commit()
-
-                    conn.close()
-
-                    await step_context.context.send_activity(
-                        f"Reset data of user: {me_info['mail']}"
-                    )
-
-                else:
-                    try:
-                        # reply, doc = self.bot.chat(
-                        #     step_context.values["command"], me_info['mail'], me_info['displayName'])
-
-                        if type(reply) == str:
-                            reply = '**' + \
-                                me_info['displayName'] + '** ' + reply
-                            await step_context.context.send_activity(reply)
-                        else:
-                            reply['output_text'] = '**' + \
-                                me_info['displayName'] + \
-                                '** ' + reply['output_text']
-                            await step_context.context.send_activity(
-                                reply['output_text']
-                            )
-                    except Exception as e:
-                        conn = pyodbc.connect(
-                            f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
-                        cursor = conn.cursor()
-                        cursor.execute(f"""DELETE FROM history WHERE email = '{(await SimpleGraphClient(token_response.token).get_me())['mail']}';""")
-                        conn.commit()
-
-                        conn.close()
-
-                        await step_context.context.send_activity(
-                            """Hiện tại hệ thống đang gặp một chút vấn đề. :(("""
-                        )
-                        await step_context.context.send_activity(
-                            """Bạn có thể gửi tin nhắn vừa rồi sau một vài giây được không?"""
-                        )
-                        print("error:", e)
-                        pass
-
-        else:
-            await step_context.context.send_activity("We couldn't log you in.")
-
-        # return await step_context.replace_dialog("WFDialog")
         return await step_context.end_dialog()

@@ -49,8 +49,6 @@ storage_connection_string = 'DefaultEndpointsProtocol=https;AccountName=acschatb
 blob_service_client = BlobServiceClient.from_connection_string(
     storage_connection_string)
 
-token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImtpZCI6Ii1LSTNROW5OUjdiUm9meG1lWm9YcWJIWkdldyJ9.eyJhdWQiOiI1OWI2N2I2YS1lNWYwLTQ1MzYtOTVmMy1hMzY3ZmY2OWVkODUiLCJpc3MiOiJodHRwczovL2xvZ2luLm1pY3Jvc29mdG9ubGluZS5jb20vNWUyYTNjYmQtMWE1Mi00NWFkLWI1MTQtYWI0Mjk1NmIzNzJjL3YyLjAiLCJpYXQiOjE2OTA4NjMxNjgsIm5iZiI6MTY5MDg2MzE2OCwiZXhwIjoxNjkwODY4NDA5LCJhaW8iOiJBV1FBbS84VUFBQUExRTEvSmZCV2RneFhGNTViNURTUGRjTU85THN6Sk54QnU4aGpGR1I5RnFiaGxPcmhIa1UyeFJCYUliM1gwcDlCYU8xSWtiSmVUcHZTNlVXTE8rZHdaekx1QUhQQ1ZGY25kaUxaMVY2S1JBNXhGck9OaS9NdWVrOWIyclpPRG45SCIsImF6cCI6Ijc2ZWE5MmQ2LTMzMDgtNDBkNS04NjRhLWIyN2ZiOGY1YjI3MyIsImF6cGFjciI6IjAiLCJuYW1lIjoiVGhpZW4gVHJhbiIsIm9pZCI6ImY1MjdhZGI1LWM5OGMtNDg4NS1iYjY3LThkMTc4NTI2ZDI1NCIsInByZWZlcnJlZF91c2VybmFtZSI6InRoaWVuLnRyYW5Abm9pcy52biIsInJoIjoiMC5BVWtBdlR3cVhsSWFyVVcxRkt0Q2xXczNMR3A3dGxudzVUWkZsZk9qWl85cDdZVkpBSE0uIiwicm9sZXMiOlsiVXNlciJdLCJzY3AiOiJhY2Nlc3NfYXNfdXNlciIsInN1YiI6Ik1oTGgzVnBVU2V1VE1FN2xlcjZ6Vk9VSno0Qkx6c3J0S2I4NTh3R1owMUkiLCJ0aWQiOiI1ZTJhM2NiZC0xYTUyLTQ1YWQtYjUxNC1hYjQyOTU2YjM3MmMiLCJ1dGkiOiIwVzJfVk1QMHYwMm5jWkVabFMwcEFBIiwidmVyIjoiMi4wIn0.U2_xKL1VK3A9NK08qT70TsYlL3dMoKSSy3gCyz4C_D1hoHT-dPKxC0oBhDMxSwtvenwcJig3oSsvuwVsIUQBJjDIdjcVp-QU30AogWG4RHL5fuAYE-yToKViALInhMz28zH75zztUN2iYlXEy4MA0gEHtgQ1xRoI_TuiuS04VI_potBsBpNPZJEf-_W1p_klYKGGXAjxxbzuhj8azvffRFdYYyWITRZrAYqH1nHOoIbWNNq3f1YdHZAXILdjL2n5tMTyIRlXUweB0BM8atKkkMh86qiInVD2VFtWXuvoAXkFwq6XrX0wVB_0FQzPz_J52spC5jLFhixp5099Q8osXQ"
-
 
 class chatAI:
     classifier_hrm = """<|im_start|>system
@@ -518,125 +516,13 @@ Output: '''
             hist = self.history_private[email]
 
         hist.append({'user': user_msg, 'AI': ai_msg})
-        # print(hist)
 
-    def update_token(self, token, email):
-        conn = pyodbc.connect(
-            f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
-        cursor = conn.cursor()
-        cursor.execute(
-            f"""SELECT token FROM history WHERE email = '{email}';""")
-        conv_type = cursor.fetchone()
-        # print(conv_type)
-        token = token.replace("'", "''")
-
-        if not conv_type[0]:
-            # print(f"Conversation type to be updated to SQL: {token}\n")
-            cursor.execute(f"""UPDATE history
-                SET token = N'{token}' WHERE email = '{email}';""")
-            conn.commit()
-            conn.close()
-            return
-
-        # print(f"Conversation type to be updated to SQL: {token}\n")
-        cursor.execute(f"""UPDATE history
-            SET token = N'{token}' WHERE email = '{email}';""")
-        conn.commit()
-        conn.close()
-        return
-
-    def get_token(self, email):
-        conn = pyodbc.connect(
-            f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
-        cursor = conn.cursor()
-        cursor.execute(
-            f"""SELECT token FROM history WHERE email = '{email}';""")
-        hist = cursor.fetchone()
-
-        if not hist:
-            cursor.execute(f"""INSERT INTO history
-    VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
-            conn.commit()
-            conn.close()
-            return ''
-
-        if not hist[0]:
-            conn.close()
-            return ''
-
-        conn.close()
-        return hist[0]
-
-    def test_token(self, email):
-        tok = self.get_token(email)
-
-        url = "https://api-hrm.nois.vn/api/user/me"
-        header = {"Authorization": f"Bearer {tok}"}
-
-        response = requests.get(url, headers=header)
-        response.encoding = 'UTF-8'
-
-        if response.status_code == 200:
-            return True
-
-        return False
-
-    def login_HRM(self, query, email):
-        global token
-        token = self.get_token(email)
-        url = "https://api-hrm.nois.vn/api/user/me"
-        header = {"Authorization": f"Bearer {token}"}
-        response = requests.get(url, headers=header)
-        response.encoding = 'utf-8'
-
-        if response.status_code == 200:
-            return 'Bạn đã đăng nhập thành công vào HRM.'
-
-        else:
-            self.update_token(query, email)
-            token = self.get_token(email)
-            header = {"Authorization": f"Bearer {token}"}
-            response = requests.get(url, headers=header)
-            response.encoding = 'utf-8'
-
-            # print(response)
-            if response.status_code == 200:
-                return "Bạn đã đăng nhập thành công vào HRM."
-            else:
-                return "Vui lòng nhập lại HRM token."
-
-    def chat(self, query, email, name):
-        # global token
-        # token = self.get_token(email)
-        # url = "https://api-hrm.nois.vn/api/user/me"
-        # header = {"Authorization": f"Bearer {token}"}
-        # response = requests.get(url, headers=header)
-        # response.encoding = 'utf-8'
-
-        # if response.status_code == 200:
-        #     pass
-
-        # else:
-        #     self.update_token(query, email)
-        #     token = self.get_token(email)
-        #     header = {"Authorization": f"Bearer {token}"}
-        #     response = requests.get(url, headers=header)
-        #     response.encoding = 'utf-8'
-
-        # #     print(response)
-        #     if response.status_code == 200:
-        #         return "Bạn đã đăng nhập thành công vào HRM.", ''
-        #     else:
-        #         return "Vui lòng nhập lại HRM token", ''
-
+    def chat(self, query, user, token):
         if self.private:
-            # if email not in self.history_private:
-            #     self.history_private[email] = []
-
-            return self.chat_private(query, email, name)
+            return self.chat_private(query, user, token)
 
         # return self.chat_public(query)
-        return self.chat_private(query, email, name)
+        return self.chat_public(query)
 
     def chat_public(self, query):
         keywords = self.keywordChain(
@@ -647,11 +533,11 @@ Output: '''
         doc = self.get_document(keywords, self.retriever_public)
 
         try:
-            response = response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(),
-                                         'user_info': ''},
-                                        return_only_outputs=False)
+            response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(),
+                              'user_info': ''},
+                             return_only_outputs=False)
         except Exception as e:
-            return {'output_text': f'Cannot generate response, error: {e}'}, doc
+            return f'Cannot generate response, error: {e}', doc
 
         self.add_to_history(query, response['output_text'])
         return response, doc
@@ -691,34 +577,30 @@ Output: '''
 
         return ast.literal_eval(leave_application_form_str)
 
-    def chat_hrm(self, query, email):
-        if not self.test_token(email):
-            self.update_conversation_type(['LeaveApplication', ''], email)
-            if self.login_HRM(query, email) == 'Vui lòng nhập lại HRM token.':
-                return "Vui lòng nhập lại HRM token."
-            elif self.login_HRM(query, email) == 'Bạn đã đăng nhập thành công vào HRM.':
-                return "Bạn đã đăng nhập thành công vào HRM."
-
-        if self.get_conversation_type(email) == ['', ''] or self.get_conversation_type(email) == ['LeaveApplication', '']:
+    def chat_hrm(self, query, user, token):
+        if self.get_conversation_type(user['mail']) == ['', ''] or self.get_conversation_type(user['mail']) == ['LeaveApplication', '']:
             label_hrm = self.classifier_hrm_chain(query)['text']
         else:
-            label_hrm = self.get_conversation_type(email)[0]
+            label_hrm = self.get_conversation_type(user['mail'])[0]
 
         response = """"""
-        # print(label_hrm)
+
+        print("label_hrm", label_hrm)
         if label_hrm == "User":
-            response = run_return_user_response(email, query, token)
+            response = run_return_user_response(query, user, token)
         elif label_hrm == "LeaveApplication":
-            if self.get_conversation_type(email) == ['', ''] or self.get_conversation_type(email) == ['LeaveApplication', '']:
+            if self.get_conversation_type(user['mail']) == ['', ''] or self.get_conversation_type(user['mail']) == ['LeaveApplication', '']:
                 leave_application_type = self.leave_application_chain(query)[
                     'text']
             else:
-                leave_application_type = self.get_conversation_type(email)[1]
+                leave_application_type = self.get_conversation_type(user['mail'])[
+                    1]
 
+            print(leave_application_type)
             if leave_application_type == 'get':
-                response = run_get_leave_application(email, query, token)
+                response = run_get_leave_application(user['mail'], query)
             elif leave_application_type == 'post':
-                leave_application_form = get_post_leave(email)
+                leave_application_form = get_post_leave(user['mail'])
 
                 confirm = self.confirm_chain(query)['text']
 
@@ -733,16 +615,16 @@ Output: '''
                         'leaveType': -1,
                     }
 
-                    update_post_leave(leave_application_form, email)
+                    update_post_leave(leave_application_form, user['mail'])
 
                     response = f"""Đơn nghỉ phép của bạn đã xóa. Bạn có thể gửi một Đơn nghỉ phép khác."""
                     self.confirm_delete = False
-                    self.update_conversation_type(['', ''], email)
+                    self.update_conversation_type(['', ''], user['mail'])
                     return response
 
-                if self.get_conversation_type(email) != ['LeaveApplication', 'post'] and leave_application_form['start_date'] != ' ':
+                if self.get_conversation_type(user['mail']) != ['LeaveApplication', 'post'] and leave_application_form['start_date'] != ' ':
                     self.update_conversation_type(
-                        ['LeaveApplication', 'post'], email)
+                        ['LeaveApplication', 'post'], user['mail'])
                     if leave_application_form['periodType'] == 0:
                         periodType = "Cả ngày"
                     elif leave_application_form['periodType'] == 1:
@@ -799,40 +681,40 @@ Output: '''
 
                     self.confirm_delete = True
                     self.update_conversation_type(
-                        ['LeaveApplication', 'post'], email)
+                        ['LeaveApplication', 'post'], user['mail'])
                     return response
 
                 self.update_conversation_type(
-                    ['LeaveApplication', 'post'], email)
+                    ['LeaveApplication', 'post'], user['mail'])
 
                 post_leave_application_response = post_leave_application_func(
-                    self.user, query, token, email)
+                    self.user, query, token, user['mail'])
                 response = post_leave_application_response[0]
                 # print(post_leave_application_response)
                 try:
                     if post_leave_application_response[1].status_code == 200:
-                        self.update_conversation_type(['', ''], email)
+                        self.update_conversation_type(['', ''], user['mail'])
                     elif post_leave_application_response[1].status_code == 401:
-                        self.update_conversation_type(['', ''], email)
+                        self.update_conversation_type(['', ''], user['mail'])
                     elif post_leave_application_response[1].status_code == 100:
-                        self.update_conversation_type(['', ''], email)
+                        self.update_conversation_type(['', ''], user['mail'])
                 except:
                     pass
 
             elif leave_application_type == 'delete':
                 self.update_conversation_type(
-                    ['LeaveApplication', 'delete'], email)
+                    ['LeaveApplication', 'delete'], user['mail'])
                 # print("delete - pass")
                 response = run_leave_application_delete(
-                    email, query, "", token)
+                    user['mail'], query, "", token)
                 if (response == "unrelated response to previous question, cancelled previous action"):
-                    self.update_conversation_type(['', ''], email)
+                    self.update_conversation_type(['', ''], user['mail'])
                     self.clear_history()
                     response = str(self.delete_chat_chain(response)['text'])
                     return response
                 elif (response == "Đã xóa thành công" or response == "empty list"):
                     self.clear_history()
-                    self.update_conversation_type(['', ''], email)
+                    self.update_conversation_type(['', ''], user['mail'])
                     response = str(self.delete_chat_chain(response)['text'])
 
         return response
@@ -957,28 +839,20 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         # # print(f"History from SQL: {txt}\n")
         return txt
 
-    def chat_private(self, query, email, name):
-        # print(self.get_conversation_type(email)[0] == 'LeaveApplication')
-
-        if str(self.get_conversation_type(email)[0]) == '':
+    def chat_private(self, query, user, token):
+        if str(self.get_conversation_type(user['mail'])[0]) == '':
             label = self.classifier_chain(
-                {'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
+                {'question': query, 'context': self.get_history_as_txt_sql(user['mail'])})['text']
         else:
             label = "hrm"
 
-        # print("label " + label)
+        print("label:" + label)
         keywords = self.keywordChain(
-            {'question': query, 'context': self.get_history_as_txt_sql(email)})['text']
-        # print(keywords)
+            {'question': query, 'context': self.get_history_as_txt_sql(user['mail'])})['text']
 
         chain = self.qa_chain
 
         if label == "drink fee":
-            # self.history_private = []
-
-            # keywordChain = LLMChain(llm=self.llm2, prompt=PromptTemplate.from_template(self.keyword_templ_drink_fee))
-            # keywords_drink_fee = keywordChain({'context': self.get_history_as_txt(), 'question': query})
-
             doc = self.get_document(keywords, self.retriever_drink)[:1]
 
             input_pandas = self.drink_chain(
@@ -987,25 +861,18 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             try:
                 blob_name = doc[0].metadata['metadata_storage_name']
             except IndexError:
-                return {'output_text': 'Không tìm thấy file tiền nước, bạn vui lòng hỏi lại với đầy đủ thông tin.'}, None
+                return 'Không tìm thấy file tiền nước, bạn vui lòng hỏi lại với đầy đủ thông tin.', None
 
-            # print(input_pandas['output_text'])
             temp_result = self.excel_drink_preprocess(
                 input_pandas['output_text'], blob_name, doc)
-            # print(temp_result)
             result_doc = "Input: " + query + "\n Output: " + str(temp_result)
-            # print(result_doc)
-
-            # if """count""" not in input_pandas['output_text']:
-            #     self.add_to_history_sql(query, 'Satisfied Anwser', email)
-            #     return {'output_text': str(temp_result)}, doc
             doc[0].page_content = result_doc
 
         elif label == "policy":
             doc = self.get_document(keywords, self.retriever_policy)
 
         elif label == "hrm":
-            response = self.chat_hrm(query, email)
+            response = self.chat_hrm(query, user, token)
             # self.add_to_history_sql(query, response, email)
             return response, " "
         else:
@@ -1028,23 +895,23 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
 
         try:
             hist = self.get_history_as_txt_sql(
-                email) if label != 'drink fee' else ''
+                user['mail']) if label != 'drink fee' else ''
 
             lang = self.language_classifier(query)['text']
             query_with_lang = query + ' Trả lời câu này bằng Tiếng Việt.' if lang == 'vi' else query + \
                 ' Answer this query using English.'
 
             response = chain({'input_documents': doc, 'question': query_with_lang, 'context': hist,
-                              'user_info': f'''The user chatting with you is named {name}, with email: {email}. 
+                              'user_info': f'''The user chatting with you is named {user['displayName']}, with email: {user['mail']}. 
                                 '''},
                              return_only_outputs=False)
 
         except Exception as e:
-            return {'output_text': f'Cannot generate response, error: {e}'}, doc
+            return f'Cannot generate response, error: {e}', doc
 
         # self.add_to_history(query, response['output_text'])
-        self.add_to_history_sql(query, response['output_text'], email)
-        return response, doc
+        self.add_to_history_sql(query, response['output_text'], user['mail'])
+        return response['output_text'], doc
 
     # def get_docs_using_keyword_string_for_drink_fee(self, keyword, retriever):
     #     # Get top 4 documents
