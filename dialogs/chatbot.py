@@ -161,6 +161,7 @@ Search query:
     chat_template = """<|im_start|>system
 Assistant is fluent in {lang} and helps the company employees and users with their questions about the companies New Ocean and NOIS.
 You MUST follow these rules:
+- Answer the question using {lang}.
 - Be brief but friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
 - If the user greets you, respond accordingly.
 
