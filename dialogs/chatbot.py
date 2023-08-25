@@ -235,7 +235,7 @@ Sources:
 
 You must follow these rules:
 1. If user require count or ask how many, you must write pandas code for file csv. The output must be 1 line.
-2. Output just only code. DO NOT ANSWER THE QUESTION, only code outputs are accepted.
+2. Output just only code. DO NOT ANSWER THE QUESTION, only code outputs are accepted. Try to output a code for the csv instead of outputting the csv outright.
 3. Must NO COMMENT, NO RESULT like this "Here is the code to get the list of people who haven't paid for their water bills in May with only their name, email, and status:"
 For example:
 Input: Danh sách những người đã đóng tiền tháng 5
@@ -689,11 +689,11 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         label = "drink fee"
         if label == "drink fee":
             # doc = self.get_document(keywords, self.retriever_drink)[:1]
-            df = pd.read_excel("D:/cb2/botver2/tool_status.xlsx")
+            df = pd.read_excel("D:/cb2/botver2/warehouse_data.xlsx")
             content = df.to_string()
 
             doc = [Document(page_content=content, metadata={'source': f'doc-1',
-                                                            'metadata_storage_name': 'tool_status.xlsx'})]
+                                                            'metadata_storage_name': 'warehouse_data.xlsx'})]
 
             input_pandas = self.drink_chain({'input_documents': doc, 'question': query, 'context': ''}, return_only_outputs=False)
 
@@ -763,7 +763,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         #                     expiry=datetime.utcnow() + timedelta(hours=1))
         #
         # sas_url = 'https://' + account_name+'.blob.core.windows.net/' + self.container_drink_fee_name + '/' + file_name + '?' + sas_i
-        sas_url = "D:/cb2/botver2/tool_status.xlsx"
+        sas_url = "D:/cb2/botver2/warehouse_data.xlsx"
         df = pd.read_excel(sas_url)
         doc[0].page_content = df
 

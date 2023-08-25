@@ -163,7 +163,8 @@ class MainDialog(LogoutDialog):
                 # me_info = await client.get_me()
 
                 # '**' + me_info['displayName'] + '** ' + 'Đợi tui xíu...'
-                await step_context.context.send_activity("...")
+                if command.strip().lower() != 'hello':
+                    await step_context.context.send_activity("...")
                 # await step_context.prompt(
                 #         TextPrompt.__name__,
                 #         PromptOptions(),
@@ -199,6 +200,9 @@ class MainDialog(LogoutDialog):
                     await step_context.context.send_activity(
                         f"Reset data of user: {(await SimpleGraphClient(token_response.token).get_me())['mail']}"
                     )
+
+                elif command.lower().strip() == 'hello':
+                    pass
 
                 else:
                     reply, doc = self.bot.chat_private(step_context.values["command"], (await SimpleGraphClient(token_response.token).get_me())['mail'], (await SimpleGraphClient(token_response.token).get_me())['displayName'])
