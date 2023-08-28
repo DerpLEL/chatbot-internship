@@ -1,6 +1,8 @@
 # Copyright (c) Microsoft Corporation. All rights reserved.
 # Licensed under the MIT License.
+import datetime
 
+import requests
 from botbuilder.core import MessageFactory, CardFactory
 from botbuilder.dialogs import WaterfallDialog, WaterfallStepContext, DialogTurnResult, ComponentDialog, DialogContext
 from botbuilder.dialogs.prompts import (
@@ -158,6 +160,32 @@ class MainDialog(LogoutDialog):
                         await step_context.context.send_activity(
                             '**' + (await client.get_me())['displayName'] + '** ' +
                             self.bot.try_request((await client.get_me())['mail'], token_response.token)
+                        )
+
+                    elif re.sub('<at>.*?</at>', '', step_context.context.activity.text).lower().strip() == "test":
+                        meeting_header = {'Authorization': f'Bearer {token_response.token}',
+                                          'Content-type': 'application/json'}
+
+                        start = datetime.now()
+                        end = start + datetime.timedelta(hours=2)
+
+                        x = requests.post(
+                            f'https://graph.microsoft.com/v1.0/me/onlineMeetings/createOrGet',
+                            headers=meeting_header,
+                            json={
+                                "startDateTime": start.strftime("%Y-%m-%dT%X"),
+                                "endDateTime": end.strftime("%Y-%m-%dT%X"),
+                                "subject": "Test meeting",
+                            }
+                        )
+
+                        print(x.status_code)
+                        print(x.text)
+                        print(x.json())
+
+                        await step_context.context.send_activity(
+                            '**' + (await client.get_me())['displayName'] + '** ' +
+                            'Meeting created.'
                         )
 
                     else:
