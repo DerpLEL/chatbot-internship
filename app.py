@@ -162,7 +162,10 @@ async def messages():
         return jsonpickle.encode(Response(status=415))
 
     activity = Activity().deserialize(body)
-    print("Activity lmao:", activity)
+
+    if 'text' in activity:
+        print("Activity lmao:", activity['text'])
+
     auth_header = request.headers["Authorization"] if "Authorization" in request.headers else ""
 
     # print(await ADAPTER.process_activity(activity, auth_header, BOT.on_turn))
