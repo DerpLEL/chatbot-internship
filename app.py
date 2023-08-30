@@ -163,7 +163,7 @@ async def messages():
 
     activity = Activity().deserialize(body)
 
-    if 'text' in activity:
+    if 'text' in activity.keys():
         print("Activity lmao:", activity['text'])
 
     auth_header = request.headers["Authorization"] if "Authorization" in request.headers else ""
