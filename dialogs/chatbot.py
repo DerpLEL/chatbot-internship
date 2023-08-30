@@ -335,6 +335,7 @@ Output: '''
     def __init__(self):
         self.history_public = []
         self.history_private = {}
+        self.graph_cache = {}
         self.private = False
         self.confirm_delete = False
         self.container_drink_fee_name = 'nois-drink-fee'

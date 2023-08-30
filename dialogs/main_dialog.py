@@ -162,7 +162,7 @@ class MainDialog(LogoutDialog):
                             self.bot.try_request((await client.get_me())['mail'], token_response.token)
                         )
 
-                    elif re.sub('<at>.*?</at>', '', step_context.context.activity.text).lower().strip() == "test":
+                    elif re.sub('<at>.*?</at>', '', step_context.context.activity.text).lower().strip() == "meeting":
                         pass
 
                     else:
