@@ -163,30 +163,7 @@ class MainDialog(LogoutDialog):
                         )
 
                     elif re.sub('<at>.*?</at>', '', step_context.context.activity.text).lower().strip() == "test":
-                        meeting_header = {'Authorization': f'Bearer {token_response.token}',
-                                          'Content-type': 'application/json'}
-
-                        start = datetime.now()
-                        end = start + datetime.timedelta(hours=2)
-
-                        x = requests.post(
-                            f'https://graph.microsoft.com/v1.0/me/onlineMeetings/createOrGet',
-                            headers=meeting_header,
-                            json={
-                                "startDateTime": start.strftime("%Y-%m-%dT%X"),
-                                "endDateTime": end.strftime("%Y-%m-%dT%X"),
-                                "subject": "Test meeting",
-                            }
-                        )
-
-                        print(x.status_code)
-                        print(x.text)
-                        print(x.json())
-
-                        await step_context.context.send_activity(
-                            '**' + (await client.get_me())['displayName'] + '** ' +
-                            'Meeting created.'
-                        )
+                        pass
 
                     else:
                         await step_context.context.send_activity('**' + (await client.get_me())['displayName'] + '** ' + self.bot.chat(re.sub('<at>.*?</at>', '', step_context.context.activity.text), await client.get_me(), token_response.token)[0])
