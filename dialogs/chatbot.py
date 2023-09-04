@@ -798,7 +798,48 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         # # print(f"History from SQL: {txt}\n")
         return txt
 
+    def auth_message(self):
+        pass
+
+    def chat_meeting(self, query, user):
+        token = self.get_graph_token(user)
+        if token == "none":
+            return self.auth_message()
+
+        return {'output_text': 'Meeting placeholder'}, None
+        ### add meeting code here
+
+    def update_graph_token(self, code):
+        return {'output_text': '###'}, None
+
+    def get_graph_token(self, user):
+        email = user['mail']
+
+        conn = pyodbc.connect(
+            f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
+        cursor = conn.cursor()
+        cursor.execute(
+            f"""SELECT token FROM history WHERE email = '{email}';""")
+        hist = cursor.fetchone()
+
+        if not hist:
+            cursor.execute(f"""INSERT INTO history
+                VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
+            conn.commit()
+            conn.close()
+
+            return "none"
+
+        if not hist[0]:
+            conn.close()
+            return "none"
+
+        return hist[0]
+
     def chat_private(self, query, user, token):
+        if "graph_token" in query:
+            return self.update_graph_token(query)
+
         if str(self.get_conversation_type(user['mail'])[0]) == '':
             label = self.classifier_chain(
                 {'question': query, 'context': self.get_history_as_txt_sql(user['mail'])})['text']
@@ -837,7 +878,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             return response, " "
 
         elif label == 'meeting':
-            return {'output_text': 'Meeting book thingy'}, None
+            return self.chat_meeting(query, user)
 
         else:
             doc = self.get_document(keywords, self.retriever_private)
