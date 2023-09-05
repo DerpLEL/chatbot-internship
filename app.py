@@ -101,6 +101,7 @@ app = Flask(__name__)
 def index():
     return render_template('chat.html')
 
+
 @app.route("/api/messages", methods=["POST"])
 async def messages():
     if "application/json" in request.headers["Content-Type"]:
