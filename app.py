@@ -158,10 +158,12 @@ def chat():
 async def messages():
     if "application/json" in request.headers["Content-Type"]:
         body = request.json
+        # print("Body:", body)
     else:
         return jsonpickle.encode(Response(status=415))
 
     activity = Activity().deserialize(body)
+    # print("Activity:", activity)
 
     auth_header = request.headers["Authorization"] if "Authorization" in request.headers else ""
 
@@ -242,6 +244,17 @@ async def messages():
         return jsonpickle.encode(Response(status=201))
     except Exception as exception:
         raise exception
+
+@app.route("/graph_token", methods=["GET"])
+def update_graph_token():
+    args = request.args
+    code = args.get("code")
+    mail = args.get("state")
+
+    return f"""Code: {code}
+    Target user: {mail}
+    Authorization complete for Graph API, you can close this window and return to the chat interface.
+    Please input your meeting query again when you return to the chat interface."""
 
 if __name__ == '__main__':
     import os

@@ -547,6 +547,10 @@ Output: '''
         print("label_hrm", label_hrm)
         if label_hrm == "User":
             response = run_return_user_response(query, user, token)
+
+        elif label_hrm == "Meeting":
+            return self.chat_meeting(query, user)
+
         elif label_hrm == "LeaveApplication":
             if self.get_conversation_type(user['mail']) == ['', ''] or self.get_conversation_type(user['mail']) == ['LeaveApplication', '']:
                 leave_application_type = self.leave_application_chain(query)[
@@ -798,19 +802,28 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         # # print(f"History from SQL: {txt}\n")
         return txt
 
-    def auth_message(self):
-        pass
+    def auth_message(self, user):
+        client_id = "b8838874-d6d2-4747-a8c7-862d2f530db0"
+        client_secret = "Gf~8Q~wMv-0j1TwBFlOy4mJauAE2eDKfwwXnTalx"
+
+        redirect_uri = 'http://localhost:3978/graph_token'  # Update with your redirect URI
+        tenant_id = "common"
+        scope = f"api://botid-{client_id}/meetings"
+
+        auth_endpoint = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize'
+
+        authorization_url = f'{auth_endpoint}?client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&response_type=code&state={user["mail"]}'
+
+        # Redirect the user to the authorization URL
+        return f'Please visit the following URL to provide consent: {authorization_url}'
 
     def chat_meeting(self, query, user):
         token = self.get_graph_token(user)
         if token == "none":
-            return self.auth_message()
+            return self.auth_message(user)
 
         return {'output_text': 'Meeting placeholder'}, None
         ### add meeting code here
-
-    def update_graph_token(self, code):
-        return {'output_text': '###'}, None
 
     def get_graph_token(self, user):
         email = user['mail']
@@ -837,9 +850,6 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         return hist[0]
 
     def chat_private(self, query, user, token):
-        if "graph_token" in query:
-            return self.update_graph_token(query)
-
         if str(self.get_conversation_type(user['mail'])[0]) == '':
             label = self.classifier_chain(
                 {'question': query, 'context': self.get_history_as_txt_sql(user['mail'])})['text']
@@ -876,9 +886,6 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             response = self.chat_hrm(query, user, token)
             # self.add_to_history_sql(query, response, email)
             return response, " "
-
-        elif label == 'meeting':
-            return self.chat_meeting(query, user)
 
         else:
             doc = self.get_document(keywords, self.retriever_private)
