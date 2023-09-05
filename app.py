@@ -7,6 +7,8 @@ from datetime import datetime
 from http import HTTPStatus
 import jsonpickle
 import pyodbc
+import requests
+import base64
 
 from aiohttp import web
 from flask import Flask, request, Response, render_template
@@ -22,6 +24,7 @@ from botbuilder.core import (
 )
 from botbuilder.core.integration import aiohttp_error_middleware
 from botbuilder.schema import Activity, ActivityTypes
+import jwt
 
 from bots import AuthBot
 
@@ -193,29 +196,54 @@ async def messages():
     except Exception as exception:
         raise exception
 
-@app.route("/graph_token", methods=["GET"])
-def update_graph_token():
-    args = request.args
-    code = args.get("code")
-    mail = args.get("state")
+# @app.route("/graph_token", methods=["GET"])
+# def update_graph_token():
+#     args = request.args
+#     code = args.get("code")
+#     mail = args.get("state")
+#
+#     print("Code:", code)
+#     print("Target mail:", mail)
+#
+#     # Get token here
+#     endpoint = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+#     header = {
+#         'Content-type': 'application/x-www-form-urlencoded'
+#     }
+#
+#     body = {
+#         'grant_type': 'authorization_code',
+#         'client_id': "b8838874-d6d2-4747-a8c7-862d2f530db0",
+#         'client_secret': "Gf~8Q~wMv-0j1TwBFlOy4mJauAE2eDKfwwXnTalx",
+#         'scope': f"api://botid-b8838874-d6d2-4747-a8c7-862d2f530db0/meetings",
+#         'redirect_uri': 'http://localhost:3978/graph_token',
+#         'code': code,
+#     }
+#
+#     x = requests.post(
+#         "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+#         headers=header,
+#         data=body
+#     )
+#
+#     print(x.status_code)
+#     body = x.json()
+#     token = body['access_token']
+#
+#     return f"""Target user: {mail}
+# Token: {token}"""
 
-    print("Code:", code)
-    print("Target mail:", mail)
+    # server = 'sql-chatbot-server.database.windows.net'
+    # database = 'sql-chatbot'
+    # username = 'test-chatbot'
+    # password = 'bMp{]nzt1'
+    # driver = '{ODBC Driver 17 for SQL Server}'
+    #
+    # conn = pyodbc.connect(f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
+    # cursor = conn.cursor()
 
-    # Get token here
-
-    server = 'sql-chatbot-server.database.windows.net'
-    database = 'sql-chatbot'
-    username = 'test-chatbot'
-    password = 'bMp{]nzt1'
-    driver = '{ODBC Driver 17 for SQL Server}'
-
-    conn = pyodbc.connect(f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
-    cursor = conn.cursor()
-
-    return f"""Authorization complete for Graph API, please input your meeting query again when you return to the chat interface.
-You can close this window."""
-
+#     return f"""Authorization complete for Graph API, please input your meeting query again when you return to the chat interface.
+# You can close this window."""
 
 if __name__ == '__main__':
     import os

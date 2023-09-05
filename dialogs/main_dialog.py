@@ -159,7 +159,7 @@ class MainDialog(LogoutDialog):
                     elif re.sub('<at>.*?</at>', '', step_context.context.activity.text).lower().strip() == "token":
                         await step_context.context.send_activity(
                             '**' + (await client.get_me())['displayName'] + '** ' +
-                            self.bot.try_request((await client.get_me())['mail'], token_response.token)
+                            token_response.token
                         )
 
                     else:

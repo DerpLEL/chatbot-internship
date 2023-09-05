@@ -549,7 +549,7 @@ Output: '''
             response = run_return_user_response(query, user, token)
 
         elif label_hrm == "Meeting":
-            return self.chat_meeting(query, user)
+            return self.chat_meeting(query, user, token)
 
         elif label_hrm == "LeaveApplication":
             if self.get_conversation_type(user['mail']) == ['', ''] or self.get_conversation_type(user['mail']) == ['LeaveApplication', '']:
@@ -802,52 +802,48 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         # # print(f"History from SQL: {txt}\n")
         return txt
 
-    def auth_message(self, user):
-        client_id = "b8838874-d6d2-4747-a8c7-862d2f530db0"
-        client_secret = "Gf~8Q~wMv-0j1TwBFlOy4mJauAE2eDKfwwXnTalx"
+    # def auth_message(self, user):
+    #     client_id = "b8838874-d6d2-4747-a8c7-862d2f530db0"
+    #     client_secret = "Gf~8Q~wMv-0j1TwBFlOy4mJauAE2eDKfwwXnTalx"
+    #
+    #     redirect_uri = 'http://localhost:3978/graph_token'  # Update with your redirect URI
+    #     tenant_id = "common"
+    #     scope = f"api://botid-{client_id}/meetings"
+    #
+    #     auth_endpoint = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize'
+    #
+    #     authorization_url = f'{auth_endpoint}?client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&response_type=code&state={user["mail"]}'
+    #
+    #     # Redirect the user to the authorization URL
+    #     return f'Please visit the following URL to provide consent: {authorization_url}'
 
-        redirect_uri = 'http://localhost:3978/graph_token'  # Update with your redirect URI
-        tenant_id = "common"
-        scope = f"api://botid-{client_id}/meetings"
-
-        auth_endpoint = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize'
-
-        authorization_url = f'{auth_endpoint}?client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&response_type=code&state={user["mail"]}'
-
-        # Redirect the user to the authorization URL
-        return f'Please visit the following URL to provide consent: {authorization_url}'
-
-    def chat_meeting(self, query, user):
-        token = self.get_graph_token(user)
-        if token == "none":
-            return self.auth_message(user)
-
+    def chat_meeting(self, query, user, token):
         return {'output_text': 'Meeting placeholder'}, None
         ### add meeting code here
 
-    def get_graph_token(self, user):
-        email = user['mail']
-
-        conn = pyodbc.connect(
-            f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
-        cursor = conn.cursor()
-        cursor.execute(
-            f"""SELECT token FROM history WHERE email = '{email}';""")
-        hist = cursor.fetchone()
-
-        if not hist:
-            cursor.execute(f"""INSERT INTO history
-                VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
-            conn.commit()
-            conn.close()
-
-            return "none"
-
-        if not hist[0]:
-            conn.close()
-            return "none"
-
-        return hist[0]
+    # def get_graph_token(self, user):
+    #     email = user['mail']
+    #
+    #     conn = pyodbc.connect(
+    #         f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
+    #     cursor = conn.cursor()
+    #     cursor.execute(
+    #         f"""SELECT token FROM history WHERE email = '{email}';""")
+    #     hist = cursor.fetchone()
+    #
+    #     if not hist:
+    #         cursor.execute(f"""INSERT INTO history
+    #             VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
+    #         conn.commit()
+    #         conn.close()
+    #
+    #         return "none"
+    #
+    #     if not hist[0]:
+    #         conn.close()
+    #         return "none"
+    #
+    #     return hist[0]
 
     def chat_private(self, query, user, token):
         if str(self.get_conversation_type(user['mail'])[0]) == '':
