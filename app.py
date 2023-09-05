@@ -6,6 +6,7 @@ import traceback
 from datetime import datetime
 from http import HTTPStatus
 import jsonpickle
+import pyodbc
 
 from aiohttp import web
 from flask import Flask, request, Response, render_template
@@ -34,7 +35,6 @@ import time
 import nest_asyncio
 
 nest_asyncio.apply()
-
 
 CONFIG = DefaultConfig()
 
@@ -100,59 +100,6 @@ app = Flask(__name__)
 @app.route('/')
 def index():
     return render_template('chat.html')
-
-
-@app.route("/get", methods=["GET", "POST"])
-def chat():
-    msg = request.form["msg"]
-
-    response = bot.chat(msg)
-
-    return response
-
-# def worker():
-#     # ADAPTER.use(ShowTypingMiddleware(0.5, 1))
-#     if "application/json" in request.headers["Content-Type"]:
-#         body = request.json
-#     else:
-#         return jsonpickle.encode(Response(status=415))
-#     activity = Activity().deserialize(body)
-#     auth_header = request.headers["Authorization"] if "Authorization" in request.headers else ""
-#     ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
-
-# async def worker():
-#     # Các tác vụ bạn muốn tiến hành trong tiến trình này
-#     print("Tiến trình đang chạy...")
-#     for i in range(1,100):
-#         print(i)
-
-# @app.route("/api/messages", methods=["POST"])
-# def messages():
-#     # ADAPTER.use(ShowTypingMiddleware(0.5, 1))
-#     if "application/json" in request.headers["Content-Type"]:
-#         body = request.json
-#     else:
-#         return jsonpickle.encode(Response(status=415))
-
-#     activity = Activity().deserialize(body)
-#     auth_header = request.headers["Authorization"] if "Authorization" in request.headers else ""
-
-#     async def worker():
-#         await ADAPTER.process_activity(activity, auth_header, BOT.on_turn)
-
-#     def run_worker():
-#         asyncio.run(worker())
-
-#     # print(await ADAPTER.process_activity(activity, auth_header, BOT.on_turn))
-#     try:
-#         for _ in range(2):
-    # thread = threading.Thread(target=run_worker, daemon=True)
-    # thread.start()
-
-#         return jsonpickle.encode(Response(status=201))
-#     except Exception as exception:
-#         raise exception
-
 
 @app.route("/api/messages", methods=["POST"])
 async def messages():
@@ -251,10 +198,23 @@ def update_graph_token():
     code = args.get("code")
     mail = args.get("state")
 
-    return f"""Code: {code}
-    Target user: {mail}
-    Authorization complete for Graph API, you can close this window and return to the chat interface.
-    Please input your meeting query again when you return to the chat interface."""
+    print("Code:", code)
+    print("Target mail:", mail)
+
+    # Get token here
+
+    server = 'sql-chatbot-server.database.windows.net'
+    database = 'sql-chatbot'
+    username = 'test-chatbot'
+    password = 'bMp{]nzt1'
+    driver = '{ODBC Driver 17 for SQL Server}'
+
+    conn = pyodbc.connect(f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
+    cursor = conn.cursor()
+
+    return f"""Authorization complete for Graph API, please input your meeting query again when you return to the chat interface.
+You can close this window."""
+
 
 if __name__ == '__main__':
     import os
