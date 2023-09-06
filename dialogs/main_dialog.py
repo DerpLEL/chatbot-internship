@@ -128,6 +128,7 @@ class MainDialog(LogoutDialog):
                         await step_context.context.send_activity(
                             '**' + (await client.get_me())['displayName'] + '** ' + f"You are {(await client.get_me())['displayName']}"
                         )
+                        print(token_response.token)
                         # display logged in users email
                     elif re.sub('<at>.*?</at>', '', step_context.context.activity.text) == "email":
                         await step_context.context.send_activity(

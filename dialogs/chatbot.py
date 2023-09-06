@@ -54,7 +54,7 @@ class chatAI:
     classifier_hrm = """<|im_start|>system
 Given a sentence, assistant will determine if the sentence belongs in 1 of 2 categories, which are:
 - LeaveApplication
-- User
+- User: include information of user like name, phone, mail, manager, department, ...
 - Certification
 - Meeting
 You answer the question "Is the user's question related to?"
@@ -180,7 +180,7 @@ Input: {question}
 Output:"""
 
     classifier_template = """<|im_start|>system
-Given a sentence, assistant will determine if the sentence belongs in 1 of 3 categories, which are:
+Given a sentence, assistant will determine if the sentence belongs in 1 of 4 categories, which are:
 - policy
 - drink fee
 - hrm
@@ -199,6 +199,12 @@ Input: Quy định công ty về nơi làm việc là gì?
 Output: policy
 Input: What is Chapter 1, article 2 of the company policy about?
 Output: policy
+Input: What is Chapter 1, article 2 of the company policy about?
+Output: policy
+Input: Cho tôi thông tin về nghỉ phép của công ty NOIS
+Output: policy
+Input: Cho tôi thông tin về nghỉ phép của NOIS
+Output: policy
 Input: Dịch vụ của NOIS là gì?
 Output: other
 Input: What is FASF?
@@ -213,26 +219,21 @@ Input: tôi muốn submit ngày nghỉ
 Output: hrm
 Input: tôi muốn hủy đơn tôi đã submit
 Output: hrm
-Input: tôi cần thông tin của tôi
+Input: thông tin của tôi
 Output: hrm
 <|im_end|>
 
+History conversation: {context}
 Input: {question}
 <|im_start|>assistant
 Output:"""
 
     delete_custom_template = """ <|im_start|>system
-
 - if the input is "unrelated response to previous question, cancelled previous action", the output, you should say to that same meaning in formal tone and in vietnamese.
-
 - if the input is "Đã xóa thành công", for the output, you shold say that the leave application have been deleted in  vietnamese
-
 - if the input is "empty list", the output should say that the leaving application that awaiting for approval is empty in vietnamese
-
 Input: {question}
-
 <|im_start|>assistant
-
 Output:"""
 
     drink_fee_template = """<|im_start|>system
@@ -364,10 +365,13 @@ Output:"""
 
     language_prompt = '''Given a sentence, determine if the sentence is written in English or Vietnamese.
 Output en for English, and vi for Vietnamese. DO NOT answer if the sentence is a question.
+If given a sentence with both Vietnamese and English, the default is Vietnamese.
 
 Sentence: Who is the co-founder of NOIS?
 Output: en
 Sentence: FASF là gì?
+Output: vi
+Sentence: Hi chatbot, Andy Tran của công ty NOIS là ai?
 Output: vi
 Sentence: {question}
 Output: '''
@@ -585,7 +589,7 @@ Output: '''
 
         response = """"""
 
-        print("label_hrm", label_hrm)
+        print("label_hrm: ", label_hrm)
         if label_hrm == "User":
             response = run_return_user_response(query, user, token)
         elif label_hrm == "LeaveApplication":
@@ -596,110 +600,110 @@ Output: '''
                 leave_application_type = self.get_conversation_type(user['mail'])[
                     1]
 
-            print(leave_application_type)
+            print(f"leave_application_type:  {leave_application_type}")
             if leave_application_type == 'get':
-                response = run_get_leave_application(user['mail'], query)
+                response = run_get_leave_application(query, user, token)
             elif leave_application_type == 'post':
                 leave_application_form = get_post_leave(user['mail'])
 
-                confirm = self.confirm_chain(query)['text']
+                # confirm = self.confirm_chain(query)['text']
 
-                if 'o' in confirm and self.confirm_delete:
-                    leave_application_form = {
-                        'start_date': ' ',
-                        'end_date': ' ',
-                        'duration': 0,
-                        'note': ' ',
-                        'periodType': -1,
-                        'reviewUser': 0,
-                        'leaveType': -1,
-                    }
+                # if 'o' in confirm and self.confirm_delete:
+                #     leave_application_form = {
+                #         'start_date': ' ',
+                #         'end_date': ' ',
+                #         'duration': 0,
+                #         'note': ' ',
+                #         'periodType': -1,
+                #         'reviewUser': 0,
+                #         'leaveType': -1,
+                #     }
 
-                    update_post_leave(leave_application_form, user['mail'])
+                #     update_post_leave(leave_application_form, user['mail'])
 
-                    response = f"""Đơn nghỉ phép của bạn đã xóa. Bạn có thể gửi một Đơn nghỉ phép khác."""
-                    self.confirm_delete = False
-                    self.update_conversation_type(['', ''], user['mail'])
-                    return response
+                #     response = f"""Đơn nghỉ phép của bạn đã xóa. Bạn có thể gửi một Đơn nghỉ phép khác."""
+                #     self.confirm_delete = False
+                #     self.update_conversation_type(['', ''], user['mail'])
+                #     return response
 
-                if self.get_conversation_type(user['mail']) != ['LeaveApplication', 'post'] and leave_application_form['start_date'] != ' ':
-                    self.update_conversation_type(
-                        ['LeaveApplication', 'post'], user['mail'])
-                    if leave_application_form['periodType'] == 0:
-                        periodType = "Cả ngày"
-                    elif leave_application_form['periodType'] == 1:
-                        periodType = "Buổi sáng"
-                    elif leave_application_form['periodType'] == 2:
-                        periodType = "Buổi chiều"
+                # if self.get_conversation_type(user['mail']) != ['LeaveApplication', 'post'] and leave_application_form['start_date'] != ' ':
+                #     self.update_conversation_type(
+                #         ['LeaveApplication', 'post'], user['mail'])
+                #     if leave_application_form['periodType'] == 0:
+                #         periodType = "Cả ngày"
+                #     elif leave_application_form['periodType'] == 1:
+                #         periodType = "Buổi sáng"
+                #     elif leave_application_form['periodType'] == 2:
+                #         periodType = "Buổi chiều"
 
-                    if leave_application_form['reviewUser'] == 56:
-                        reviewUser_string = 'Nguyễn Thị Mỹ Dung'
-                    elif leave_application_form['reviewUser'] == 108:
-                        reviewUser_string = 'ĐÀO MINH SÁNG'
-                    elif leave_application_form['reviewUser'] == 137:
-                        reviewUser_string = 'TRẦN VĂN KHANG'
-                    elif leave_application_form['reviewUser'] == 119:
-                        reviewUser_string = 'Trần Đăng Ninh'
-                    elif leave_application_form['reviewUser'] == 281:
-                        reviewUser_string = 'PHẠM THỊ DIỄM PHÚC'
-                    elif leave_application_form['reviewUser'] == 139:
-                        reviewUser_string = 'LÝ MINH QUÂN'
-                    elif leave_application_form['reviewUser'] == 124:
-                        reviewUser_string = 'ĐỔNG HỒNG NHUNG'
-                    elif leave_application_form['reviewUser'] == 141:
-                        reviewUser_string = 'VÕ TẤN TÀI'
-                    elif leave_application_form['reviewUser'] == 298:
-                        reviewUser_string = 'Tai Vo'
-                    elif leave_application_form['reviewUser'] == 95:
-                        reviewUser_string = 'TRẦN THỊ THÚY AN'
+                #     if leave_application_form['reviewUser'] == 56:
+                #         reviewUser_string = 'Nguyễn Thị Mỹ Dung'
+                #     elif leave_application_form['reviewUser'] == 108:
+                #         reviewUser_string = 'ĐÀO MINH SÁNG'
+                #     elif leave_application_form['reviewUser'] == 137:
+                #         reviewUser_string = 'TRẦN VĂN KHANG'
+                #     elif leave_application_form['reviewUser'] == 119:
+                #         reviewUser_string = 'Trần Đăng Ninh'
+                #     elif leave_application_form['reviewUser'] == 281:
+                #         reviewUser_string = 'PHẠM THỊ DIỄM PHÚC'
+                #     elif leave_application_form['reviewUser'] == 139:
+                #         reviewUser_string = 'LÝ MINH QUÂN'
+                #     elif leave_application_form['reviewUser'] == 124:
+                #         reviewUser_string = 'ĐỔNG HỒNG NHUNG'
+                #     elif leave_application_form['reviewUser'] == 141:
+                #         reviewUser_string = 'VÕ TẤN TÀI'
+                #     elif leave_application_form['reviewUser'] == 298:
+                #         reviewUser_string = 'Tai Vo'
+                #     elif leave_application_form['reviewUser'] == 95:
+                #         reviewUser_string = 'TRẦN THỊ THÚY AN'
 
-                    if leave_application_form['leaveType'] == 1:
-                        leaveType_string = 'Nghỉ phép có lương'
-                    elif leave_application_form['leaveType'] == 2:
-                        leaveType_string = 'Nghỉ không lương'
-                    elif leave_application_form['leaveType'] == 8:
-                        leaveType_string = 'Nghỉ ốm'
-                    elif leave_application_form['leaveType'] == 9:
-                        leaveType_string = 'Nghỉ bảo hiểm xã hội'
-                    elif leave_application_form['leaveType'] == 5:
-                        leaveType_string = 'Nghỉ hội nghị, đào tạo'
-                    elif leave_application_form['leaveType'] == 3:
-                        leaveType_string = 'Nghỉ khác (đám cưới,...)'
+                #     if leave_application_form['leaveType'] == 1:
+                #         leaveType_string = 'Nghỉ phép có lương'
+                #     elif leave_application_form['leaveType'] == 2:
+                #         leaveType_string = 'Nghỉ không lương'
+                #     elif leave_application_form['leaveType'] == 8:
+                #         leaveType_string = 'Nghỉ ốm'
+                #     elif leave_application_form['leaveType'] == 9:
+                #         leaveType_string = 'Nghỉ bảo hiểm xã hội'
+                #     elif leave_application_form['leaveType'] == 5:
+                #         leaveType_string = 'Nghỉ hội nghị, đào tạo'
+                #     elif leave_application_form['leaveType'] == 3:
+                #         leaveType_string = 'Nghỉ khác (đám cưới,...)'
 
-                    response = f"""Hiện bạn đang có một Form submit ngày nghỉ chưa submit:\n
-                    ______________________________________________________________________
-                    Người duyệt: {reviewUser_string}
-                    Ngày bắt đầu nghỉ: {leave_application_form['start_date']}
-                    Ngày kết thúc nghỉ: {leave_application_form['end_date']}
-                    Nghỉ buổi: {periodType}
-                    Tổng thời gian nghỉ: {leave_application_form['duration']}
-                    Hình thứ nghỉ: {leaveType_string}
-                    Lí do: {leave_application_form['note']}    
-                    ______________________________________________________________________\n
-                    
-                    Bạn có muốn giữ đơn nghỉ phép này không? Nếu có thì vui lòng bạn cung cấp những thông tin còn thiếu."""
+                #     response = f"""Hiện bạn đang có một Form submit ngày nghỉ chưa submit:\n
+                #     ______________________________________________________________________
+                #     Người duyệt: {reviewUser_string}
+                #     Ngày bắt đầu nghỉ: {leave_application_form['start_date']}
+                #     Ngày kết thúc nghỉ: {leave_application_form['end_date']}
+                #     Nghỉ buổi: {periodType}
+                #     Tổng thời gian nghỉ: {leave_application_form['duration']}
+                #     Hình thứ nghỉ: {leaveType_string}
+                #     Lí do: {leave_application_form['note']}
+                #     ______________________________________________________________________\n
 
-                    self.confirm_delete = True
-                    self.update_conversation_type(
-                        ['LeaveApplication', 'post'], user['mail'])
-                    return response
+                #     Bạn có muốn giữ đơn nghỉ phép này không? Nếu có thì vui lòng bạn cung cấp những thông tin còn thiếu."""
+
+                #     self.confirm_delete = True
+                #     self.update_conversation_type(
+                #         ['LeaveApplication', 'post'], user['mail'])
+                #     return response
 
                 self.update_conversation_type(
                     ['LeaveApplication', 'post'], user['mail'])
 
                 post_leave_application_response = post_leave_application_func(
-                    self.user, query, token, user['mail'])
+                    user, query, token, user['mail'])
                 response = post_leave_application_response[0]
                 # print(post_leave_application_response)
-                try:
-                    if post_leave_application_response[1].status_code == 200:
-                        self.update_conversation_type(['', ''], user['mail'])
-                    elif post_leave_application_response[1].status_code == 401:
-                        self.update_conversation_type(['', ''], user['mail'])
-                    elif post_leave_application_response[1].status_code == 100:
-                        self.update_conversation_type(['', ''], user['mail'])
-                except:
-                    pass
+                # try:
+                if post_leave_application_response[1].status_code == 200:
+                    self.update_conversation_type(['', ''], user['mail'])
+                elif post_leave_application_response[1].status_code == 401:
+                    self.update_conversation_type(['', ''], user['mail'])
+                elif post_leave_application_response[1].status_code == 100:
+                    self.update_conversation_type(['', ''], user['mail'])
+                # except:
+                #     pass
 
             elif leave_application_type == 'delete':
                 self.update_conversation_type(
@@ -846,7 +850,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         else:
             label = "hrm"
 
-        print("label:" + label)
+        print("label: " + label)
         keywords = self.keywordChain(
             {'question': query, 'context': self.get_history_as_txt_sql(user['mail'])})['text']
 
@@ -877,10 +881,11 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             return response, " "
         else:
             doc = self.get_document(keywords, self.retriever_private)
+
             try:
                 num_results = 3
 
-                for result in search(query + "hiện tại", num_results=num_results):
+                for result in search("Hiện tại," + query, num_results=num_results):
                     response = requests.get(result)
                     html_content = response.text
                     soup = BeautifulSoup(html_content, 'html.parser')
@@ -889,7 +894,7 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
                         tag.replace_with(tag.text)
 
                     text = soup.get_text()
-                    doc[0].page_content = text[:4100]
+                    doc[1].page_content = text[:4100]
             except:
                 pass
 

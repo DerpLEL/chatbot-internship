@@ -1,241 +1,37 @@
 from langchain.prompts import PromptTemplate
 from langchain.chat_models import AzureChatOpenAI
 from langchain.chains import LLMChain
-from langchain.chains.api.prompt import API_RESPONSE_PROMPT
+from langchain.chains.qa_with_sources import load_qa_with_sources_chain
+from langchain.schema import Document
+from .bot_config import BotDefaultConfig
+from math import log
 
 import requests
+import pyodbc
+import difflib
+import pandas as pd
 
 
-url = "https://api-hrm.nois.vn/api"
-header = {}
+requests.encoding = 'UTF-8'
 
-classifier_usecase2 = """<|im_start|>system
+BOT_CONFIG = BotDefaultConfig()
 
-Given a sentence, assistant will determine if the sentence belongs in 1 of 2 categories, which are:
-- LeaveApplication
-- User
-- Certification
-- Meeting
-
-You answer the question "Is the user's question related to ?"
-
-EXAMPLE:
-Input: tôi muốn submit ngày nghỉ
-Output: LeaveApplication
-Input: tôi cần thông tin của tôi
-Output: User
-Input: tôi muốn biết tôi đã có bao nhiêu tín chỉ
-Output: Certification
-Input: tôi muốn đặt lịch meeting phòng meeting số 1.
-Output: Meeting
-Inout: tôi còn bao nhiêu ngày nghỉ phép
-Output: LeaveApplication
-Input: tôi cần thông tin quản lý của tôi
-Output: User
-Input: hãy cho tôi biết tất cả tính chỉ của tôi
-Output: Certification
-Input: tôi muốn hủy lịch họp phòng meeting số 1.
-Output: Meeting
-
-<|im_end|>
-Input: {question}
-<|im_start|>assistant
-Output:"""
-
-# User_clasifier
-classifier_user = """<|im_start|>system
-
-Given a sentence, assistant will determine if the sentence belongs in 1 of 3 categories, which are:
-- get user
-- get manager
-
-You answer the question "Is the user's question related to?"
-
-EXAMPLE:
-Input: thông tin cá nhân của tôi là gì
-Output: get user
-Input: quản lí/ sếp của tôi là ai?
-Output: get manager
-Input: trong năm nay, em đã nghỉ bao nhiêu ngày
-Output: get user
-Input: ngày sinh nhật của tôi là gì
-Output: get user
-Input: công việc của tôi trong công ty là gì
-Output: get user
-
-<|im_end|>
-Input: {question}
-<|im_start|>assistant
-Output:"""
-
-# - latest application specific
-
-# EXAMPLE 
-# Input: cho tôi biết đơn nghỉ phép gần nhất bắt đầu từ ngày bao nhiêu
-# Output: latest application specific
-
-# Input: cho tôi biết note của đơn nghỉ phép gần nhất
-# Output: latest application specific
-
-# Input: cho tôi biết ngày kết thúc của đơn nghỉ phép gần nhất
-# Output: latest application specific
-
-# Input: cho tôi biết loại nghỉ phép của đơn nghỉ phép gần nhất
-# Output: latest application specific
-classifier_question_leave_application =""" <|im_start|>system
-Given a sentence, you will putting the sentence in one of these category
-- quantity general
-- quanitity specific
-- latest application
-
-- general
+server = BOT_CONFIG.SERVER
+database = BOT_CONFIG.DATABASE
+username = BOT_CONFIG.USERNAME
+password = BOT_CONFIG.PASSWORD
+driver = BOT_CONFIG.DRIVER
 
 
-DESCRIPTION of the categories above:
-- quantity general: asking about general quanity such as what is the number of my leave application
-- quanitity specific: asking about quanity from the list which satisfy the follow condition
-- latest application: asking question regards to the numbered application, the order of it
-- general: asking question regards to show all the leave application.
-EXAMPLE:
-Input: số đơn xin ngày nghỉ của tôi là bao nhiêu?
-Ouput: quantity general
-
-Input: tôi hiện tại có bao nhiêu đơn ngày nghỉ?
-Output: quantity general
-
-Input: tôi có bao nhiêu đơn nghỉ phép tổng cộng?
-Ouput: quantity general
-
-Input: có bao nhiêu đơn nghỉ phép đã được chấp thuận
-Output: quantity specific
-
-Input:cho tôi thông tin của đơn xin nghỉ phép gần nhất
-Ouput: latest application
-
-
-<|im_end|>
-Input: {question}
-<|im_start|>assistant
-
-Output:"""
-keyword_templ_leave_application = """Given a sentence, extract keywords and translate English, and it must be 1 keyword only
-
-SPECIAL CASE:
-if the input include "đơn" + "chấp thuận", do not return totalRecord, output should return "reviewStatusName"
-if the input include "đơn nghỉ " + "chấp thuận" or "đồng ý", do not return totalRecord, output should return "reviewStatusName"
-
-The keyword MUST follow one of these:
-
-      "id": ,
-      "registerDate": ,
-      "fromDate": ,
-      "toDate": ,
-      "numberDayOff": ,
-      "leaveApplicationNote": ,
-      "reviewStatus": ,
-      "reviewNote": ,
-      "leaveApplicationType": ,
-      "userId": ,
-      "jobTitle": ,
-      "userName": ,
-      "reviewUserId": ,
-      "reviewUser": ,
-      "reviewStatusName": ,
-      "reviewDate": ,
-      "periodType": ,
-      "periodTypeName": ,
-      "relatedUserId": ,
-      "relatedUser": ,
-      "totalRecord":
-
-######
-EXAMPLE
-SENTENCE: id của tôi là gì?
-OUTPUT: id
-######
-SENTENCE: đơn ghi nghỉ từ ngày nào?
-OUTPUT: fromDate
-######
-SENTENCE: đơn ghi nghỉ tới ngày nào?
-OUTPUT: toDate
-######
-SENTENCE: tổng thời gian nghỉ là nhiêu ngày?
-OUTPUT: numberDayOff
-######
-SENTENCE: đơn đã được chấp thuận?
-OUTPUT: reviewStatusName
-
-#####
-SENTENCE: tổng số đơn ngày nghỉ được trả lương?
-OUTPUT: leaveApplicationType
-######
-SENTENCE: đơn xin nghỉ của tôi có được trả lương không?
-OUTPUT: leaveApplicationType
-######
-SENTENCE: note của đơn nghỉ của tôi là gì?
-OUTPUT: leaveApplicationNote
-######
-SPECIAL CASE:
-Input: tôi hiện có bao nhiêu đơn ngày nghỉ đã được chấp thuận?
-Output: reviewStatusName
-######
-Input: ngày nghỉ đã được chấp thuận?
-Output: reviewStatusName
-#####
-Input: đơn đã được chấp thuận?
-Output: reviewStatusName
-#####
-Input: tổng đơn nghỉ được đồng ý
-Output: reviewStatusName
-
-SENTENCE: {output}
-OUTPUT:"""
-
-extracted_value_quantity_specific = """Given a sentence, extract a keyword value (specific string labelled below or a string or a number) , and it must be 1 value only
-
-The value follow one of these:
-  Đồng ý
-  PaidLeave
-If value didnt match the above, the value should be
-  a number
-  a string
-
-######
-EXAMPLE
-SENTENCE: tổng số đơn ngày nghỉ đã được chấp thuận?
-OUTPUT: Đồng ý
-######
-SENTENCE: tổng số đơn ngày nghỉ được trả lương?
-OUTPUT: PaidLeave
-######
-SENTENCE: tôi hiện có bao nhiêu đơn ngày nghỉ đã được chấp thuận?
-OUTPUT: Đồng ý
-######
-SENTENCE: đơn đã được chấp thuận??
-OUTPUT: Đồng ý
-######
-
-
-SENTENCE: {output}
-OUTPUT:"""
+# Prompt template for LLM
 chat_template = """<|im_start|>system
-You are an intellegent bot assistant that helps users answer their questions. Your answer must adhere to the following criteria:
-- the answer will be inside the output of the summaries, answer according to the given summaries. 
+Assistant helps the company employees and users with their questions about the companies New Ocean and NOIS. Your answer must adhere to the following criteria:
+You MUST follow this rule:
+- If question is in English, answer in English. If question is in Vietnamese, answer in Vietnamese. 
+- Be friendly in your answers. You may use the provided sources to help answer the question. If there isn't enough information, say you don't know. If asking a clarifying question to the user would help, ask the question.
 - If the user greets you, respond accordingly.
-- if value of the output is none, null or N/A, the answer is "thông tin đó chưa cập nhật"
-- if given a dictionary format, answer all of the information within that dictionary, and still if value of the output is none, null or N/A, the answer is "thông tin đó chưa cập nhật",
-you have to go down to new line each information given
-- if given list of dictionary format, you only show the leave application id, start date, end date and the number of day of
-DISPLAY as the following example format
 
-EXAMPLE:
-INPUT: 'summaries': 'input: cho tôi xem số lượng đơn nghỉ phép, output: 1', 'context': '', 'question': 'cho tôi xem số lượng đơn nghỉ phép'
-OUTPUT: số lượng đơn nghỉ phép bạn đang hiện đã nộp là 1
-
-INPUT: 'summaries': 'input: cho tôi xem số lượng đơn nghỉ phép, output: 3', 'context': '', 'question': 'cho tôi xem số lượng đơn nghỉ phép'
-OUTPUT: số lượng đơn nghỉ phép bạn đang hiện đã nộp là 3
-
-- SPECIAL CASE: output of gender 0, the answer is male, if the output of gender is 1, the ouput is female
+{user_info}
 
 Sources:
 {summaries}
@@ -247,191 +43,236 @@ Chat history:{context}
 {question}
 <|im_end|>
 <|im_start|>assistant
+"""
 
+language_prompt = '''Given a sentence, determine if the sentence is written in English or Vietnamese.
+Output en for English, and vi for Vietnamese. DO NOT answer if the sentence is a question.
+If given a sentence that has both Vietnamese and English, prioritize Vietnamese.
+
+Sentence: Who is the co-founder of NOIS?
+Output: en
+Sentence: FASF là gì?
+Output: vi
+Sentence: {question}
+Output: '''
+
+
+# Large Language Model
+llm = AzureChatOpenAI(
+    openai_api_type="azure",
+    openai_api_base='https://openai-nois-intern.openai.azure.com/',
+    openai_api_version="2023-03-15-preview",
+    deployment_name='gpt-35-turbo-16k',
+    openai_api_key='400568d9a16740b88aff437480544a39',
+    temperature=0.8,
+    max_tokens=3000
+)
+
+llm2 = AzureChatOpenAI(
+    openai_api_type="azure",
+    openai_api_base='https://openai-nois-intern.openai.azure.com/',
+    openai_api_version="2023-03-15-preview",
+    deployment_name='gpt-35-turbo-16k',
+    openai_api_key='400568d9a16740b88aff437480544a39',
+    temperature=0.7,
+    max_tokens=600
+)
+
+llm3 = AzureChatOpenAI(
+    openai_api_type="azure",
+    openai_api_base='https://openai-nois-intern.openai.azure.com/',
+    openai_api_version="2023-03-15-preview",
+    deployment_name='gpt-35-turbo-16k',
+    openai_api_key='400568d9a16740b88aff437480544a39',
+    temperature=0.5,
+    max_tokens=600
+)
+
+# chain for creating answer from bot
+qa_chain = load_qa_with_sources_chain(
+    llm=llm, chain_type="stuff", prompt=PromptTemplate.from_template(chat_template))
+language_classifier = LLMChain(
+    llm=llm3, prompt=PromptTemplate.from_template(language_prompt))
+
+
+"""
+get history conversation of user
+- input: mail of user
+- output: history conversation of user
 """
 
 
-latest_application_date_classifier = """
+def get_history_as_txt_sql(email):
+    conn = pyodbc.connect(
+        f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
+    cursor = conn.cursor()
+    cursor.execute(
+        f"""SELECT chat FROM history WHERE email = '{email}';""")
+    hist = cursor.fetchone()
 
-SENTENCE: {output}
-OUTPUT:"""
-llm2 = AzureChatOpenAI(
-            openai_api_type="azure",
-            openai_api_base='https://openai-nois-intern.openai.azure.com/',
-            openai_api_version="2023-03-15-preview",
-            deployment_name='gpt-35-turbo-16k',
-            openai_api_key='400568d9a16740b88aff437480544a39',
-            temperature=0.7,
-            max_tokens=600
-        )
+    if not hist:
+        cursor.execute(f"""INSERT INTO history
+VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
+        conn.commit()
+        conn.close()
+        return ""
 
-# for keyword -lateron
-llm3 = AzureChatOpenAI(
-            openai_api_type="azure",
-            openai_api_base='https://openai-nois-intern.openai.azure.com/',
-            openai_api_version="2023-03-15-preview",
-            deployment_name='gpt-35-turbo-16k',
-            openai_api_key='400568d9a16740b88aff437480544a39',
-            temperature=0.5,
-            max_tokens=600
-        )
+    if not hist[0]:
+        conn.close()
+        return ""
 
-# using section
+    hist = hist[0].split("<sep>")
 
-usecase2_classifier_chain = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(classifier_usecase2))
-classifier_user_chain = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(classifier_user))
-classifier_leave_application_get = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(classifier_question_leave_application))
-keyword_chain = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(keyword_templ_leave_application))
-value_extract = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(extracted_value_quantity_specific))
-qaChain = LLMChain(llm=llm2, prompt=PromptTemplate.from_template(chat_template))
+    txt = ""
+    for row in hist:
+        i = row.split('||')
 
-# function define
-def get_leave_application():
-  response = requests.get(url + "/leaveapplication/paging?pageIndex=0&pageSize=50&type=0", headers=header)
-  temp_list = []
-  if response.status_code == 200:
-      for i in response.json()['data']['items']:
-          if i["reviewStatusName"] != "Đồng ý":
-              temp_list.append(i) 
-      return temp_list
-  else:
-      return ["token expired"]
-  
+        try:
+            txt += f"\n<|im_start|>user\n{i[0]}\n<|im_end|>\n"
+            txt += f"<|im_start|>assistant\n{i[1]}\n<|im_end|>"
+        except IndexError:
+            break
 
-def new_line_formatter(response):
-    # check empty
-    if response == "":
-        return
-    # not
-    else:
-        final_response = ''
-        paragraphs = response.split('\n\n')  # Split the response into paragraphs using '\n\n'
+    conn.close()
+    return txt
 
-        for i, paragraph in enumerate(paragraphs):
-            lines = paragraph.split('\n')
-            paragraph_html = '<div>' + '</div><div>'.join(lines) + '</div>'
-            final_response += paragraph_html
-            if i < len(paragraphs) - 1:
-                final_response += '<br>'  # Add an extra <div></div> between paragraphs
 
-        return final_response
-    
-def display_leave_application(response):
+def get_top_docs(initial_docs, top):
+    sorted_docs = []
+    for document in initial_docs:
+        sorted_docs.append((document.metadata['@search.score'], document))
+
+    # Sort the sorted_docs by their search.score metadata.
+    sorted_docs.sort(reverse=True)
+
+    # Return a list of documents, sorted by their search.score metadata.
+    return [tup[1] for tup in sorted_docs][:3]
+
+
+def fuzzy_match(s1, s2):
+    """Calculates the similarity score between two strings using the Levenshtein distance."""
+
+    # Calculate the Levenshtein distance between the two strings.
+    distance = difflib.SequenceMatcher(None, s1, s2).ratio()
+
+    # Return the similarity score as a number between 0 and 1.
+    # return 1 - distance / max(len(s1), len(s2))
+    return distance
+
+
+def bm25_score(query, document, k1=1.2, b=0.75):
+    """Calculates the BM25 score for a query and a document.
+
+    Args:
+        query: The query string.
+        document: The document string.
+        k1: The k1 parameter.
+        b: The b parameter.
+
+    Returns:
+        The BM25 score for the query and the document.
     """
-    Input: application id
 
-    Output:
-        temp_list: None
-    Purpose: delete leave application from HRM from website url
-    """  
-  # input list of dictionaries response
-  # displaying the application
-    # print("response - general - pass: " + str(response)) # error here means token expired
-    if response != []:
-        count = 1
-        text = ""
-        for i in response:
-            text += ("Đơn xin nghỉ việc  " + str(count) +" :\n")
-            text += ("ID: " +str(i["id"])  +"\n")
-            text += ("Từ ngày: " + str(i["fromDate"])  + "\n")
-            text +=("Đến ngày: " + str(i["toDate"]) + "\n")
-            text +=("Số ngày nghỉ: " + str(i["numberDayOff"]) + "\n\n")
-            count+=1
-       
-        text = new_line_formatter(text)
-        text = text[:0] + "\n______________________________________________________________________" + text[0:]
-        text += " ______________________________________________________________________"
-        # print(text)
-        return text
-    else:
-        return
-    
-# single dict
-def display_single_leave_application(response): # input list of dictionaries response
-  # displaying the application
-#   print("response - general - pass: " + str(response))
-  if response != []:
-    count = 1
-    text =""
-    text += ("Leave application number " + str(count) +" :\n")
-    text += ("Application id: " +str(response["id"])  +"\n")
-    text += ("From date: " + str(response["fromDate"])  + "\n")
-    text +=("To date: " + str(response["toDate"]) + "\n")
-    text +=("Number day off: " + str(response["numberDayOff"]) + "\n\n")
-    count+=1
-    text = new_line_formatter(text)
-    # print(text)
-    return text
-  else:
-      return 
+    # Calculate the term frequency for each term in the query.
+    term_frequencies = {}
+    for term in query.split():
+        if term not in term_frequencies:
+            term_frequencies[term] = 0
+            term_frequencies[term] += 1
+
+    # Calculate the document frequency for each term in the query.
+    document_frequencies = {}
+    for term in query.split():
+        if term not in document_frequencies:
+            document_frequencies[term] = 0
+            document_frequencies[term] += 1
+
+    # Calculate the length of the document.
+    document_length = len(document)
+
+    # Calculate the BM25 score for the query and the document.
+    score = 0
+    for term in query.split():
+        # Calculate the term frequency normalization factor.
+        tf_norm = (term_frequencies[term] + 1) / (term_frequencies[term] +
+                                                  k1 * (1 - b + b * document_length / (document_length + 1)))
+
+        # Calculate the document frequency normalization factor.
+        df_norm = (document_frequencies[term] + 1) / \
+            (document_frequencies[term] + k1)
+
+        # Calculate the BM25 score for the term.
+        score += tf_norm * df_norm * \
+            log((1 + len(document)) / (1 + document_frequencies[term]))
+
+    return score
 
 
-# history_delete = ""
-def run_get_leave_application(email, query, token):
-    global header
-    global history_delete
-    header = {"Authorization": f"Bearer {token}"}
-    label_get_application = classifier_leave_application_get(query)['text']
-    # THIS IS FOR general --> ask again if user want to perform any action with it, save these into history
-    
-    # print(label_get_application)
-    response = get_leave_application()
-    if response == ["token expired"]:
-        return response[0]
-    if response != []:
-        if (label_get_application =="general"):
-            result = display_leave_application(response) + "\n Bạn muốn tôi giúp gì thêm "
-            # history_delete += result
-            return result
+def run_get_leave_application(query, user, token):
+    try:
+        # Request to HRM to get list of user's leaf application
+        url = f"https://api-hrm.nois.vn/api/chatbot/dayoff?email={user['mail']}"
+        headers = {
+            "api-key": "2NFGmIbGKlPkedZ25Mo9vQyM0CKSmABieUk-SCGzm9A",
+            "Authorization": token,
+        }
+        response = requests.get(url, headers=headers)
 
-        # THIS IS FOR quantity general
-        elif (label_get_application =="quantity general"):
-            size_of_leave_application = len(response)
-            temp_result = "input: " + query + ", output: " + str(size_of_leave_application)
-            # print(temp_result)
-            result = qaChain({'summaries': temp_result,'context':"", 'question': query}, return_only_outputs=False)
-            # print(result)
-            return result["text"]
+        # String with leave application information of user
+#         user_la_info = f"""Số ngày phép đã có: {response.json()['data']['yearOffDay']},
+# Số ngày phép đã nghỉ: {response.json()['data']['offDay']},
+# Số ngày nghỉ phép thâm niên: {response.json()['data']['bonusDayOff']},
+# Số ngày phép được dùng: {response.json()['data']['allowDayOff']},
+# Số ngày phép tối đa: {response.json()['data']['maxDayOff']},
+# Số ngày phép nghỉ ốm: {response.json()['data']['sickDayOff']},
+# Số ngày phép nghỉ ốm đã dùng: {response.json()['data']['offDayForSick']},
+# Số ngày phép ốm được dùng: {response.json()['data']['allowDayOffSick']}
+# """
+        user_la_info1 = f"""Thông tin ngày nghỉ phép của tôi ({user['displayName']}):
+-Số ngày phép đã có: 1,
+-Số ngày phép đã nghỉ: 2,
+-Số ngày nghỉ phép thâm niên: 3,
+-Số ngày phép được dùng: 4,
+-Số ngày phép tối đa: 5,
+-Số ngày phép nghỉ ốm: 6,
+-Số ngày phép nghỉ ốm đã dùng: 7,
+-Số ngày phép ốm được dùng: 8
+"""
+    # formal
+#         user_la_info = f"""Thông tin ngày nghỉ phép của tôi ({user['displayName']}):
+# Trong năm nay, tôi đã được cấp tổng cộng {response.json()['data']['yearOffDay']} ngày phép. Trong số đó, tôi đã sử dụng {response.json()['data']['offDay']} ngày để nghỉ. Ngoài ra, tôi cũng được hưởng {response.json()['data']['bonusDayOff']}ngày phép thâm niên. Hiện tại, tôi còn lại {response.json()['data']['allowDayOff']} ngày phép có thể sử dụng.
 
+# Tuy nhiên, có một số hạn chế về số ngày phép mà tôi có thể nghỉ. Số ngày phép tối đa mà tôi có thể sử dụng là {response.json()['data']['maxDayOff']}. Ngoài ra, tôi chỉ được sử dụng {response.json()['data']['allowDayOffSick']} ngày phép ốm. Trong năm nay, tôi đã nghỉ ốm {response.json()['data']['offDayForSick']} ngày và còn có thể sử dụng {response.json()['data']['allowDayOffSick']} ngày phép ốm.
+# """
+        user_la_info = f"""Thông tin ngày nghỉ phép của tôi ({user['displayName']}):
+Trong năm nay, tôi đã được cấp tổng cộng 6.0 ngày phép. Trong số đó, tôi đã sử dụng 3.0 ngày để nghỉ. Ngoài ra, tôi cũng được hưởng 1.0 ngày phép thâm niên. Hiện tại, tôi còn lại 6.0 ngày phép có thể sử dụng.
 
-        # THIS IS FOR quantity specific
-        # done tổng số đơn ngày nghỉ đã được chấp thuận
-        # done tổng số đơn ngày nghỉ được trả lương
-        # done tổng số đơn ngày nghỉ được có note là 2nd
-        # need to add more value since dont know the exact discrete val
-        elif (label_get_application =="quantity specific"):
-            counter = 0
-            keyword = keyword_chain(query)['text']
-            value_to_compare = value_extract(query)['text']
-            # print(keyword)
-            # print(value_to_compare)
-            # list of dict for leav3 application
-            size_of_leave_application = len(response)
-            num = 0
-            for i in response:
-                if (i[keyword] == value_to_compare):
-                    counter+= 1
-                    num += 1
-            temp_result = " output: " + str(counter) # "input: " + query + 
-            result = qaChain({'summaries': temp_result,'context':"", 'question': query}, return_only_outputs=False)
-            return result["text"]
-        # THIS IS FOR latest application
-        elif (label_get_application == "latest application"):
-            response = display_single_leave_application(response[0])
-            return response + "bạn muốn tôi làm gì tiếp"
+Tuy nhiên, có một số hạn chế về số ngày phép mà tôi có thể nghỉ. Số ngày phép tối đa mà tôi có thể sử dụng là 25.5. Ngoài ra, tôi chỉ được sử dụng 2.0 ngày phép ốm. Trong năm nay, tôi đã nghỉ ốm 0.0 ngày và còn có thể sử dụng 2.0 ngày phép ốm.
+"""
+        print(user_la_info)
+        doc = [Document(page_content=user_la_info,
+                        metadata={'@search.score': fuzzy_match(query, user_la_info),
+                                  'metadata_storage_name': 'local', 'source': 'local'})]
 
+        doc = get_top_docs(doc, 1)
+        print(doc)
 
-        # THIS IS FOR latest application specific
-        # elif (label_get_application == "latest application specific"):     
-        #     keyword = keyword_chain(query)['text']
-        # #     print("first response: " + str(response[0]))
-        #     display_response = display_single_leave_application(response[0])
-        #     try:
-        #         temp_result = "input: " + query + " output: " + str(response[0][keyword])
-        #     except:
-        #         return display_response
-        #     result = qaChain({'summaries': temp_result,'context':"", 'question': query}, return_only_outputs=False)
-        #     return result["text"]
+        # Conversation history
+        hist = get_history_as_txt_sql(user['mail'])
+        # Check query language
+        lang = language_classifier(query)['text'].strip()
+        query_with_lang = query + '. Using leave application information of the user. Answer in list type. Using exist documents to answer the question. You can answer by those document without any input from the User.' + 'Answer this query using English.' if lang == 'en' else query + \
+            ' Answer this query using Vietnamese.'
+        lang_prompt = 'English' if lang == 'en' else 'Vietnamese'
 
-    else:
-        return "currently you have no leave application waiting"
+        # Create response
+        response = qa_chain({'input_documents': doc, 'question': query_with_lang, 'context': hist,
+                            'user_info': f'''The user chatting with you is named {user['displayName']}, with email: {user['mail']}.
+                            ''', 'lang': lang_prompt},
+                            return_only_outputs=False)
+
+        return response['output_text']
+
+    except Exception as e:
+        print(e)
+        pass
