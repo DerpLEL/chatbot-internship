@@ -802,23 +802,23 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         # # print(f"History from SQL: {txt}\n")
         return txt
 
-    # def auth_message(self, user):
-    #     client_id = "b8838874-d6d2-4747-a8c7-862d2f530db0"
-    #     client_secret = "Gf~8Q~wMv-0j1TwBFlOy4mJauAE2eDKfwwXnTalx"
-    #
-    #     redirect_uri = 'http://localhost:3978/graph_token'  # Update with your redirect URI
-    #     tenant_id = "common"
-    #     scope = f"api://botid-{client_id}/meetings"
-    #
-    #     auth_endpoint = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize'
-    #
-    #     authorization_url = f'{auth_endpoint}?client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&response_type=code&state={user["mail"]}'
-    #
-    #     # Redirect the user to the authorization URL
-    #     return f'Please visit the following URL to provide consent: {authorization_url}'
+    def auth_message(self, user):
+        client_id = "b8838874-d6d2-4747-a8c7-862d2f530db0"
+        client_secret = "Gf~8Q~wMv-0j1TwBFlOy4mJauAE2eDKfwwXnTalx"
+
+        redirect_uri = 'http://localhost:3978/graph_token'  # Update with your redirect URI
+        tenant_id = "common"
+        scope = f"api://botid-{client_id}/meetings"
+
+        auth_endpoint = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize'
+
+        authorization_url = f'{auth_endpoint}?client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&response_type=code&state={user["mail"]}'
+
+        # Redirect the user to the authorization URL
+        return f'Please visit the following URL to provide consent: {authorization_url}'
 
     def chat_meeting(self, query, user, token):
-        return {'output_text': 'Meeting placeholder'}, None
+        return self.auth_message(user)
         ### add meeting code here
 
     # def get_graph_token(self, user):
