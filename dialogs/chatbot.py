@@ -808,7 +808,8 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
 
         redirect_uri = 'http://localhost:3978/graph_token'  # Update with your redirect URI
         tenant_id = "common"
-        scope = f"api://botid-{client_id}/meetings"
+        # scope = f"api://botid-{client_id}/meetings2"
+        scope = "Calendars.ReadWrite%20OnlineMeetings.Read%20OnlineMeetings.ReadWrite"
 
         auth_endpoint = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize'
 

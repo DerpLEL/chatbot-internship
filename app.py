@@ -9,6 +9,7 @@ import jsonpickle
 import pyodbc
 import requests
 import base64
+import pprint
 
 from aiohttp import web
 from flask import Flask, request, Response, render_template
@@ -211,11 +212,14 @@ def update_graph_token():
         'Content-type': 'application/x-www-form-urlencoded'
     }
 
+    string = f"api://botid-b8838874-d6d2-4747-a8c7-862d2f530db0/meetings2"
+    string2 = "Calendars.ReadWrite OnlineMeetings.Read OnlineMeetings.ReadWrite"
+
     body = {
         'grant_type': 'authorization_code',
         'client_id': "b8838874-d6d2-4747-a8c7-862d2f530db0",
         'client_secret': "Gf~8Q~wMv-0j1TwBFlOy4mJauAE2eDKfwwXnTalx",
-        'scope': f"api://botid-b8838874-d6d2-4747-a8c7-862d2f530db0/meetings",
+        'scope': string2,
         'redirect_uri': 'http://localhost:3978/graph_token',
         'code': code,
     }
@@ -227,6 +231,7 @@ def update_graph_token():
     )
 
     print(x.status_code)
+    pprint.pprint(x.json())
     body = x.json()
     token = body['access_token']
 
