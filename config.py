@@ -14,6 +14,13 @@ pw = "Gf~8Q~wMv-0j1TwBFlOy4mJauAE2eDKfwwXnTalx"
 id01 = "d70aeb25-d473-4545-b414-70e9050580bf"
 pw01 = "GdD8Q~63pxG~gNl4IRkPXRWOfyxAbrhl2~TRKanF"
 
+"""Default auth config
+Grant type: authorization_code
+Login URL: https://login.microsoftonline.com
+Tenant ID: 5e2a3cbd-1a52-45ad-b514-ab42956b372c
+Resource URL: https://graph.microsoft.com/
+Scopes: User.Read"""
+
 
 class DefaultConfig:
     """ Bot Configuration """
