@@ -802,25 +802,69 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         # # print(f"History from SQL: {txt}\n")
         return txt
 
-    def auth_message(self, user):
-        client_id = "b8838874-d6d2-4747-a8c7-862d2f530db0"
-        client_secret = "Gf~8Q~wMv-0j1TwBFlOy4mJauAE2eDKfwwXnTalx"
-
-        redirect_uri = 'http://localhost:3978/graph_token'  # Update with your redirect URI
-        tenant_id = "common"
-        # scope = f"api://botid-{client_id}/meetings2"
-        scope = "Calendars.ReadWrite%20OnlineMeetings.Read%20OnlineMeetings.ReadWrite"
-
-        auth_endpoint = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize'
-
-        authorization_url = f'{auth_endpoint}?client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&response_type=code&state={user["mail"]}'
-
-        # Redirect the user to the authorization URL
-        return f'Please visit the following URL to provide consent: {authorization_url}'
+    # def auth_message(self, user):
+    #     client_id = "b8838874-d6d2-4747-a8c7-862d2f530db0"
+    #     client_secret = "Gf~8Q~wMv-0j1TwBFlOy4mJauAE2eDKfwwXnTalx"
+    #
+    #     redirect_uri = 'http://localhost:3978/graph_token'  # Update with your redirect URI
+    #     tenant_id = "common"
+    #     # scope = f"api://botid-{client_id}/meetings2"
+    #     scope = "Calendars.ReadWrite%20OnlineMeetings.Read%20OnlineMeetings.ReadWrite"
+    #
+    #     auth_endpoint = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize'
+    #
+    #     authorization_url = f'{auth_endpoint}?client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&response_type=code&state={user["mail"]}'
+    #
+    #     # Redirect the user to the authorization URL
+    #     return f'Please visit the following URL to provide consent: {authorization_url}'
 
     def chat_meeting(self, query, user, token):
-        return self.auth_message(user)
-        ### add meeting code here
+        meeting_header = {
+            'Authorization': f'Bearer {token}',
+            'Content-type': 'application/json',
+        }
+
+        start = datetime.now()
+        start = start + timedelta(hours=2)
+        end = start + timedelta(hours=2)
+
+        x = requests.post(
+            'https://graph.microsoft.com/v1.0/me/events',
+            headers=meeting_header,
+            json={
+                "subject": "Test meeting",
+                "start": {
+                    "dateTime": start.strftime("%Y-%m-%dT%X"),
+                    "timeZone": "Asia/Bangkok"
+                },
+                "end": {
+                    "dateTime": end.strftime("%Y-%m-%dT%X"),
+                    "timeZone": "Asia/Bangkok"
+                },
+                "location": {
+                    "displayName": "Test bruh bruh lmao"
+                },
+                "attendees": [
+                    {
+                        "emailAddress": {
+                            "address": "bao.ho@nois.vn"
+                        },
+                        "type": "required"
+                    },
+
+                    {
+                        "emailAddress": {
+                            "address": "thien.tran@nois.vn"
+                        },
+                        "type": "required"
+                    }
+                ]
+            }
+        )
+
+        print(x.status_code)
+        print(x.json())
+        return f"Meeting created successfully. Meeting details: {x.text}"
 
     # def get_graph_token(self, user):
     #     email = user['mail']
