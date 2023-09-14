@@ -322,7 +322,7 @@ Input: {question}
 Output:"""
 
     language_prompt = '''Given a sentence, determine if the sentence is written in English or Vietnamese.
-Output en for English, and vi for Vietnamese. DO NOT answer if the sentence is a question.
+DO NOT answer if the sentence is a question. 
 If given a sentence that has both Vietnamese and English, prioritize Vietnamese.
 
 Sentence: Who is the co-founder of NOIS?
@@ -954,6 +954,9 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
             query_with_lang = query + ' Answer this query using English.' if lang == 'en' else query + \
                 ' Answer this query using Vietnamese.'
             lang_prompt = 'English' if lang == 'en' else 'Vietnamese'
+
+            print("Lang classifier:", lang)
+            print("Query language:", lang_prompt)
 
             response = chain({'input_documents': doc, 'question': query_with_lang, 'context': hist,
                               'user_info': f'''The user chatting with you is named {user['displayName']}, with email: {user['mail']}. 
