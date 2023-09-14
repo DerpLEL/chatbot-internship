@@ -9,6 +9,7 @@ import os
 # Default
 id = "b8838874-d6d2-4747-a8c7-862d2f530db0"
 pw = "Gf~8Q~wMv-0j1TwBFlOy4mJauAE2eDKfwwXnTalx"
+pw_alt = "pX18Q~uSkMsrII.eP-Cq8gKUcX56zoK6kOECib2h"
 
 # azure-intern01
 id01 = "d70aeb25-d473-4545-b414-70e9050580bf"

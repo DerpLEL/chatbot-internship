@@ -131,10 +131,17 @@ class MainDialog(LogoutDialog):
                             '**' + (await client.get_me())['displayName'] + '** ' + f"You are {(await client.get_me())['displayName']}"
                         )
                         # display logged in users email
+
                     elif re.sub('<at>.*?</at>', '', step_context.context.activity.text) == "email":
                         await step_context.context.send_activity(
                             '**' + (await client.get_me())['displayName'] + '** ' + f"Your email: {(await client.get_me())['mail']}"
                         )
+
+                    elif re.sub('<at>.*?</at>', '', step_context.context.activity.text) == "debug":
+                        await step_context.context.send_activity(
+                            await client.get_me()
+                        )
+
                     elif re.sub('<at>.*?</at>', '', step_context.context.activity.text).lower().strip() == "resetall":
                         conn = pyodbc.connect(
                             f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
@@ -169,7 +176,9 @@ class MainDialog(LogoutDialog):
                         # except:
                         #     await step_context.context.send_activity('**' + (await client.get_me())['displayName'] + '** ' + self.bot.chat(re.sub('<at>.*?</at>', '', step_context.context.activity.text), (await client.get_me())['mail'], (await client.get_me())['displayName'])[0])
 
-            except:
+            except Exception as e:
+                print("Error:", e)
+
                 conn = pyodbc.connect(
                     f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
                 cursor = conn.cursor()

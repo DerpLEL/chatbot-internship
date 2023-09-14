@@ -197,46 +197,46 @@ async def messages():
     except Exception as exception:
         raise exception
 
-@app.route("/graph_token", methods=["GET"])
-def update_graph_token():
-    args = request.args
-    code = args.get("code")
-    mail = args.get("state")
-
-    print("Code:", code)
-    print("Target mail:", mail)
-
-    # Get token here
-    endpoint = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
-    header = {
-        'Content-type': 'application/x-www-form-urlencoded'
-    }
-
-    string = f"api://botid-b8838874-d6d2-4747-a8c7-862d2f530db0/meetings2"
-    string2 = "Calendars.ReadWrite OnlineMeetings.Read OnlineMeetings.ReadWrite"
-
-    body = {
-        'grant_type': 'authorization_code',
-        'client_id': "b8838874-d6d2-4747-a8c7-862d2f530db0",
-        'client_secret': "Gf~8Q~wMv-0j1TwBFlOy4mJauAE2eDKfwwXnTalx",
-        'scope': string2,
-        'redirect_uri': 'http://localhost:3978/graph_token',
-        'code': code,
-    }
-
-    x = requests.post(
-        "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-        headers=header,
-        data=body
-    )
-
-    print(x.status_code)
-    pprint.pprint(x.json())
-    body = x.json()
-    token = body['access_token']
-
-    return f"""Target user: {mail}
-Token: {token}"""
+# @app.route("/graph_token", methods=["GET"])
+# def update_graph_token():
+#     args = request.args
+#     code = args.get("code")
+#     mail = args.get("state")
+#
+#     print("Code:", code)
+#     print("Target mail:", mail)
+#
+#     # Get token here
+#     endpoint = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+#     header = {
+#         'Content-type': 'application/x-www-form-urlencoded'
+#     }
+#
+#     string = f"api://botid-b8838874-d6d2-4747-a8c7-862d2f530db0/meetings2"
+#     string2 = "Calendars.ReadWrite OnlineMeetings.Read OnlineMeetings.ReadWrite"
+#
+#     body = {
+#         'grant_type': 'authorization_code',
+#         'client_id': "b8838874-d6d2-4747-a8c7-862d2f530db0",
+#         'client_secret': "Gf~8Q~wMv-0j1TwBFlOy4mJauAE2eDKfwwXnTalx",
+#         'scope': string2,
+#         'redirect_uri': 'http://localhost:3978/graph_token',
+#         'code': code,
+#     }
+#
+#     x = requests.post(
+#         "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+#         headers=header,
+#         data=body
+#     )
+#
+#     print(x.status_code)
+#     pprint.pprint(x.json())
+#     body = x.json()
+#     token = body['access_token']
+#
+#     return f"""Target user: {mail}
+# Token: {token}"""
 
     # server = 'sql-chatbot-server.database.windows.net'
     # database = 'sql-chatbot'
@@ -257,4 +257,4 @@ if __name__ == '__main__':
         PORT = 3978
     except ValueError:
         PORT = 5555
-    app.run(debug=False, threaded=True, host="0.0.0.0", port=CONFIG.PORT)
+    app.run(debug=True, threaded=True, host="0.0.0.0", port=CONFIG.PORT)
