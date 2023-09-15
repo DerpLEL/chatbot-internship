@@ -128,8 +128,8 @@ class Toolset:
 
         self.token = None
 
-    def set_token(self, hrm_token):
-        self.token = hrm_token
+    def set_token(self, token):
+        self.token = token
         self.header = {"Authorization": f"Bearer {self.token}"}
 
     def post_method(self, user_id, manager, start_date, end_date, leave_type, note):
@@ -406,6 +406,11 @@ Until this tool returns "OK", the user's leave application IS NOT submitted.'''
             self.human_inp
         ]
 
+    def get_tool3(self):
+        return [
+            self.human_inp
+        ]
+
 
 class Agent:
     # msg = global_message
@@ -644,16 +649,16 @@ Thought: {agent_scratchpad}
         self.callback.set_message(self.msg)
         self.callback.set_tools(self.tools)
 
-    def run_hrm(self, query, hrm_token):
+    def run_hrm(self, query, token):
         # self.history1.clear()
-        self.tools.set_token(hrm_token)
+        self.tools.set_token(token)
         return self.agent_chain1.run(input=query, callbacks=[self.callback])
 
-    def run_leave_application(self, query, hrm_token):
+    def run_leave_application(self, query, token):
         # self.history2.clear()
-        self.tools.set_token(hrm_token)
+        self.tools.set_token(token)
         return self.agent_chain2.run(input=query, callbacks=[self.callback])
 
-    def run_meeting(self, query, hrm_token):
-        self.tools.set_token(hrm_token)
+    def run_meeting(self, query, token):
+        self.tools.set_token(token)
         # return 
