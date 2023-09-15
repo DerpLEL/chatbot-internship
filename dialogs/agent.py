@@ -642,15 +642,15 @@ Thought: {agent_scratchpad}
         self.callback.set_message(self.msg)
         self.callback.set_tools(self.tools)
 
-    def run1(self, query, hrm_token):
+    def run_hrm(self, query, hrm_token):
         self.history1.clear()
         self.tools.set_token(hrm_token)
         return self.agent_chain1.run(input=query, callbacks=[self.callback])
 
-    def run2(self, query, hrm_token):
+    def run_leave_application(self, query, hrm_token):
         self.history2.clear()
         self.tools.set_token(hrm_token)
         return self.agent_chain2.run(input=query, callbacks=[self.callback])
 
-    def run3(self, query, hrm_token):
+    def run_meeting(self, query, hrm_token):
         pass
