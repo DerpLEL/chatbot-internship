@@ -616,17 +616,17 @@ Thought: {agent_scratchpad}
 
         self.agent1 = ZSAgentMod(llm_chain=self.llm_chain1, tools=self.tools.get_tool1(), verbose=True,
                                  stop=["\nObservation:", "<|im_end|>", "<|im_sep|>"])
-        self.history1 = ConversationBufferWindowMemory(k=3, memory_key="context", human_prefix='User', ai_prefix='Assistant')
+        # self.history1 = ConversationBufferWindowMemory(k=3, memory_key="context", human_prefix='User', ai_prefix='Assistant')
         self.agent_chain1 = AgentExecutor.from_agent_and_tools(
             agent=self.agent1,
             tools=self.tools.get_tool1(),
             verbose=True,
             handle_parsing_errors="True",
-            memory=self.history1
+            # memory=self.history1
         )
 
         self.llm_chain2 = LLMChain(llm=llm3, prompt=self.prompt2)
-        self.history2 = ConversationBufferWindowMemory(k=3, memory_key="context", human_prefix='User', ai_prefix='Assistant')
+        # self.history2 = ConversationBufferWindowMemory(k=3, memory_key="context", human_prefix='User', ai_prefix='Assistant')
 
         self.agent2 = ZSAgentMod(llm_chain=self.llm_chain2, tools=self.tools.get_tool2(), verbose=True,
                                  stop=["\nObservation:", "<|im_end|>", "<|im_sep|>"])
@@ -635,7 +635,7 @@ Thought: {agent_scratchpad}
             tools=self.tools.get_tool2(),
             verbose=True,
             handle_parsing_errors="True",
-            memory=self.history2
+            # memory=self.history2
         )
 
         self.callback = MyCustomHandler()
@@ -643,12 +643,12 @@ Thought: {agent_scratchpad}
         self.callback.set_tools(self.tools)
 
     def run_hrm(self, query, hrm_token):
-        self.history1.clear()
+        # self.history1.clear()
         self.tools.set_token(hrm_token)
         return self.agent_chain1.run(input=query, callbacks=[self.callback])
 
     def run_leave_application(self, query, hrm_token):
-        self.history2.clear()
+        # self.history2.clear()
         self.tools.set_token(hrm_token)
         return self.agent_chain2.run(input=query, callbacks=[self.callback])
 
