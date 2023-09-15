@@ -569,7 +569,6 @@ Output: '''
         if self.private:
             return self.chat_private(query, user, token)
 
-        # return self.chat_public(query)
         return self.chat_public(query)
     
     def send_msg_to_agent(self, query, user):
