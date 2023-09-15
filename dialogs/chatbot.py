@@ -20,6 +20,8 @@ from .user import *
 from .post_leave_application import *
 from .get_leave_application import *
 from .delete_leave_application import *
+from .agent import Agent
+import threading
 
 requests.encoding = 'UTF-8'
 
@@ -334,13 +336,15 @@ Output: '''
 
     def __init__(self):
         self.history_public = []
-        self.history_private = {}
+        self.agent_session = {}
+
         self.graph_cache = {}
         self.private = False
         self.confirm_delete = False
         self.container_drink_fee_name = 'nois-drink-fee'
         self.container_client = blob_service_client.get_container_client(
             self.container_drink_fee_name)
+
         self.user = {"username": '', "mail": ''}
 
         self.llm = AzureChatOpenAI(
@@ -476,12 +480,100 @@ Output: '''
 
         hist.append({'user': user_msg, 'AI': ai_msg})
 
+    def get_bot_response(self, user):
+        while not self.agent_session[user['mail']].msg.output:
+            pass
+
+        reply = self.agent_session[user['mail']].msg.output
+        self.agent_session[user['mail']].msg.reset()
+
+        return reply
+
+    def start_agent(self, query, user, token, agent_type):
+        self.agent_session[user['mail']] = Agent(user)
+
+        if agent_type == "1":
+            self.agent_session[user['mail']].run_hrm(query, token)
+
+        elif agent_type == "2":
+            self.agent_session[user['mail']].run_leave_application(query, token)
+
+        else:
+            self.agent_session[user['mail']].run_meeting(query, token)
+
+        del self.agent_session[user['mail']]
+        return
+
+    def chat_meeting(self, query, user, token):
+        # meeting_header = {
+        #     'Authorization': f'Bearer {token}',
+        #     'Content-type': 'application/json',
+        # }
+        #
+        # start = datetime.now()
+        # start = start + timedelta(hours=2)
+        # end = start + timedelta(hours=2)
+        #
+        # x = requests.post(
+        #     'https://graph.microsoft.com/v1.0/me/events',
+        #     headers=meeting_header,
+        #     json={
+        #         "subject": "Test meeting",
+        #         "start": {
+        #             "dateTime": start.strftime("%Y-%m-%dT%X"),
+        #             "timeZone": "Asia/Bangkok"
+        #         },
+        #         "end": {
+        #             "dateTime": end.strftime("%Y-%m-%dT%X"),
+        #             "timeZone": "Asia/Bangkok"
+        #         },
+        #         "location": {
+        #             "displayName": "Test bruh bruh lmao"
+        #         },
+        #         "attendees": [
+        #             {
+        #                 "emailAddress": {
+        #                     "address": "bao.ho@nois.vn"
+        #                 },
+        #                 "type": "required"
+        #             },
+        #
+        #             {
+        #                 "emailAddress": {
+        #                     "address": "thien.tran@nois.vn"
+        #                 },
+        #                 "type": "required"
+        #             }
+        #         ]
+        #     }
+        # )
+        #
+        # print(x.status_code)
+        # print(x.json())
+        # return f"Meeting created successfully. Meeting details: {x.text}"
+        agent_thread = threading.Thread(
+            target=self.start_agent,
+            args=(query, user, token, "3",),
+            daemon=True
+        )
+        agent_thread.start()
+        self.send_msg_to_agent(query, user)
+
+        return self.get_bot_response(user)
+
     def chat(self, query, user, token):
+        if user['mail'] in self.agent_session:
+            self.send_msg_to_agent(query, user)
+            return self.get_bot_response(user)
+
         if self.private:
             return self.chat_private(query, user, token)
 
         # return self.chat_public(query)
         return self.chat_public(query)
+    
+    def send_msg_to_agent(self, query, user):
+        self.agent_session[user['mail']].msg.input = query
 
     def chat_public(self, query):
         keywords = self.keywordChain(
@@ -801,94 +893,6 @@ VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
         conn.close()
         # # print(f"History from SQL: {txt}\n")
         return txt
-
-    # def auth_message(self, user):
-    #     client_id = "b8838874-d6d2-4747-a8c7-862d2f530db0"
-    #     client_secret = "Gf~8Q~wMv-0j1TwBFlOy4mJauAE2eDKfwwXnTalx"
-    #
-    #     redirect_uri = 'http://localhost:3978/graph_token'  # Update with your redirect URI
-    #     tenant_id = "common"
-    #     # scope = f"api://botid-{client_id}/meetings2"
-    #     scope = "Calendars.ReadWrite%20OnlineMeetings.Read%20OnlineMeetings.ReadWrite"
-    #
-    #     auth_endpoint = f'https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/authorize'
-    #
-    #     authorization_url = f'{auth_endpoint}?client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&response_type=code&state={user["mail"]}'
-    #
-    #     # Redirect the user to the authorization URL
-    #     return f'Please visit the following URL to provide consent: {authorization_url}'
-
-    def chat_meeting(self, query, user, token):
-        meeting_header = {
-            'Authorization': f'Bearer {token}',
-            'Content-type': 'application/json',
-        }
-
-        start = datetime.now()
-        start = start + timedelta(hours=2)
-        end = start + timedelta(hours=2)
-
-        x = requests.post(
-            'https://graph.microsoft.com/v1.0/me/events',
-            headers=meeting_header,
-            json={
-                "subject": "Test meeting",
-                "start": {
-                    "dateTime": start.strftime("%Y-%m-%dT%X"),
-                    "timeZone": "Asia/Bangkok"
-                },
-                "end": {
-                    "dateTime": end.strftime("%Y-%m-%dT%X"),
-                    "timeZone": "Asia/Bangkok"
-                },
-                "location": {
-                    "displayName": "Test bruh bruh lmao"
-                },
-                "attendees": [
-                    {
-                        "emailAddress": {
-                            "address": "bao.ho@nois.vn"
-                        },
-                        "type": "required"
-                    },
-
-                    {
-                        "emailAddress": {
-                            "address": "thien.tran@nois.vn"
-                        },
-                        "type": "required"
-                    }
-                ]
-            }
-        )
-
-        print(x.status_code)
-        print(x.json())
-        return f"Meeting created successfully. Meeting details: {x.text}"
-
-    # def get_graph_token(self, user):
-    #     email = user['mail']
-    #
-    #     conn = pyodbc.connect(
-    #         f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
-    #     cursor = conn.cursor()
-    #     cursor.execute(
-    #         f"""SELECT token FROM history WHERE email = '{email}';""")
-    #     hist = cursor.fetchone()
-    #
-    #     if not hist:
-    #         cursor.execute(f"""INSERT INTO history
-    #             VALUES ('{email}', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);""")
-    #         conn.commit()
-    #         conn.close()
-    #
-    #         return "none"
-    #
-    #     if not hist[0]:
-    #         conn.close()
-    #         return "none"
-    #
-    #     return hist[0]
 
     def chat_private(self, query, user, token):
         if str(self.get_conversation_type(user['mail'])[0]) == '':
