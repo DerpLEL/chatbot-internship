@@ -409,15 +409,17 @@ Until this tool returns "OK", the user's leave application IS NOT submitted.'''
 
 class Agent:
     # msg = global_message
-    def __init__(self, email):
+    def __init__(self, user):
         date2 = dtime.strftime(dtime.today(), "%A %Y-%m-%d")
 
-        self.email = email
+        self.email = user['mail']
+        self.name = user['displayName']
+
         self.msg = MessageClass()
         self.tools = Toolset(self.email, self.msg)
 
         self.prefix1 = f"""You are an intelligent assistant helping user find his/her information in HRM system by using tool. 
-The user chatting with you is {get_userName(self.email)} with the email {self.email}. If question/data are not about them, tell them you don't have access.
+The user chatting with you is {self.name} with the email {self.email}. If question/data are not about them, tell them you don't have access.
 DO NOT use data of the user {self.email} to answer questions about other users.
 You have access to the following tools:"""
 
@@ -425,16 +427,16 @@ You have access to the following tools:"""
 
 Examples: 
 Question: What is my date of birth?
-Thought: The user chatting with me has the email {email}.
+Thought: The user chatting with me has the email {self.email}.
 Thought: find the data of user by user's email.
 Action: HRM get user data
-Action Input: {email}
+Action Input: {self.email}
 Observation: ...
 Thought: I now know the final answer
 Final Answer: Your date of birth is ...
 
 Question: What is hung.bui@nois.vn's bank account number?
-Thought: The user chatting with me is {get_userName(email)} with the email {email}.
+Thought: The user chatting with me is {self.name} with the email {self.email}.
 Thought: the question is not about the current user, so I can't answer the question.
 Final Answer: I'm sorry but I don't have access to that information.
 
@@ -653,4 +655,5 @@ Thought: {agent_scratchpad}
         return self.agent_chain2.run(input=query, callbacks=[self.callback])
 
     def run_meeting(self, query, hrm_token):
-        pass
+        self.tools.set_token(hrm_token)
+        # return 
