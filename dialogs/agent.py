@@ -202,6 +202,12 @@ class Toolset:
         lst = args.split(', ')
         date = dtime.now().strftime("%Y-%m-%d")
 
+        def get_userId(string):
+            return string
+
+        def check_manager_name(lst):
+            return -1, "None"
+
         lst = [get_userId(self.email)] + lst
 
         if len(lst) != 6:
@@ -245,7 +251,7 @@ class Toolset:
     Remaining leave day(s): {remaining_day_off}
     And ask the user (using the tool human) if they want to apply for a different type, change start or end dates, or cancel."""
 
-        print("\nUserId: ", lst[0], " (", email, ")")
+        print("\nUserId: ", lst[0], " (", self.email, ")")
         print("ReviewerId: ", manager_id)
         print("Start date: ", lst[2])
         print("End date: ", lst[3])
