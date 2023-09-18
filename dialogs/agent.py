@@ -13,6 +13,7 @@ from .customHuman import *
 from .message import *
 
 dtime = datetime.datetime
+timedelta = datetime.timedelta
 
 llm3 = AzureChatOpenAI(
     openai_api_type="azure",
@@ -366,6 +367,54 @@ class Toolset:
 
         return f'Error: {response.status_code}'
 
+    def book_meeting(self, query: str = None):
+        """Prototype meeting function, only takes in members"""
+        lst = query.split(', ')
+
+        meeting_header = {
+            'Authorization': f'Bearer {self.token}',
+            'Content-type': 'application/json',
+        }
+
+        meeting_members = []
+
+        for i in lst:
+            temp = dict()
+            temp['emailAddress'] = dict()
+            temp['emailAddress']['address'] = i
+            temp['type'] = 'required'
+
+            meeting_members.append(temp)
+
+        start = dtime.now()
+        start = start + timedelta(hours=2)
+        end = start + timedelta(hours=2)
+
+        x = requests.post(
+            'https://graph.microsoft.com/v1.0/me/events',
+            headers=meeting_header,
+            json={
+                "subject": "Test meeting",
+                "start": {
+                    "dateTime": start.strftime("%Y-%m-%dT%X"),
+                    "timeZone": "Asia/Bangkok"
+                },
+                "end": {
+                    "dateTime": end.strftime("%Y-%m-%dT%X"),
+                    "timeZone": "Asia/Bangkok"
+                },
+                "location": {
+                    "displayName": "Test bruh bruh lmao"
+                },
+                "attendees": meeting_members
+            }
+        )
+
+        print(x.status_code)
+        print(x.json())
+        # f"Meeting created successfully. Meeting details: {x.text}"
+        return "Meeting created successfully."
+
     def get_tool1(self):
         return [
             Tool(
@@ -414,6 +463,12 @@ Until this tool returns "OK", the user's leave application IS NOT submitted.'''
 
     def get_tool3(self):
         return [
+            Tool(
+                name='Book meeting',
+                func=self.book_meeting,
+                description="useful for booking a meeting. Input is a string of participants' emails separated by comma and space."
+            ),
+
             self.human_inp
         ]
 
@@ -651,6 +706,59 @@ Thought: {agent_scratchpad}
             # memory=self.history2
         )
 
+        self.prefix_meeting = f"""You are an intelligent agent who can book meetings based on users' requests.
+Suppose the current date is {date2} (Weekday YYYY-MM-DD).
+You have access to the following tools:"""
+
+        self.meeting_example = """
+        
+======
+Example
+Question: I want to book a meeting.
+Thought: I need to ask the user for the list of participants.
+Action: human
+Action Input: Can you please provide the emails of the participants?
+Observation: Their emails are abc@gmail.com and 123@hotmail.com
+Thought: I have all the required information, now I can book the meeting.
+Action: Book meeting
+Action Input: abc@gmail.com, 123@hotmail.com
+Observation: Meeting created successfully.
+Thought: I now know the final answer
+Final Answer: The meeting has been booked successfully.
+======
+
+"""
+
+        self.suffix_meeting = """Ask the user for any missing information.
+Begin!
+
+Question: {input}
+Thought: {agent_scratchpad}
+"""
+
+        self.suffix_meeting = self.meeting_example + self.suffix_meeting
+
+        self.prompt_meeting = ZSAgentMod.create_prompt(
+            self.tools.get_tool3(),
+            prefix=self.prefix_meeting,
+            format_instructions=format_instr,
+            suffix=self.suffix_meeting,
+            input_variables=["input", "agent_scratchpad"],
+        )
+
+        self.llm_chain3 = LLMChain(llm=llm3, prompt=self.prompt_meeting)
+        # self.history2 = ConversationBufferWindowMemory(k=3, memory_key="context", human_prefix='User', ai_prefix='Assistant')
+
+        self.agent3 = ZSAgentMod(llm_chain=self.llm_chain3, tools=self.tools.get_tool3(), verbose=True,
+                                 stop=["\nObservation:", "<|im_end|>", "<|im_sep|>"])
+        self.agent_chain3 = AgentExecutor.from_agent_and_tools(
+            agent=self.agent3,
+            tools=self.tools.get_tool3(),
+            verbose=True,
+            handle_parsing_errors="True",
+            # memory=self.history2
+        )
+
         self.callback = MyCustomHandler()
         self.callback.set_message(self.msg)
         self.callback.set_tools(self.tools)
@@ -667,4 +775,4 @@ Thought: {agent_scratchpad}
 
     def run_meeting(self, query, token):
         self.tools.set_token(token)
-        # return 
+        return self.agent_chain3.run(input=query, callbacks=[self.callback])

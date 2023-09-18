@@ -554,9 +554,10 @@ Output: '''
         agent_thread = threading.Thread(
             target=self.start_agent,
             args=(query, user, token, "3",),
-            daemon=True
+            daemon=False
         )
         agent_thread.start()
+
         self.send_msg_to_agent(query, user)
 
         return self.get_bot_response(user)
