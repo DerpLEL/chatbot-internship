@@ -377,7 +377,8 @@ class Toolset:
 
         meeting_members = []
 
-        for i in lst:
+        # Get member from string input
+        for i in lst[2:]:
             temp = dict()
             temp['emailAddress'] = dict()
             temp['emailAddress']['address'] = i
@@ -389,17 +390,20 @@ class Toolset:
         start = start + timedelta(hours=2)
         end = start + timedelta(hours=2)
 
+        # start.strftime("%Y-%m-%dT%X")
+        # end.strftime("%Y-%m-%dT%X")
+
         x = requests.post(
             'https://graph.microsoft.com/v1.0/me/events',
             headers=meeting_header,
             json={
                 "subject": "Test meeting",
                 "start": {
-                    "dateTime": start.strftime("%Y-%m-%dT%X"),
+                    "dateTime": lst[0],
                     "timeZone": "Asia/Bangkok"
                 },
                 "end": {
-                    "dateTime": end.strftime("%Y-%m-%dT%X"),
+                    "dateTime": lst[1],
                     "timeZone": "Asia/Bangkok"
                 },
                 "location": {
@@ -409,6 +413,7 @@ class Toolset:
             }
         )
 
+        print()
         print(x.status_code)
         print(x.json())
         # f"Meeting created successfully. Meeting details: {x.text}"
@@ -465,7 +470,10 @@ Until this tool returns "OK", the user's leave application IS NOT submitted.'''
             Tool(
                 name='Book meeting',
                 func=self.book_meeting,
-                description="useful for booking a meeting. Input is a string of participants' emails separated by comma and space."
+                description="""useful for booking a meeting. Input, separated by comma and space, includes the following:
+1. Start date and time: format is YYYY-MM-DDThh:mm:ss (T is a separator)
+2. End date and time: format is YYYY-MM-DDThh:mm:ss (T is a separator)
+3. Participants' emails: can be one or many"""
             ),
 
             self.human_inp
@@ -710,14 +718,22 @@ You have access to the following tools:"""
         
 ======
 Example
-Question: I want to book a meeting.
-Thought: I need to ask the user for the list of participants.
+Question: I want to book a meeting, today is July 1st, 2001.
+Thought: I need to ask the user for the start date and time.
+Action: human
+Action Input: When do you want the meeting to start?
+Observation: July 2nd, 2001 at 9:00am
+Thought: Meeting start date and time is 2001-07-02|09:00:00. Now I need to ask the user for the end date and time.
+Action: human
+Action Input: When do you want to the meeting to end?
+Observation: 2 hours after the starting.
+Thought: Meeting end date and time is 2001-07-02|11:00:00. Now I need to ask the user for the list of participants.
 Action: human
 Action Input: Can you please provide the emails of the participants?
 Observation: Their emails are abc@gmail.com and 123@hotmail.com
 Thought: I have all the required information, now I can book the meeting.
 Action: Book meeting
-Action Input: abc@gmail.com, 123@hotmail.com
+Action Input: 2001-07-02|09:00:00, 2001-07-02|11:00:00, abc@gmail.com, 123@hotmail.com
 Observation: Meeting created successfully.
 Thought: I now know the final answer
 Final Answer: The meeting has been booked successfully.
