@@ -554,12 +554,16 @@ Output: '''
         agent_thread = threading.Thread(
             target=self.start_agent,
             args=(query, user, token, "3",),
+            daemon=True
         )
         agent_thread.start()
 
         self.send_msg_to_agent(query, user)
 
         return self.get_bot_response(user)
+
+    def send_msg_to_agent(self, query, user):
+        self.agent_session[user['mail']].msg.input = query
 
     def chat(self, query, user, token):
         if user['mail'] in self.agent_session:
@@ -570,9 +574,6 @@ Output: '''
             return self.chat_private(query, user, token)
 
         return self.chat_public(query)
-    
-    def send_msg_to_agent(self, query, user):
-        self.agent_session[user['mail']].msg.input = query
 
     def chat_public(self, query):
         keywords = self.keywordChain(
