@@ -560,7 +560,7 @@ Output: '''
 
         self.send_msg_to_agent(query, user)
 
-        return self.get_bot_response(user)
+        return self.get_bot_response(user), None
 
     def send_msg_to_agent(self, query, user):
         self.agent_session[user['mail']].msg.input = query
@@ -568,7 +568,7 @@ Output: '''
     def chat(self, query, user, token):
         if user['mail'] in self.agent_session:
             self.send_msg_to_agent(query, user)
-            return self.get_bot_response(user)
+            return self.get_bot_response(user), None
 
         if self.private:
             return self.chat_private(query, user, token)
