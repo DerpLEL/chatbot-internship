@@ -501,9 +501,6 @@ Output: '''
         else:
             self.agent_session[user['mail']].run_meeting(query, token)
 
-        while self.agent_session[user['mail']].msg.output:
-            pass
-
         del self.agent_session[user['mail']]
         return
 
