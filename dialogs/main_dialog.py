@@ -137,11 +137,6 @@ class MainDialog(LogoutDialog):
                             '**' + (await client.get_me())['displayName'] + '** ' + f"Your email: {(await client.get_me())['mail']}"
                         )
 
-                    elif re.sub('<at>.*?</at>', '', step_context.context.activity.text) == "debug":
-                        await step_context.context.send_activity(
-                            await client.get_me()
-                        )
-
                     elif re.sub('<at>.*?</at>', '', step_context.context.activity.text).lower().strip() == "resetall":
                         conn = pyodbc.connect(
                             f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
