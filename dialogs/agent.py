@@ -524,8 +524,6 @@ Question: {input}
             input_variables=["input", "context", "agent_scratchpad"],
         )
 
-        self.prompt_test = ""
-
         self.prefix2 = f"""You are an intelligent assistant who helps user submit or delete leave applications through the HRM system using tools. 
 The user chatting with you has the email: {self.email}. 
 Suppose the current date is {date2} (Weekday Year-Month-Day).
