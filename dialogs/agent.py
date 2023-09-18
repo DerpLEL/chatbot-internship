@@ -710,8 +710,8 @@ Thought: {agent_scratchpad}
             # memory=self.history2
         )
 
+        # Suppose the current date is {date2} (Weekday Year-Month-Day).
         self.prefix_meeting = f"""You are an intelligent agent who can book meetings based on users' requests.
-Suppose the current date is {date2} (Weekday YYYY-MM-DD).
 You have access to the following tools:"""
 
         self.meeting_example = """
@@ -748,7 +748,7 @@ Question: {input}
 Thought: {agent_scratchpad}
 """
 
-        self.suffix_meeting = self.meeting_example + self.suffix_meeting
+        self.suffix_meeting = self.meeting_example + f"Suppose the current date is {date2} (Weekday Year-Month-Day). " + self.suffix_meeting
 
         self.prompt_meeting = ZSAgentMod.create_prompt(
             self.tools.get_tool3(),
@@ -787,4 +787,5 @@ Thought: {agent_scratchpad}
 
     def run_meeting(self, query, token):
         self.tools.set_token(token)
+        curr_date = dtime.strftime(dtime.today(), "%A %Y-%m-%d")
         return self.agent_chain3.run(input=query, callbacks=[self.callback])
