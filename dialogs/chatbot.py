@@ -554,7 +554,6 @@ Output: '''
         agent_thread = threading.Thread(
             target=self.start_agent,
             args=(query, user, token, "3",),
-            daemon=False
         )
         agent_thread.start()
 
