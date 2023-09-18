@@ -390,9 +390,9 @@ class Toolset:
 
             meeting_members.append(temp)
 
-        start = dtime.now()
-        start = start + timedelta(hours=2)
-        end = start + timedelta(hours=2)
+        # start = dtime.now()
+        # start = start + timedelta(hours=2)
+        # end = start + timedelta(hours=2)
 
         # start.strftime("%Y-%m-%dT%X")
         # end.strftime("%Y-%m-%dT%X")
