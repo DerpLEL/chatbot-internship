@@ -577,20 +577,21 @@ Output: '''
 
     def chat_public(self, query):
         keywords = self.keywordChain(
-            {'question': query, 'context': self.get_history_as_txt()})['text']
+            {'question': query, 'context': ''})['text']
         # print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
         doc = self.get_document(keywords, self.retriever_public)
 
+        # self.get_history_as_txt()
         try:
-            response = chain({'input_documents': doc, 'question': query, 'context': self.get_history_as_txt(),
+            response = chain({'input_documents': doc, 'question': query, 'context': '',
                               'user_info': ''},
                              return_only_outputs=False)
         except Exception as e:
             return f'Cannot generate response, error: {e}', doc
 
-        self.add_to_history(query, response['output_text'])
+        # self.add_to_history(query, response['output_text'])
         return response, doc
 
     def get_post_leave(self, email):
