@@ -560,7 +560,7 @@ Output: '''
 
         self.send_msg_to_agent(query, user)
 
-        return self.get_bot_response(user), None
+        return self.get_bot_response(user)
 
     def send_msg_to_agent(self, query, user):
         self.agent_session[user['mail']].msg.input = query
