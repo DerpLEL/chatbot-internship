@@ -576,16 +576,18 @@ Output: '''
         return self.chat_public(query)
 
     def chat_public(self, query):
+        chat_history_temp = ''
+        # chat_history_temp = self.get_history_as_txt()
+
         keywords = self.keywordChain(
-            {'question': query, 'context': ''})['text']
+            {'question': query, 'context': chat_history_temp})['text']
         # print(f"Query: {query}\nKeywords: {keywords}")
 
         chain = self.qa_chain
         doc = self.get_document(keywords, self.retriever_public)
 
-        # self.get_history_as_txt()
         try:
-            response = chain({'input_documents': doc, 'question': query, 'context': '',
+            response = chain({'input_documents': doc, 'question': query, 'context': chat_history_temp,
                               'user_info': ''},
                              return_only_outputs=False)
         except Exception as e:
