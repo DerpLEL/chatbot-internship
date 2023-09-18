@@ -480,6 +480,12 @@ Until this tool returns "OK", the user's leave application IS NOT submitted.'''
 3. Participants' emails: can be one or many"""
             ),
 
+            Tool(
+                name='Calculate relative time',
+                func=datetime_calc,
+                description=f'useful for calculating relative time inputs (i.e this Tuesday, next Tuesday, this Friday, next Friday, etc). Input is a relative time string and must be in English.'
+            ),
+
             self.human_inp
         ]
 
