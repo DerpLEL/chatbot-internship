@@ -378,7 +378,11 @@ class Toolset:
         meeting_members = []
 
         # Get member from string input
-        for i in lst[2:]:
+        email_list = lst[2:]
+        if self.email not in email_list:
+            email_list = [self.email] + email_list
+
+        for i in email_list:
             temp = dict()
             temp['emailAddress'] = dict()
             temp['emailAddress']['address'] = i
@@ -407,7 +411,7 @@ class Toolset:
                     "timeZone": "Asia/Bangkok"
                 },
                 "location": {
-                    "displayName": "Test bruh bruh lmao"
+                    "displayName": "Hong Bang (Factory 1 - Conf. Room)"
                 },
                 "attendees": meeting_members
             }
