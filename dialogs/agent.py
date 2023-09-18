@@ -474,7 +474,6 @@ Until this tool returns "OK", the user's leave application IS NOT submitted.'''
 
 
 class Agent:
-    # msg = global_message
     def __init__(self, user):
         date2 = dtime.strftime(dtime.today(), "%A %Y-%m-%d")
 
