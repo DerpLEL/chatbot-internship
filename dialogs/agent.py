@@ -787,5 +787,5 @@ Thought: {agent_scratchpad}
 
     def run_meeting(self, query, token):
         self.tools.set_token(token)
-        curr_date = dtime.strftime(dtime.today(), "%A %Y-%m-%d")
+        # curr_date = dtime.strftime(dtime.today(), "%A %Y-%m-%d")
         return self.agent_chain3.run(input=query, callbacks=[self.callback])
