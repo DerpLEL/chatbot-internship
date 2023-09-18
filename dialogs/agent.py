@@ -2,7 +2,6 @@ import datetime
 from typing import Any, Dict
 import numpy as np
 import parsedatetime
-import requests
 from langchain.agents import ZeroShotAgent, AgentExecutor, Tool
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.chains import LLMChain
