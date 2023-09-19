@@ -434,6 +434,12 @@ class Toolset:
 - Attendees: {email_list}
 - Location: {meeting_info['location']['displayName']}"""
 
+        else:
+            # pprint.pprint(x.json())
+            error_msg = x.json()['error']
+            return f"""Error: {error_msg['message']}
+Cancel the meeting booking process."""
+
     def get_tool1(self):
         return [
             Tool(
