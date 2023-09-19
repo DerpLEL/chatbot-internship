@@ -499,7 +499,7 @@ Until this tool returns "OK", the user's leave application IS NOT submitted.'''
             Tool(
                 name='Calculate relative date',
                 func=datetime_calc,
-                description=f'useful for calculating relative date inputs (i.e this Tuesday, next Tuesday, this Friday, next Friday, etc). Input is a relative date string and must be in English.'
+                description=f'''useful for calculating relative date inputs (i.e this Tuesday, next Tuesday, this Friday, next Friday, etc). Input must be relative date string (hours are not relative) and must be in English.'''
             ),
 
             self.human_inp
