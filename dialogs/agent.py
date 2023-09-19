@@ -404,7 +404,7 @@ class Toolset:
             json={
                 "subject": "Test meeting",
                 "start": {
-                    "dateTime": lst[0],
+                    "dateTime": "idk",
                     "timeZone": "Asia/Bangkok"
                 },
                 "end": {
@@ -435,10 +435,9 @@ class Toolset:
 - Location: {meeting_info['location']['displayName']}"""
 
         else:
-            # pprint.pprint(x.json())
-            error_msg = x.json()['error']
-            return f"""Error: {error_msg['message']}
-Cancel the meeting booking process."""
+            pprint.pprint(x.json()['error'])
+            return f"""Server Error: Failed to create a meeting
+Relay the error to the user and cancel."""
 
     def get_tool1(self):
         return [
