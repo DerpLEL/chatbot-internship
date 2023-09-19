@@ -404,7 +404,7 @@ class Toolset:
             json={
                 "subject": "Test meeting",
                 "start": {
-                    "dateTime": "idk",
+                    "dateTime": lst[0],
                     "timeZone": "Asia/Bangkok"
                 },
                 "end": {
