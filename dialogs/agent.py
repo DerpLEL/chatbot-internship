@@ -10,6 +10,7 @@ from langchain.memory import ConversationBufferWindowMemory
 from langchain.schema import AgentFinish
 from .customHuman import *
 from .message import *
+import pprint
 
 dtime = datetime.datetime
 timedelta = datetime.timedelta
@@ -58,7 +59,7 @@ def datetime_calc(query: str):
     parsed_date, _ = cal.parseDT(query)
 
     if parsed_date:
-        return parsed_date
+        return parsed_date.strftime("%Y-%m-%d")
     else:
         return "Cannot parse given relative datetime."
 
@@ -419,9 +420,19 @@ class Toolset:
 
         print()
         print(x.status_code)
-        print(x.json())
-        # f"Meeting created successfully. Meeting details: {x.text}"
-        return "Meeting created successfully."
+
+        if x.status_code == 201:
+            meeting_info = x.json()
+            # pprint.pprint(meeting_info)
+
+            # f"Meeting created successfully. Meeting details: {x.text}"
+            return f"""Meeting created successfully. Relay these meeting info to the user:
+- Meeting subject: {meeting_info['subject']}
+- Timezone: {meeting_info['originalStartTimeZone']}
+- Start: {meeting_info['start']['dateTime']}
+- End: {meeting_info['end']['dateTime']}
+- Attendees: {email_list}
+- Location: {meeting_info['location']['displayName']}"""
 
     def get_tool1(self):
         return [
