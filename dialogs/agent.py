@@ -744,7 +744,7 @@ You have access to the following tools:"""
         
 ======
 Example
-Question: I want to book a meeting, today is July 1st, 2001.
+Question: I want to book a meeting
 Thought: I need to ask the user for the start date and time.
 Action: human
 Action Input: When do you want the meeting to start?
