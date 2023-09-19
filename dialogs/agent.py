@@ -767,7 +767,8 @@ Final Answer: The meeting has been booked successfully.
 
 """
 
-        self.suffix_meeting = """Ask the user for any missing information.
+        self.suffix_meeting = """Ask the user for any missing information. If the user provides enough information,
+some steps in the example can be skipped.
 Begin!
 
 Question: {input}
