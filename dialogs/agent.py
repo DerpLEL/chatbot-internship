@@ -749,17 +749,17 @@ Thought: I need to ask the user for the start date and time.
 Action: human
 Action Input: When do you want the meeting to start?
 Observation: July 2nd, 2001 at 9:00am
-Thought: Meeting start date and time is 2001-07-02|09:00:00. Now I need to ask the user for the end date and time.
+Thought: Meeting start date and time is 2001-07-02T09:00:00. Now I need to ask the user for the end date and time.
 Action: human
 Action Input: When do you want to the meeting to end?
-Observation: 2 hours after the starting.
-Thought: Meeting end date and time is 2001-07-02|11:00:00. Now I need to ask the user for the list of participants.
+Observation: 2 hours after starting.
+Thought: Meeting end date and time is 2001-07-02T11:00:00. Now I need to ask the user for the list of participants.
 Action: human
 Action Input: Can you please provide the emails of the participants?
 Observation: Their emails are abc@gmail.com and 123@hotmail.com
 Thought: I have all the required information, now I can book the meeting.
 Action: Book meeting
-Action Input: 2001-07-02|09:00:00, 2001-07-02|11:00:00, abc@gmail.com, 123@hotmail.com
+Action Input: 2001-07-02T09:00:00, 2001-07-02T11:00:00, abc@gmail.com, 123@hotmail.com
 Observation: Meeting created successfully.
 Thought: I now know the final answer
 Final Answer: The meeting has been booked successfully.
