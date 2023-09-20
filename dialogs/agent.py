@@ -767,15 +767,15 @@ Final Answer: The meeting has been booked successfully.
 
 """
 
-        self.suffix_meeting = """Ask the user for any missing information. If the user provides enough information,
-some steps in the example can be skipped.
+        self.suffix_meeting = """Ask the user for any missing information.
+If the user provides enough information, some steps in the example can be skipped.
 Begin!
 
 Question: {input}
 Thought: {agent_scratchpad}
 """
 
-        self.suffix_meeting = self.meeting_example + f"Suppose the current date is {date2} (Weekday Year-Month-Day). " + self.suffix_meeting
+        self.suffix_meeting = self.meeting_example + "Suppose the current date is {date2} (Weekday Year-Month-Day). " + self.suffix_meeting
 
         self.prompt_meeting = ZSAgentMod.create_prompt(
             self.tools.get_tool3(),
