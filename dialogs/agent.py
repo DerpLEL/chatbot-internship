@@ -775,7 +775,7 @@ Question: {input}
 Thought: {agent_scratchpad}
 """
 
-        self.suffix_meeting = self.meeting_example + "Suppose the current date is {date2} (Weekday Year-Month-Day). " + self.suffix_meeting
+        self.suffix_meeting = self.meeting_example + f"Suppose the current date is {date2} (Weekday Year-Month-Day). " + self.suffix_meeting
 
         self.prompt_meeting = ZSAgentMod.create_prompt(
             self.tools.get_tool3(),
