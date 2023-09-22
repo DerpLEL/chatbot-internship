@@ -743,7 +743,7 @@ You have access to the following tools:"""
         self.meeting_example = """
         
 ======
-Example
+Example 1
 Question: I want to book a meeting
 Thought: I need to ask the user for the start date and time.
 Action: human
@@ -760,6 +760,16 @@ Observation: Their emails are abc@gmail.com and 123@hotmail.com
 Thought: I have all the required information, now I can book the meeting.
 Action: Book meeting
 Action Input: 2001-07-02T01:00:00, 2001-07-02T03:00:00, abc@gmail.com, 123@hotmail.com
+Observation: Meeting created successfully.
+Thought: I now know the final answer
+Final Answer: The meeting has been booked successfully.
+
+Example 2
+Question: I want to book a meeting for July 15th, 2001 from 3 to 5pm. Participants include xyz@yahoomail.com and def@hotmail.com.
+Thought: Meeting start date and time is 2001-07-15T15:00:00, and meeting end date and time is 2001-07-15T17:00:00. Participants' emails are xyz@yahoomail.com and def@hotmail.com.
+I have all the required information, now I can book the meeting.
+Action: Book meeting
+Action Input: 2001-07-15T15:00:00, 2001-07-15T17:00:00, xyz@yahoomail.com, def@hotmail.com
 Observation: Meeting created successfully.
 Thought: I now know the final answer
 Final Answer: The meeting has been booked successfully.
