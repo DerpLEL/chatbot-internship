@@ -439,7 +439,7 @@ class Toolset:
             return f"""Server Error: Failed to create a meeting
 Relay the error to the user and cancel."""
 
-    def get_meeting(self):
+    def get_meeting(self, query: str = None):
         meeting_header = {
             'Authorization': f'Bearer {self.token}',
         }
