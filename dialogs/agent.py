@@ -439,6 +439,26 @@ class Toolset:
             return f"""Server Error: Failed to create a meeting
 Relay the error to the user and cancel."""
 
+    def get_meeting(self):
+        meeting_header = {
+            'Authorization': f'Bearer {self.token}',
+        }
+
+        reply = requests.get(
+            'https://graph.microsoft.com/v1.0/me/events',
+            headers=meeting_header
+        )
+
+        if reply.status_code == 200:
+            meeting_list = reply.json().get('value', [])
+            meeting_list = [i for i in meeting_list if
+                            i.get('organizer', {}).get('emailAddress', {}).get('address') == self.email]
+
+            return meeting_list
+
+        else:
+            return "Server error: Failed to get scheduled meeting"
+
     def get_tool1(self):
         return [
             Tool(
