@@ -95,7 +95,7 @@ class MyCustomHandler(BaseCallbackHandler):
             # print(reply.text)
             # print(input_str)
 
-        if serialized['name'] == 'HRM get applications':
+        if serialized['name'] in ['HRM get applications', 'Get meeting']:
             # self.prev_msg = self.tools.get_leave_applications()
             # if self.prev_msg == "This user hasn't submitted any leave applications.":
             #     self.prev_msg = ""
@@ -536,6 +536,18 @@ Until this tool returns "OK", the user's leave application IS NOT submitted.'''
                 name='Calculate relative date',
                 func=datetime_calc,
                 description=f'''useful for calculating relative date inputs (i.e this Tuesday, next Tuesday, this Friday, next Friday, etc). Input must be relative date string and must be in English. Input with hours are not accepted.'''
+            ),
+
+            Tool(
+                name='Get meeting',
+                func=self.get_meeting,
+                description='''useful for getting meeting details, but only meeting(s) created by the user. This tool does not take any inputs.'''
+            ),
+
+            Tool(
+                name='Delete meeting',
+                func=self.delete_meeting,
+                description='''useful for delete a specific meeting event. Input is the id string of the meeting, which you must ask the user for first.'''
             ),
 
             self.human_inp
