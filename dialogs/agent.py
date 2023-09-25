@@ -454,6 +454,9 @@ Relay the error to the user and cancel."""
             meeting_list = [i for i in meeting_list if
                             i.get('organizer', {}).get('emailAddress', {}).get('address') == self.email]
 
+            if not meeting_list:
+                return "User has not booked any meetings."
+
             return str(meeting_list) + "\n"
 
         else:
