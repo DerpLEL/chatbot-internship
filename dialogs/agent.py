@@ -460,6 +460,7 @@ Relay the error to the user and cancel."""
             return str(meeting_list) + "\n"
 
         else:
+            print(reply.text)
             return "Server error: Failed to get scheduled meeting"
 
     def delete_meeting(self, meeting_id: str = None):
