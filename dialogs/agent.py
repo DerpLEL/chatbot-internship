@@ -454,7 +454,7 @@ Relay the error to the user and cancel."""
             meeting_list = [i for i in meeting_list if
                             i.get('organizer', {}).get('emailAddress', {}).get('address') == self.email]
 
-            return meeting_list
+            return str(meeting_list) + "\n"
 
         else:
             return "Server error: Failed to get scheduled meeting"
