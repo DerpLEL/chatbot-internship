@@ -459,6 +459,22 @@ Relay the error to the user and cancel."""
         else:
             return "Server error: Failed to get scheduled meeting"
 
+    def delete_meeting(self, meeting_id: str = None):
+        meeting_header = {
+            'Authorization': f'Bearer {self.token}',
+        }
+
+        reply = requests.delete(
+            f'https://graph.microsoft.com/v1.0/me/events/{meeting_id}',
+            headers=meeting_header
+        )
+
+        if reply.status_code == 204:
+            return "Meeting event deleted successfully"
+
+        else:
+            return "Server error: Failed to delete meeting event"
+
     def get_tool1(self):
         return [
             Tool(
