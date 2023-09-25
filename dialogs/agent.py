@@ -570,7 +570,7 @@ Until this tool returns "OK", the user's leave application IS NOT submitted.'''
             Tool(
                 name='Delete meeting',
                 func=self.delete_meeting,
-                description='''useful for delete a specific meeting event. Input is the id string of the meeting. Use the Get meeting tool first, and then ask the user for the id.'''
+                description='''useful for delete a specific meeting event. Input is the id string of the meeting. ALWAYS use the Get meeting tool first, and then ask the user which meeting they want to delete.'''
             ),
 
             self.human_inp
