@@ -472,9 +472,11 @@ Relay the error to the user and cancel."""
 - Start: {i.get('start', {}).get('dateTime')}
 - End: {i.get('end', {}).get('dateTime')}
 - Attendees: {str(members)}
-- Location: {i.get('location', {}).get('displayName')}'''
+- Location: {i.get('location', {}).get('displayName')}
 
-            return meeting_info + "\n"
+'''
+
+            return meeting_info
 
         else:
             print(reply.text)
