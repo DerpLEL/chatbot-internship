@@ -423,7 +423,7 @@ class Toolset:
 
         if x.status_code == 201:
             meeting_info = x.json()
-            # pprint.pprint(meeting_info)
+            pprint.pprint(meeting_info)
 
             # f"Meeting created successfully. Meeting details: {x.text}"
             return f"""Meeting created successfully. Relay these meeting info to the user:
@@ -757,7 +757,7 @@ Thought: Meeting end date and time is 2001-07-02T11:00:00. Now I need to ask the
 Action: human
 Action Input: Can you please provide the emails of the participants?
 Observation: Their emails are abc@gmail.com and 123@hotmail.com
-Thought: I have all the required information, now I can book the meeting.
+Thought: Participants' emails are abc@gmail.com and 123@hotmail.com. I have all the required information, now I can book the meeting.
 Action: Book meeting
 Action Input: 2001-07-02T01:00:00, 2001-07-02T03:00:00, abc@gmail.com, 123@hotmail.com
 Observation: Meeting created successfully.
