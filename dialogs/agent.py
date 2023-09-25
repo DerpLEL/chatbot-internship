@@ -457,7 +457,24 @@ Relay the error to the user and cancel."""
             if not meeting_list:
                 return "User has not booked any meetings."
 
-            return str(meeting_list) + "\n"
+            meeting_info = ""
+            counter = 1
+            for i in meeting_list:
+                member_list = i.get('attendees', [])
+                members = []
+                for y in member_list:
+                    members.append(y.get('emailAddress', {}).get('address'))
+
+                meeting_info += f'''Meeting number {counter}:
+- ID: {i.get('id')}
+- Meeting subject: {i.get('subject')}
+- Timezone: {i.get('originalStartTimeZone')}
+- Start: {i.get('start', {}).get('dateTime')}
+- End: {i.get('end', {}).get('dateTime')}
+- Attendees: {str(members)}
+- Location: {i.get('location', {}).get('displayName')}'''
+
+            return meeting_info + "\n"
 
         else:
             print(reply.text)
