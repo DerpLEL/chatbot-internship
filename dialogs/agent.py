@@ -465,7 +465,7 @@ Relay the error to the user and cancel."""
                 for y in member_list:
                     members.append(y.get('emailAddress', {}).get('address'))
 
-                meeting_info += f'''Meeting number {counter}:
+                meeting_info += f'''Booked meeting info number {counter}:
 - ID: {i.get('id')}
 - Meeting subject: {i.get('subject')}
 - Timezone: {i.get('originalStartTimeZone')}
