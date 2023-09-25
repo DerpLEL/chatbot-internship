@@ -103,8 +103,8 @@ class MyCustomHandler(BaseCallbackHandler):
 
     def on_agent_finish(self, finish: AgentFinish, **kwargs: Any) -> Any:
         """Run on agent end."""
-        self.msg.output = self.prev_msg + finish.return_values['output']
-        self.prev_msg = ""
+        self.msg.output = finish.return_values['output']
+        # self.prev_msg = ""
 
     def on_tool_end(self, output: str, **kwargs: Any) -> Any:
         """Run when tool ends running."""
